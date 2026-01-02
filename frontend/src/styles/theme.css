@@ -1,0 +1,457 @@
+/* ============================================
+   GLOBAL DESIGN SYSTEM
+   Modern Fintech-style overrides for Bootstrap
+   ============================================ */
+
+:root {
+  /* Background Colors */
+  --bg-main: #f8f9fa;
+  --bg-card: #ffffff;
+
+  /* Text Colors */
+  --text-primary: #212529;
+  --text-secondary: #6c757d;
+
+  /* Border */
+  --border-light: rgba(0, 0, 0, 0.05);
+
+  /* Status Colors */
+  --success: #00c853;
+  --danger: #ff5252;
+  --warning: #ffb300;
+  --info: #2979ff;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 6px 12px rgba(0, 0, 0, 0.06);
+
+  /* Border Radius */
+  --radius: 12px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.2s ease;
+  --transition-slow: 0.3s ease;
+}
+
+/* Inter Font - Applied Globally */
+body,
+button,
+input,
+select,
+textarea,
+.card,
+.modal,
+.dropdown-menu {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ============================================
+   BUTTON OVERRIDES (MOST IMPORTANT)
+   ============================================ */
+
+.btn {
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+  box-shadow: none;
+  border: none;
+  transition: all var(--transition-base);
+  padding: 10px 16px;
+  font-size: 14px;
+}
+
+.btn-primary {
+  background: var(--info);
+  border: none;
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background: #1c6be1;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:focus {
+  box-shadow: 0 0 0 2px rgba(41, 121, 255, 0.15);
+}
+
+.btn-outline-primary {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--info);
+}
+
+.btn-outline-primary:hover {
+  background: var(--bg-main);
+  border-color: var(--info);
+  color: var(--info);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--bg-main);
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+}
+
+.btn-secondary:hover {
+  background: #f1f3f5;
+  border-color: var(--border-light);
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.btn-danger:hover {
+  background: #ff3838;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-success {
+  background: var(--success);
+  color: #ffffff;
+}
+
+.btn-success:hover {
+  background: #00b248;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  border: 1px solid var(--border-soft);
+}
+
+.btn-secondary:hover {
+  background-color: #f1f5f9;
+  border-color: var(--border-soft);
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background-color: #ef4444;
+  color: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-danger:hover {
+  background-color: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-hover);
+}
+
+.btn-success {
+  background-color: #10b981;
+  color: #ffffff;
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-success:hover {
+  background-color: #059669;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* ============================================
+   CARDS - FINTECH POLISH
+   ============================================ */
+
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  border: none;
+}
+
+.card-header {
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-soft);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  padding: 16px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-main);
+}
+
+.card-body {
+  padding: 20px;
+}
+
+/* ============================================
+   FORM CONTROLS & INPUTS
+   ============================================ */
+
+.form-control,
+.form-select {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  padding: 10px 12px;
+  font-size: 14px;
+  transition: all var(--transition-base);
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.form-control:focus,
+.form-select:focus {
+  box-shadow: 0 0 0 2px rgba(41, 121, 255, 0.15);
+  border-color: var(--info);
+  outline: 0;
+}
+
+.form-control::placeholder {
+  color: var(--text-light);
+  opacity: 1;
+}
+
+/* Date Inputs */
+input[type="date"],
+input[type="month"] {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-soft);
+  padding: 8px 12px;
+  font-size: 14px;
+  background-color: var(--bg-card);
+  color: var(--text-main);
+  transition: all var(--transition-base);
+}
+
+input[type="date"]:focus,
+input[type="month"]:focus {
+  border-color: var(--primary);
+  outline: 0;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* ============================================
+   DROPDOWNS
+   ============================================ */
+
+.dropdown-menu {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-soft);
+  padding: 6px;
+  margin-top: 4px;
+  background-color: var(--bg-card);
+}
+
+.dropdown-item {
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 14px;
+  transition: all var(--transition-fast);
+  color: var(--text-main);
+}
+
+.dropdown-item:hover {
+  background-color: var(--bg-main);
+  color: var(--primary);
+}
+
+.dropdown-item:active {
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
+.dropdown-item.active {
+  background-color: var(--primary);
+  color: #ffffff;
+}
+
+/* ============================================
+   BADGES
+   ============================================ */
+
+.badge {
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.bg-primary {
+  background-color: var(--primary) !important;
+}
+
+.bg-success {
+  background-color: #10b981 !important;
+}
+
+.bg-warning {
+  background-color: #f59e0b !important;
+}
+
+.bg-danger {
+  background-color: #ef4444 !important;
+}
+
+.bg-info {
+  background-color: #3b82f6 !important;
+}
+
+/* ============================================
+   TABLES
+   ============================================ */
+
+.table {
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+.table thead th {
+  border-bottom: 2px solid var(--border-soft);
+  font-weight: 600;
+  color: var(--text-main);
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  padding: 12px;
+}
+
+.table tbody td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.table tbody tr:hover {
+  background-color: var(--bg-main);
+}
+
+.table-hover tbody tr:hover {
+  background-color: var(--bg-main);
+}
+
+/* ============================================
+   ALERTS
+   ============================================ */
+
+.alert {
+  border-radius: var(--radius-md);
+  border: none;
+  padding: 12px 16px;
+  font-size: 14px;
+}
+
+.alert-primary {
+  background-color: #eff6ff;
+  color: #1e40af;
+}
+
+.alert-success {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.alert-danger {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.alert-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+/* ============================================
+   MODALS
+   ============================================ */
+
+.modal-content {
+  border-radius: var(--radius-md);
+  border: none;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.15);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--border-soft);
+  padding: 20px 24px;
+}
+
+.modal-title {
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--text-main);
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--border-soft);
+  padding: 16px 24px;
+}
+
+/* ============================================
+   NAVIGATION
+   ============================================ */
+
+.nav-link {
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+  border-radius: var(--radius-sm);
+}
+
+.nav-link:hover {
+  color: var(--primary);
+  background-color: var(--bg-main);
+}
+
+.nav-link.active {
+  color: var(--primary);
+  background-color: #eff6ff;
+  font-weight: 600;
+}
+
+/* ============================================
+   UTILITY OVERRIDES
+   ============================================ */
+
+/* Remove Bootstrap's default focus styles */
+*:focus {
+  outline: none;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-soft);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-light);
+}
+
+/* Links */
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--primary-hover);
+  text-decoration: none;
+}
+
