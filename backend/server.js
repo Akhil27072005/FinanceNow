@@ -18,9 +18,48 @@ connectDB();
 const app = express();
 
 // Middleware
+// CORS configuration - supports multiple origins (comma-separated) or single origin
+const getAllowedOrigins = () => {
+  if (process.env.FRONTEND_URL) {
+    // Support comma-separated list of origins
+    const origins = process.env.FRONTEND_URL.split(',').map(url => url.trim());
+    return origins;
+  }
+  return ['http://localhost:3000'];
+};
+
+const allowedOrigins = getAllowedOrigins();
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true // Allow cookies to be sent
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Check if origin matches any allowed origin
+    const isAllowed = allowedOrigins.some(allowed => {
+      // Exact match
+      if (origin === allowed) return true;
+      
+      // Support Vercel preview deployments (any subdomain of vercel.app)
+      if (allowed.includes('vercel.app') && origin.includes('vercel.app')) {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      // Log for debugging
+      console.log('⚠️  CORS blocked origin:', origin);
+      console.log('✅ Allowed origins:', allowedOrigins);
+      callback(new Error(`CORS: Origin ${origin} is not allowed`));
+    }
+  },
+  credentials: true, // Allow cookies to be sent
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 })); // Enable CORS for frontend communication
 app.use(express.json()); // Parse JSON request bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
