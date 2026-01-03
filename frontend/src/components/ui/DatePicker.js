@@ -22,8 +22,10 @@ const DatePicker = ({ selected, onChange, placeholder = 'Select date', showMonth
     }
     
     // Handle YYYY-MM-DD format (date picker)
+    // Parse using local time components to avoid timezone shifts
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-      return new Date(dateString);
+      const [year, month, day] = dateString.split('-').map(Number);
+      return new Date(year, month - 1, day);
     }
     
     // Try to parse as Date
@@ -41,8 +43,12 @@ const DatePicker = ({ selected, onChange, placeholder = 'Select date', showMonth
       const month = String(date.getMonth() + 1).padStart(2, '0');
       return `${year}-${month}`;
     } else {
-      // Return YYYY-MM-DD format
-      return date.toISOString().split('T')[0];
+      // Return YYYY-MM-DD format using local time to avoid timezone issues
+      // Use local date components instead of toISOString() which converts to UTC
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
     }
   };
 
