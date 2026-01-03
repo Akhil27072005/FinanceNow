@@ -13,26 +13,43 @@ const cache = require('../utils/cache');
 const getDateRange = (month, startDate, endDate) => {
   let dateStart, dateEnd;
 
-  if (month) {
+  // Check if month is provided and not empty string
+  if (month && month.trim() !== '') {
     // Validate month format (YYYY-MM)
     const monthRegex = /^\d{4}-\d{2}$/;
     if (!monthRegex.test(month)) {
       throw new Error('Month must be in YYYY-MM format (e.g., 2024-01)');
     }
 
-    // Set start and end of month
+    // Set start and end of month using local time to avoid timezone issues
     const [year, monthNum] = month.split('-').map(Number);
     dateStart = new Date(year, monthNum - 1, 1);
     dateEnd = new Date(year, monthNum, 0, 23, 59, 59, 999); // Last day of month
-  } else if (startDate && endDate) {
-    // Validate date range
-    dateStart = new Date(startDate);
-    dateEnd = new Date(endDate);
+    
+    // Validate the dates were created correctly
+    if (isNaN(dateStart.getTime()) || isNaN(dateEnd.getTime())) {
+      throw new Error('Invalid month provided');
+    }
+  } else if (startDate && endDate && startDate.trim() !== '' && endDate.trim() !== '') {
+    // Validate date range - parse dates more carefully to handle timezones
+    // Parse as local dates to avoid timezone shifts
+    const startParts = startDate.split('-').map(Number);
+    const endParts = endDate.split('-').map(Number);
+    
+    if (startParts.length !== 3 || endParts.length !== 3) {
+      throw new Error('Invalid date format. Use ISO 8601 format (e.g., 2024-01-15)');
+    }
+
+    // Create dates using local time (year, month-1, day) to avoid timezone issues
+    dateStart = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+    dateEnd = new Date(endParts[0], endParts[1] - 1, endParts[2]);
 
     if (isNaN(dateStart.getTime()) || isNaN(dateEnd.getTime())) {
       throw new Error('Invalid date format. Use ISO 8601 format (e.g., 2024-01-15)');
     }
 
+    // Set start date to beginning of day
+    dateStart.setHours(0, 0, 0, 0);
     // Set end date to end of day
     dateEnd.setHours(23, 59, 59, 999);
 
