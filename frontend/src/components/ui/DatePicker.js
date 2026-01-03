@@ -12,25 +12,38 @@ const DatePicker = ({ selected, onChange, placeholder = 'Select date', showMonth
   const parseDate = (dateString) => {
     if (!dateString) return null;
     
-    // If it's already a Date object, return it
-    if (dateString instanceof Date) return dateString;
+    // If it's already a Date object, ensure it's in local time
+    if (dateString instanceof Date) {
+      // Create a new date using local components to avoid timezone issues
+      const year = dateString.getFullYear();
+      const month = dateString.getMonth();
+      const day = dateString.getDate();
+      // Use noon (12:00) to avoid timezone edge cases at midnight
+      return new Date(year, month, day, 12, 0, 0);
+    }
     
     // Handle YYYY-MM format (month picker)
     if (showMonthYearPicker && /^\d{4}-\d{2}$/.test(dateString)) {
       const [year, month] = dateString.split('-');
-      return new Date(parseInt(year), parseInt(month) - 1, 1);
+      return new Date(parseInt(year), parseInt(month) - 1, 1, 12, 0, 0);
     }
     
     // Handle YYYY-MM-DD format (date picker)
     // Parse using local time components to avoid timezone shifts
+    // Use noon (12:00) instead of midnight to avoid timezone edge cases
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
       const [year, month, day] = dateString.split('-').map(Number);
-      return new Date(year, month - 1, day);
+      return new Date(year, month - 1, day, 12, 0, 0);
     }
     
-    // Try to parse as Date
+    // Try to parse as Date and convert to local
     const parsed = new Date(dateString);
-    return isNaN(parsed.getTime()) ? null : parsed;
+    if (isNaN(parsed.getTime())) return null;
+    // Convert to local date at noon
+    const year = parsed.getFullYear();
+    const month = parsed.getMonth();
+    const day = parsed.getDate();
+    return new Date(year, month, day, 12, 0, 0);
   };
 
   // Format date for output
