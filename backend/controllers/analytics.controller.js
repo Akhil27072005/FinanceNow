@@ -4,6 +4,7 @@ const Category = require('../src/models/Category');
 const SubCategory = require('../src/models/SubCategory');
 const Tag = require('../src/models/Tag');
 const mongoose = require('mongoose');
+const cache = require('../utils/cache');
 
 /**
  * Utility function to determine date range from query parameters
@@ -57,10 +58,21 @@ const getDateRange = (month, startDate, endDate) => {
 const getDashboardAnalytics = async (req, res, next) => {
   try {
     const { month, startDate, endDate } = req.query;
-    const userId = req.user._id;
+    const userId = req.user._id.toString();
 
     // Determine date range
     const { dateStart, dateEnd } = getDateRange(month, startDate, endDate);
+
+    // Generate cache key
+    const cacheKey = month 
+      ? `analytics:${userId}:dashboard:${month}`
+      : `analytics:${userId}:dashboard:${startDate}:${endDate}`;
+
+    // Try to get from cache first
+    const cachedData = await cache.get(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
 
     // Calculate number of days in range for average daily expense
     const daysInRange = Math.ceil((dateEnd - dateStart) / (1000 * 60 * 60 * 24)) + 1;
@@ -160,6 +172,9 @@ const getDashboardAnalytics = async (req, res, next) => {
         monthlySubscriptionSpend: Math.round(subscriptionData.totalMonthlySpend * 100) / 100 // Round to 2 decimal places
       }
     };
+
+    // Cache the response for 10 minutes (600 seconds)
+    await cache.set(cacheKey, response, 600);
 
     res.json(response);
   } catch (error) {
@@ -438,7 +453,7 @@ const getTagBasedSpending = async (userId, type, dateStart, dateEnd) => {
 const getChartData = async (req, res, next) => {
   try {
     const { type, month, startDate, endDate, chartType, categoryId } = req.query;
-    const userId = req.user._id;
+    const userId = req.user._id.toString();
 
     // Validation: type is required
     if (!type) {
@@ -469,8 +484,24 @@ const getChartData = async (req, res, next) => {
       });
     }
 
-    // Determine chart type (default to monthlyTrend if not specified)
+    // Generate cache key
     const chart = chartType || 'monthlyTrend';
+    const cacheKeyParts = [
+      `analytics:${userId}:charts`,
+      type,
+      chart,
+      month || `${startDate}:${endDate}`,
+      categoryId || 'all'
+    ];
+    const cacheKey = cacheKeyParts.join(':');
+
+    // Try to get from cache first
+    const cachedData = await cache.get(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
+    // Determine chart type (default to monthlyTrend if not specified)
     let data;
     let chartName;
 
@@ -507,7 +538,7 @@ const getChartData = async (req, res, next) => {
         });
     }
 
-    res.json({
+    const response = {
       success: true,
       chartType: chartName,
       type: type,
@@ -516,7 +547,12 @@ const getChartData = async (req, res, next) => {
         endDate: dateEnd.toISOString()
       },
       data: data
-    });
+    };
+
+    // Cache the response for 10 minutes (600 seconds)
+    await cache.set(cacheKey, response, 600);
+
+    res.json(response);
   } catch (error) {
     next(error);
   }

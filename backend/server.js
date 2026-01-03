@@ -10,9 +10,13 @@ dotenv.config();
 const connectDB = require('./config/database');
 const passport = require('./config/passport');
 const errorHandler = require('./middleware/errorHandler');
+const { initRedis } = require('./config/redis');
 
 // Connect to MongoDB
 connectDB();
+
+// Initialize Redis (optional - graceful degradation if not configured)
+initRedis();
 
 // Initialize Express app
 const app = express();

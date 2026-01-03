@@ -4,6 +4,7 @@ const SubCategory = require('../src/models/SubCategory');
 const Tag = require('../src/models/Tag');
 const PaymentMethod = require('../src/models/PaymentMethod');
 const mongoose = require('mongoose');
+const cache = require('../utils/cache');
 
 /**
  * Create a new transaction
@@ -175,6 +176,9 @@ const createTransaction = async (req, res, next) => {
 
     // Populate references for response
     await transaction.populate('categoryId subCategoryId tags paymentMethodId');
+
+    // Invalidate analytics cache (transaction changes affect all analytics)
+    await cache.invalidateAnalyticsCache(req.user._id.toString());
 
     res.status(201).json({
       success: true,
@@ -584,6 +588,9 @@ const updateTransaction = async (req, res, next) => {
     // Populate references for response
     await transaction.populate('categoryId subCategoryId tags paymentMethodId');
 
+    // Invalidate analytics cache (transaction changes affect all analytics)
+    await cache.invalidateAnalyticsCache(req.user._id.toString());
+
     res.json({
       success: true,
       data: transaction
@@ -621,6 +628,9 @@ const deleteTransaction = async (req, res, next) => {
         error: 'Transaction not found'
       });
     }
+
+    // Invalidate analytics cache (transaction changes affect all analytics)
+    await cache.invalidateAnalyticsCache(req.user._id.toString());
 
     res.json({
       success: true,
