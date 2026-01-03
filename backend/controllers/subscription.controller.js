@@ -2,6 +2,7 @@ const Subscription = require('../src/models/Subscription');
 const Category = require('../src/models/Category');
 const PaymentMethod = require('../src/models/PaymentMethod');
 const mongoose = require('mongoose');
+const cache = require('../utils/cache');
 
 /**
  * Create a new subscription
@@ -127,6 +128,10 @@ const createSubscription = async (req, res, next) => {
 
     // Populate references for response
     await subscription.populate('categoryId paymentMethodId');
+
+    // Invalidate subscription alerts cache
+    const userIdStr = req.user._id.toString();
+    await cache.del(`subscriptions:${userIdStr}:alerts:7`); // Default 7 days
 
     res.status(201).json({
       success: true,
@@ -402,6 +407,10 @@ const updateSubscription = async (req, res, next) => {
     // Populate references for response
     await subscription.populate('categoryId paymentMethodId');
 
+    // Invalidate subscription alerts cache
+    const userIdStr = req.user._id.toString();
+    await cache.del(`subscriptions:${userIdStr}:alerts:7`); // Default 7 days
+
     res.json({
       success: true,
       data: subscription
@@ -440,6 +449,10 @@ const deleteSubscription = async (req, res, next) => {
       });
     }
 
+    // Invalidate subscription alerts cache
+    const userIdStr = req.user._id.toString();
+    await cache.del(`subscriptions:${userIdStr}:alerts:7`); // Default 7 days
+
     res.json({
       success: true,
       message: 'Subscription deleted successfully'
@@ -457,6 +470,7 @@ const getSubscriptionAlerts = async (req, res, next) => {
   try {
     const { days = 7 } = req.query;
     const userId = req.user._id;
+    const userIdStr = userId.toString();
 
     // Validate days parameter
     const daysNum = parseInt(days, 10);
@@ -465,6 +479,15 @@ const getSubscriptionAlerts = async (req, res, next) => {
         success: false,
         error: 'Days must be a positive number'
       });
+    }
+
+    // Generate cache key
+    const cacheKey = `subscriptions:${userIdStr}:alerts:${daysNum}`;
+
+    // Try to get from cache first
+    const cachedData = await cache.get(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
     }
 
     // Get today's date (start of day)
@@ -489,43 +512,42 @@ const getSubscriptionAlerts = async (req, res, next) => {
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    // Query for upcoming subscriptions
-    // nextPaymentDate >= today AND <= today + days, isActive = true
-    const upcomingSubscriptions = await Subscription.find({
-      userId: userId,
-      isActive: true,
-      nextPaymentDate: {
-        $gte: today,
-        $lte: endDate
-      }
-    })
-      .select('_id name amount billingCycle nextPaymentDate')
-      .sort({ nextPaymentDate: 1 }); // Sort by nearest date first
+    // OPTIMIZE: Run all 3 queries in parallel instead of sequentially
+    const [upcomingSubscriptions, overdueSubscriptions, monthlySubscriptions] = await Promise.all([
+      // Query for upcoming subscriptions
+      Subscription.find({
+        userId: userId,
+        isActive: true,
+        nextPaymentDate: {
+          $gte: today,
+          $lte: endDate
+        }
+      })
+        .select('_id name amount billingCycle nextPaymentDate')
+        .sort({ nextPaymentDate: 1 }), // Sort by nearest date first
 
-    // Query for overdue subscriptions
-    // nextPaymentDate < today, isActive = true
-    const overdueSubscriptions = await Subscription.find({
-      userId: userId,
-      isActive: true,
-      nextPaymentDate: {
-        $lt: today
-      }
-    })
-      .select('_id name amount billingCycle nextPaymentDate')
-      .sort({ nextPaymentDate: 1 }); // Sort by oldest first
+      // Query for overdue subscriptions
+      Subscription.find({
+        userId: userId,
+        isActive: true,
+        nextPaymentDate: {
+          $lt: today
+        }
+      })
+        .select('_id name amount billingCycle nextPaymentDate')
+        .sort({ nextPaymentDate: 1 }), // Sort by oldest first
 
-    // Calculate monthly subscription load
-    // Total amount of subscriptions due in the current month
-    // Normalize yearly subscriptions to monthly value
-    const monthlySubscriptions = await Subscription.find({
-      userId: userId,
-      isActive: true,
-      nextPaymentDate: {
-        $gte: currentMonthStart,
-        $lte: currentMonthEnd
-      }
-    })
-      .select('amount billingCycle');
+      // Calculate monthly subscription load
+      Subscription.find({
+        userId: userId,
+        isActive: true,
+        nextPaymentDate: {
+          $gte: currentMonthStart,
+          $lte: currentMonthEnd
+        }
+      })
+        .select('amount billingCycle')
+    ]);
 
     // Calculate total monthly spend (normalize yearly to monthly)
     let monthlySubscriptionSpend = 0;
@@ -561,6 +583,9 @@ const getSubscriptionAlerts = async (req, res, next) => {
       upcoming: upcomingSubscriptions.map(formatSubscription),
       overdue: overdueSubscriptions.map(formatSubscription)
     };
+
+    // Cache for 5 minutes (300 seconds)
+    await cache.set(cacheKey, response, 300);
 
     res.json(response);
   } catch (error) {
