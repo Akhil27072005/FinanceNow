@@ -58,15 +58,16 @@ const getDateRange = (month, startDate, endDate) => {
 const getDashboardAnalytics = async (req, res, next) => {
   try {
     const { month, startDate, endDate } = req.query;
-    const userId = req.user._id.toString();
+    const userId = req.user._id; // Keep as ObjectId for MongoDB queries
+    const userIdStr = userId.toString(); // String version for cache keys
 
     // Determine date range
     const { dateStart, dateEnd } = getDateRange(month, startDate, endDate);
 
     // Generate cache key
     const cacheKey = month 
-      ? `analytics:${userId}:dashboard:${month}`
-      : `analytics:${userId}:dashboard:${startDate}:${endDate}`;
+      ? `analytics:${userIdStr}:dashboard:${month}`
+      : `analytics:${userIdStr}:dashboard:${startDate}:${endDate}`;
 
     // Try to get from cache first
     const cachedData = await cache.get(cacheKey);
@@ -82,7 +83,7 @@ const getDashboardAnalytics = async (req, res, next) => {
     const transactionPipeline = [
       {
         $match: {
-          userId: userId,
+          userId: userId, // Use ObjectId for MongoDB
           date: {
             $gte: dateStart,
             $lte: dateEnd
@@ -122,7 +123,7 @@ const getDashboardAnalytics = async (req, res, next) => {
     const subscriptionPipeline = [
       {
         $match: {
-          userId: userId,
+          userId: userId, // Use ObjectId for MongoDB
           isActive: true
         }
       },
@@ -453,7 +454,8 @@ const getTagBasedSpending = async (userId, type, dateStart, dateEnd) => {
 const getChartData = async (req, res, next) => {
   try {
     const { type, month, startDate, endDate, chartType, categoryId } = req.query;
-    const userId = req.user._id.toString();
+    const userId = req.user._id; // Keep as ObjectId for MongoDB queries
+    const userIdStr = userId.toString(); // String version for cache keys
 
     // Validation: type is required
     if (!type) {
@@ -487,7 +489,7 @@ const getChartData = async (req, res, next) => {
     // Generate cache key
     const chart = chartType || 'monthlyTrend';
     const cacheKeyParts = [
-      `analytics:${userId}:charts`,
+      `analytics:${userIdStr}:charts`,
       type,
       chart,
       month || `${startDate}:${endDate}`,
