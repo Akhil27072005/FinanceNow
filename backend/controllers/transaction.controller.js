@@ -179,6 +179,22 @@ const createTransaction = async (req, res, next) => {
 
     // Invalidate analytics cache (transaction changes affect all analytics)
     await cache.invalidateAnalyticsCache(req.user._id.toString());
+    
+    // Invalidate transaction cache (first page cache)
+    // Try to delete common transaction cache keys
+    const userIdStr = req.user._id.toString();
+    const commonCacheKeys = [
+      `transactions:${userIdStr}:page1`,
+      `transactions:${userIdStr}:page1:type:expense`,
+      `transactions:${userIdStr}:page1:type:income`,
+      `transactions:${userIdStr}:page1:type:savings`,
+      `transactions:${userIdStr}:page1:type:investment`
+    ];
+    
+    // Delete common cache keys (ignore errors for non-existent keys)
+    for (const key of commonCacheKeys) {
+      await cache.del(key);
+    }
 
     res.status(201).json({
       success: true,
@@ -290,7 +306,54 @@ const getTransactions = async (req, res, next) => {
 
     const skip = (pageNum - 1) * limitNum;
 
-    // Execute query
+    // Only cache first page (page = 1) with default limit (20)
+    const shouldCache = pageNum === 1 && limitNum === 20;
+    const userIdStr = req.user._id.toString();
+
+    if (shouldCache) {
+      // Generate cache key based on filters
+      const cacheKeyParts = [`transactions:${userIdStr}:page1`];
+      if (type) cacheKeyParts.push(`type:${type}`);
+      if (startDate) cacheKeyParts.push(`start:${startDate}`);
+      if (endDate) cacheKeyParts.push(`end:${endDate}`);
+      if (categoryId) cacheKeyParts.push(`cat:${categoryId}`);
+      if (tag) cacheKeyParts.push(`tag:${tag}`);
+      const cacheKey = cacheKeyParts.join(':');
+
+      // Try to get from cache first
+      const cachedData = await cache.get(cacheKey);
+      if (cachedData) {
+        return res.json(cachedData);
+      }
+
+      // Execute query
+      const transactions = await Transaction.find(filter)
+        .populate('categoryId subCategoryId tags paymentMethodId')
+        .sort({ date: -1 }) // Sort by date descending
+        .skip(skip)
+        .limit(limitNum);
+
+      // Get total count for pagination metadata
+      const total = await Transaction.countDocuments(filter);
+
+      const response = {
+        success: true,
+        data: transactions,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          pages: Math.ceil(total / limitNum)
+        }
+      };
+
+      // Cache for 5 minutes (300 seconds) - first page only
+      await cache.set(cacheKey, response, 300);
+
+      return res.json(response);
+    }
+
+    // Execute query (for non-cached pages)
     const transactions = await Transaction.find(filter)
       .populate('categoryId subCategoryId tags paymentMethodId')
       .sort({ date: -1 }) // Sort by date descending
@@ -590,6 +653,10 @@ const updateTransaction = async (req, res, next) => {
 
     // Invalidate analytics cache (transaction changes affect all analytics)
     await cache.invalidateAnalyticsCache(req.user._id.toString());
+    
+    // Invalidate transaction cache (first page cache)
+    const userIdStr = req.user._id.toString();
+    await cache.delPattern(`transactions:${userIdStr}:*`);
 
     res.json({
       success: true,
@@ -631,6 +698,21 @@ const deleteTransaction = async (req, res, next) => {
 
     // Invalidate analytics cache (transaction changes affect all analytics)
     await cache.invalidateAnalyticsCache(req.user._id.toString());
+    
+    // Invalidate transaction cache (first page cache)
+    const userIdStr = req.user._id.toString();
+    const commonCacheKeys = [
+      `transactions:${userIdStr}:page1`,
+      `transactions:${userIdStr}:page1:type:expense`,
+      `transactions:${userIdStr}:page1:type:income`,
+      `transactions:${userIdStr}:page1:type:savings`,
+      `transactions:${userIdStr}:page1:type:investment`
+    ];
+    
+    // Delete common cache keys (ignore errors for non-existent keys)
+    for (const key of commonCacheKeys) {
+      await cache.del(key);
+    }
 
     res.json({
       success: true,

@@ -21,6 +21,7 @@ const Dashboard = () => {
   const [budgets, setBudgets] = useState([]);
   const [budgetTransactions, setBudgetTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [chartsLoading, setChartsLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
@@ -34,13 +35,54 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
+      setChartsLoading(true);
       setError('');
 
-      // Load dashboard KPIs
-      const dashboardResponse = await analyticsService.getDashboard({ month: selectedMonth });
-      setDashboardData(dashboardResponse);
+      // Calculate month date range for transactions
+      const monthStart = `${selectedMonth}-01`;
+      const monthEndDate = new Date(new Date(monthStart).getFullYear(), new Date(monthStart).getMonth() + 1, 0);
+      const monthEnd = monthEndDate.toISOString().split('T')[0];
 
-      // Load chart data
+      // OPTION 1: Parallelize ALL API calls for maximum speed
+      // All calls happen simultaneously instead of sequentially
+      const [
+        dashboardResponse,
+        budgetsRes,
+        transactionsRes,
+        alertsResponse
+      ] = await Promise.all([
+        analyticsService.getDashboard({ month: selectedMonth }),
+        budgetService.getBudgets({ month: selectedMonth }),
+        transactionService.getTransactions({ 
+          type: 'expense',
+          startDate: monthStart,
+          endDate: monthEnd
+        }),
+        subscriptionService.getAlerts(7)
+      ]);
+
+      // Progressive loading: Update state as data arrives
+      setDashboardData(dashboardResponse);
+      setBudgets(budgetsRes.data || []);
+      setBudgetTransactions(transactionsRes.data || []);
+      setSubscriptionAlerts(alertsResponse);
+      setLoading(false); // Main data loaded, show dashboard
+
+      // OPTION 3: Lazy load charts after main data is displayed
+      // Charts load separately so dashboard appears faster
+      loadChartsLazy();
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to load dashboard data');
+      setLoading(false);
+      setChartsLoading(false);
+    }
+  };
+
+  // Lazy load charts separately after main dashboard loads
+  const loadChartsLazy = async () => {
+    try {
+      setChartsLoading(true);
+      
       const [incomeTrend, expenseTrend, categorySplit] = await Promise.all([
         analyticsService.getCharts('income', 'monthlyTrend', { month: selectedMonth }),
         analyticsService.getCharts('expense', 'monthlyTrend', { month: selectedMonth }),
@@ -52,32 +94,12 @@ const Dashboard = () => {
         expenseTrend: expenseTrend.data,
         categorySplit: categorySplit.data
       });
-
-      // Load subscription alerts
-      const alertsResponse = await subscriptionService.getAlerts(7);
-      setSubscriptionAlerts(alertsResponse);
-
-      // Load budgets and transactions for budget status
-      const monthStart = `${selectedMonth}-01`;
-      const monthEndDate = new Date(new Date(monthStart).getFullYear(), new Date(monthStart).getMonth() + 1, 0);
-      const monthEnd = monthEndDate.toISOString().split('T')[0];
-
-      const [budgetsRes, transactionsRes] = await Promise.all([
-        budgetService.getBudgets({ month: selectedMonth }),
-        transactionService.getTransactions({ 
-          type: 'expense',
-          startDate: monthStart,
-          endDate: monthEnd
-        })
-      ]);
-
-      setBudgets(budgetsRes.data || []);
-      setBudgetTransactions(transactionsRes.data || []);
-
-      setLoading(false);
+      
+      setChartsLoading(false);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load dashboard data');
-      setLoading(false);
+      console.error('Failed to load charts:', err);
+      setChartsLoading(false);
+      // Don't show error for charts, just log it
     }
   };
 
@@ -394,7 +416,19 @@ const Dashboard = () => {
                   Income vs Expenses Trend
                 </h5>
               </div>
-              {combinedTrendData.length > 0 ? (
+              {chartsLoading ? (
+                <div style={{ 
+                  padding: '80px 20px', 
+                  textAlign: 'center',
+                  color: '#9ca3af',
+                  fontSize: '13px'
+                }}>
+                  <div className="spinner-border spinner-border-sm text-primary" role="status" style={{ marginBottom: '8px' }}>
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <p style={{ margin: '8px 0 0 0' }}>Loading chart data...</p>
+                </div>
+              ) : combinedTrendData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={380}>
                   <LineChart data={combinedTrendData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
                     <defs>
@@ -476,7 +510,19 @@ const Dashboard = () => {
               }}>
                 Expense by Category
               </h5>
-              {(() => {
+              {chartsLoading ? (
+                <div style={{ 
+                  padding: '80px 20px', 
+                  textAlign: 'center',
+                  color: '#9ca3af',
+                  fontSize: '13px'
+                }}>
+                  <div className="spinner-border spinner-border-sm text-primary" role="status" style={{ marginBottom: '8px' }}>
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <p style={{ margin: '8px 0 0 0' }}>Loading chart data...</p>
+                </div>
+              ) : (() => {
                 // Process category split data - ensure correct field names and calculate total
                 const processedData = chartData.categorySplit && chartData.categorySplit.length > 0
                   ? chartData.categorySplit.map(item => ({
