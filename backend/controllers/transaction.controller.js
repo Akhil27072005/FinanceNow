@@ -326,15 +326,21 @@ const getTransactions = async (req, res, next) => {
         return res.json(cachedData);
       }
 
-      // Execute query
-      const transactions = await Transaction.find(filter)
-        .populate('categoryId subCategoryId tags paymentMethodId')
-        .sort({ date: -1 }) // Sort by date descending
-        .skip(skip)
-        .limit(limitNum);
-
-      // Get total count for pagination metadata
-      const total = await Transaction.countDocuments(filter);
+      // OPTIMIZE: Run query and count in parallel, use lean() for faster queries
+      // lean() returns plain JavaScript objects instead of Mongoose documents (faster)
+      // Only populate needed fields to reduce overhead
+      const [transactions, total] = await Promise.all([
+        Transaction.find(filter)
+          .populate('categoryId', 'name type') // Only get name and type
+          .populate('subCategoryId', 'name') // Only get name
+          .populate('tags', 'name color') // Only get name and color
+          .populate('paymentMethodId', 'name icon type') // Only get needed fields
+          .sort({ date: -1 }) // Sort by date descending
+          .skip(skip)
+          .limit(limitNum)
+          .lean(), // Use lean() for better performance
+        Transaction.countDocuments(filter)
+      ]);
 
       const response = {
         success: true,
@@ -353,15 +359,19 @@ const getTransactions = async (req, res, next) => {
       return res.json(response);
     }
 
-    // Execute query (for non-cached pages)
-    const transactions = await Transaction.find(filter)
-      .populate('categoryId subCategoryId tags paymentMethodId')
-      .sort({ date: -1 }) // Sort by date descending
-      .skip(skip)
-      .limit(limitNum);
-
-    // Get total count for pagination metadata
-    const total = await Transaction.countDocuments(filter);
+    // Execute query (for non-cached pages) - optimized with lean() and selective populate
+    const [transactions, total] = await Promise.all([
+      Transaction.find(filter)
+        .populate('categoryId', 'name type')
+        .populate('subCategoryId', 'name')
+        .populate('tags', 'name color')
+        .populate('paymentMethodId', 'name icon type')
+        .sort({ date: -1 }) // Sort by date descending
+        .skip(skip)
+        .limit(limitNum)
+        .lean(), // Use lean() for better performance
+      Transaction.countDocuments(filter)
+    ]);
 
     res.json({
       success: true,
