@@ -19,7 +19,9 @@ const createTransaction = async (req, res, next) => {
       categoryId,
       subCategoryId,
       tags,
-      paymentMethod,
+      paymentMethodId,
+      paymentMethodDetail,
+      paymentMethod, // Keep for backward compatibility
       account,
       notes
     } = req.body;
@@ -134,9 +136,13 @@ const createTransaction = async (req, res, next) => {
       }
     }
 
+    // Normalize empty strings to null for optional fields
+    const normalizedPaymentMethodId = paymentMethodId && paymentMethodId.trim() !== '' ? paymentMethodId : null;
+    const normalizedPaymentMethodDetail = paymentMethodDetail && paymentMethodDetail.trim() !== '' ? paymentMethodDetail : null;
+
     // Validation: paymentMethodId must belong to user if provided
-    if (paymentMethodId) {
-      if (!mongoose.Types.ObjectId.isValid(paymentMethodId)) {
+    if (normalizedPaymentMethodId) {
+      if (!mongoose.Types.ObjectId.isValid(normalizedPaymentMethodId)) {
         return res.status(400).json({
           success: false,
           error: 'Invalid paymentMethodId format'
@@ -144,7 +150,7 @@ const createTransaction = async (req, res, next) => {
       }
 
       const paymentMethodObj = await PaymentMethod.findOne({
-        _id: paymentMethodId,
+        _id: normalizedPaymentMethodId,
         userId: req.user._id
       });
 
@@ -165,8 +171,8 @@ const createTransaction = async (req, res, next) => {
       categoryId: categoryId || null,
       subCategoryId: subCategoryId || null,
       tags: tags || [],
-      paymentMethodId: paymentMethodId || null,
-      paymentMethodDetail: paymentMethodDetail || null,
+      paymentMethodId: normalizedPaymentMethodId,
+      paymentMethodDetail: normalizedPaymentMethodDetail,
       paymentMethod: paymentMethod || null, // Keep for backward compatibility
       account: account || 'self',
       notes: notes || null
