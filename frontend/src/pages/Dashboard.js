@@ -45,15 +45,13 @@ const Dashboard = () => {
       const monthEndDate = new Date(new Date(monthStart).getFullYear(), new Date(monthStart).getMonth() + 1, 0);
       const monthEnd = monthEndDate.toISOString().split('T')[0];
 
-      // OPTION 1: Parallelize ALL API calls for maximum speed
-      // All calls happen simultaneously instead of sequentially
-      const [
-        dashboardResponse,
-        budgetsRes,
-        transactionsRes,
-        alertsResponse
-      ] = await Promise.all([
-        analyticsService.getDashboard({ month: selectedMonth }),
+      // Load dashboard KPIs first (most important, show immediately)
+      const dashboardResponse = await analyticsService.getDashboard({ month: selectedMonth });
+      setDashboardData(dashboardResponse);
+      setLoading(false); // Show dashboard as soon as KPIs are ready
+
+      // Lazy load everything else in parallel (budgets, transactions, alerts, charts)
+      Promise.all([
         budgetService.getBudgets({ month: selectedMonth }),
         transactionService.getTransactions({ 
           type: 'expense',
@@ -61,18 +59,18 @@ const Dashboard = () => {
           endDate: monthEnd
         }),
         subscriptionService.getAlerts(7)
-      ]);
+      ]).then(([budgetsRes, transactionsRes, alertsResponse]) => {
+        setBudgets(budgetsRes.data || []);
+        setBudgetTransactions(transactionsRes.data || []);
+        setSubscriptionAlerts(alertsResponse);
+      }).catch(err => {
+        console.error('Error loading secondary data:', err);
+      });
 
-      // Progressive loading: Update state as data arrives
-      setDashboardData(dashboardResponse);
-      setBudgets(budgetsRes.data || []);
-      setBudgetTransactions(transactionsRes.data || []);
-      setSubscriptionAlerts(alertsResponse);
-      setLoading(false); // Main data loaded, show dashboard
-
-      // OPTION 3: Lazy load charts after main data is displayed
-      // Charts load separately so dashboard appears faster
-      loadChartsLazy();
+      // Load charts separately after dashboard is visible
+      requestAnimationFrame(() => {
+        loadChartsLazy();
+      });
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to load dashboard data');
       setLoading(false);
