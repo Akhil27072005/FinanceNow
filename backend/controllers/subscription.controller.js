@@ -526,15 +526,16 @@ const getSubscriptionAlerts = async (req, res, next) => {
         .select('_id name amount billingCycle nextPaymentDate')
         .sort({ nextPaymentDate: 1 }), // Sort by nearest date first
 
-      // Query for overdue subscriptions
+      // Query for overdue subscriptions (exclude auto-renew subscriptions)
       Subscription.find({
         userId: userId,
         isActive: true,
+        autoRenew: false, // Only show non-auto-renew subscriptions in overdue
         nextPaymentDate: {
           $lt: today
         }
       })
-        .select('_id name amount billingCycle nextPaymentDate')
+        .select('_id name amount billingCycle nextPaymentDate autoRenew')
         .sort({ nextPaymentDate: 1 }), // Sort by oldest first
 
       // Calculate monthly subscription load
@@ -593,12 +594,130 @@ const getSubscriptionAlerts = async (req, res, next) => {
   }
 };
 
+/**
+ * Mark subscription as paid
+ * POST /api/subscriptions/:id/mark-paid
+ * Updates the nextPaymentDate to the next billing cycle
+ */
+const markSubscriptionAsPaid = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid subscription ID format'
+      });
+    }
+
+    // Find subscription (must belong to user)
+    const subscription = await Subscription.findOne({
+      _id: id,
+      userId: userId
+    });
+
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        error: 'Subscription not found'
+      });
+    }
+
+    // Log the subscription being updated (for debugging)
+    console.log(`Marking subscription as paid: ${subscription.name} (ID: ${id}), Current nextPaymentDate: ${subscription.nextPaymentDate}, AutoRenew: ${subscription.autoRenew}`);
+
+    // Calculate next payment date based on billing cycle
+    // Always use the original nextPaymentDate (due date) as the base to maintain billing cycle alignment
+    // This ensures the billing cycle stays consistent even if payment is late
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Use the subscription's original nextPaymentDate (the due date) as the base
+    // This maintains the billing cycle alignment regardless of when it's marked as paid
+    const baseDate = new Date(subscription.nextPaymentDate);
+    baseDate.setHours(0, 0, 0, 0);
+    const newNextDate = new Date(baseDate);
+
+    if (subscription.billingCycle === 'monthly') {
+      newNextDate.setMonth(newNextDate.getMonth() + 1);
+    } else if (subscription.billingCycle === 'yearly') {
+      newNextDate.setFullYear(newNextDate.getFullYear() + 1);
+    }
+
+    // Store old date for logging
+    const oldNextDate = subscription.nextPaymentDate;
+
+    // Update next payment date
+    subscription.nextPaymentDate = newNextDate;
+    await subscription.save();
+
+    // Verify only this subscription was updated (safety check)
+    const updatedSubscription = await Subscription.findOne({
+      _id: id,
+      userId: userId
+    });
+
+    if (!updatedSubscription || updatedSubscription.nextPaymentDate.getTime() !== newNextDate.getTime()) {
+      console.error(`ERROR: Subscription update verification failed for ID: ${id}`);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to update subscription'
+      });
+    }
+
+    console.log(`Successfully updated subscription: ${subscription.name}, Old date: ${oldNextDate}, New date: ${newNextDate}`);
+
+    // Populate references for response
+    await subscription.populate('categoryId paymentMethodId');
+
+    // Verify no other subscriptions were affected (safety check)
+    const otherSubscriptions = await Subscription.find({
+      userId: userId,
+      _id: { $ne: id },
+      autoRenew: true,
+      isActive: true
+    }).select('_id name nextPaymentDate autoRenew');
+
+    // Log other auto-renew subscriptions to verify they weren't affected
+    if (otherSubscriptions.length > 0) {
+      console.log(`Other auto-renew subscriptions (should be unchanged):`, 
+        otherSubscriptions.map(s => ({
+          id: s._id.toString(),
+          name: s.name,
+          nextPaymentDate: s.nextPaymentDate,
+          autoRenew: s.autoRenew
+        }))
+      );
+    }
+
+    // Invalidate subscription alerts cache
+    await cache.invalidateSubscriptionAlertsCache(userId.toString());
+
+    res.json({
+      success: true,
+      message: 'Subscription marked as paid',
+      subscription: subscription,
+      debug: {
+        updatedId: id,
+        oldDate: oldNextDate,
+        newDate: newNextDate,
+        otherAutoRenewCount: otherSubscriptions.length
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createSubscription,
   getSubscriptions,
   getSubscription,
   updateSubscription,
   deleteSubscription,
-  getSubscriptionAlerts
+  getSubscriptionAlerts,
+  markSubscriptionAsPaid
 };
 

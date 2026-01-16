@@ -232,6 +232,42 @@ const getVersionedKey = async (baseKey, userId) => {
   }
 };
 
+/**
+ * Invalidate subscription alerts cache for a user
+ * Deletes common cache keys for subscription alerts (different day values)
+ * @param {string} userId - User ID
+ * @returns {Promise<number>} Number of keys invalidated
+ */
+const invalidateSubscriptionAlertsCache = async (userId) => {
+  if (!isRedisAvailable()) {
+    return 0;
+  }
+
+  try {
+    const redis = getRedis();
+    let deletedCount = 0;
+
+    // Common day values used for subscription alerts (7 is default, but users might use others)
+    const commonDays = [1, 3, 7, 14, 30, 60, 90];
+    
+    // Delete cache keys for common day values
+    for (const days of commonDays) {
+      const cacheKey = `subscriptions:${userId}:alerts:${days}`;
+      try {
+        const result = await redis.del(cacheKey);
+        if (result === 1) deletedCount++;
+      } catch (error) {
+        // Ignore errors for keys that don't exist
+      }
+    }
+
+    return deletedCount;
+  } catch (error) {
+    console.error(`Cache invalidation error for subscription alerts (user "${userId}"):`, error.message);
+    return 0;
+  }
+};
+
 module.exports = {
   get,
   set,
@@ -239,6 +275,7 @@ module.exports = {
   delPattern,
   invalidateAnalyticsCache,
   invalidateUserCache,
-  getVersionedKey
+  getVersionedKey,
+  invalidateSubscriptionAlertsCache
 };
 

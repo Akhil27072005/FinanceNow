@@ -7,7 +7,8 @@ const {
   getSubscription,
   updateSubscription,
   deleteSubscription,
-  getSubscriptionAlerts
+  getSubscriptionAlerts,
+  markSubscriptionAsPaid
 } = require('../controllers/subscription.controller');
 
 /**
@@ -21,6 +22,9 @@ router.post('/', authenticateUser, createSubscription);
 
 // Get subscription alerts (upcoming and overdue)
 router.get('/alerts', authenticateUser, getSubscriptionAlerts);
+
+// Mark subscription as paid (updates nextPaymentDate) - MUST come before /:id routes
+router.post('/:id/mark-paid', authenticateUser, markSubscriptionAsPaid);
 
 // Get all subscriptions (optionally filtered by isActive)
 router.get('/', authenticateUser, getSubscriptions);

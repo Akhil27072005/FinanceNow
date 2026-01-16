@@ -9,6 +9,7 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { cardStyle } from '../styles/cardStyles';
 import { BarChart3, CreditCard, AlertTriangle, Bell } from 'lucide-react';
 import DatePicker from '../components/ui/DatePicker';
+import Button from '../components/ui/Button';
 
 /**
  * Dashboard Page
@@ -23,6 +24,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [chartsLoading, setChartsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [markingAsPaid, setMarkingAsPaid] = useState(null); // Track which subscription is being marked as paid
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -141,6 +143,29 @@ const Dashboard = () => {
     const diffTime = paymentDate - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  // Handle marking subscription as paid
+  const handleMarkAsPaid = async (subscriptionId) => {
+    try {
+      setMarkingAsPaid(subscriptionId);
+      setError('');
+      const response = await subscriptionService.markAsPaid(subscriptionId);
+      
+      if (response && response.success) {
+        // Reload subscription alerts to reflect the change
+        const alertsResponse = await subscriptionService.getAlerts(7);
+        setSubscriptionAlerts(alertsResponse);
+      } else {
+        setError(response?.error || 'Failed to mark subscription as paid');
+      }
+    } catch (err) {
+      console.error('Error marking subscription as paid:', err);
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to mark subscription as paid';
+      setError(errorMessage);
+    } finally {
+      setMarkingAsPaid(null);
+    }
   };
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
@@ -786,10 +811,11 @@ const Dashboard = () => {
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            border: '1px solid #fde68a'
+                            border: '1px solid #fde68a',
+                            gap: '12px'
                           }}
                         >
-                          <div>
+                          <div style={{ flex: 1 }}>
                             <div style={{ fontWeight: 600, fontSize: '14px', color: '#111827', marginBottom: '2px' }}>
                               {sub.name}
                             </div>
@@ -797,19 +823,44 @@ const Dashboard = () => {
                               {formatCurrency(sub.amount)} • {sub.billingCycle}
                             </div>
                           </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <Badge 
-                              bg="danger"
-                              style={{
-                                padding: '4px 10px',
-                                borderRadius: '6px',
-                                fontSize: '11px',
-                                fontWeight: 500
-                              }}
-                            >
-                              {daysOverdue === 1 ? '1 day overdue' : `${daysOverdue} days overdue`}
-                            </Badge>
-                            <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '4px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <Badge 
+                                bg="danger"
+                                style={{
+                                  padding: '4px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  fontWeight: 500
+                                }}
+                              >
+                                {daysOverdue === 1 ? '1 day overdue' : `${daysOverdue} days overdue`}
+                              </Badge>
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => handleMarkAsPaid(sub.id)}
+                                loading={markingAsPaid === sub.id}
+                                disabled={markingAsPaid !== null}
+                                style={{
+                                  padding: '4px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  fontWeight: 500,
+                                  height: 'auto',
+                                  lineHeight: '1.2',
+                                  minWidth: 'auto',
+                                  whiteSpace: 'nowrap',
+                                  backgroundColor: '#10b981',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  boxShadow: 'none'
+                                }}
+                              >
+                                {markingAsPaid === sub.id ? 'Processing...' : 'Mark as Paid'}
+                              </Button>
+                            </div>
+                            <div style={{ fontSize: '10px', color: '#9ca3af' }}>
                               {formatDateDDMMYYYY(sub.nextPaymentDate)}
                             </div>
                           </div>
