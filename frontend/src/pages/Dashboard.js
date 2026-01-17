@@ -53,10 +53,13 @@ const Dashboard = () => {
       // Lazy load everything else in parallel (budgets, transactions, alerts, charts)
       Promise.all([
         budgetService.getBudgets({ month: selectedMonth }),
+        // Fetch ALL transactions for the month (no pagination) for budget calculation
         transactionService.getTransactions({ 
           type: 'expense',
           startDate: monthStart,
-          endDate: monthEnd
+          endDate: monthEnd,
+          limit: 10000, // High limit to get all transactions for budget calculation
+          page: 1
         }),
         subscriptionService.getAlerts(7)
       ]).then(([budgetsRes, transactionsRes, alertsResponse]) => {

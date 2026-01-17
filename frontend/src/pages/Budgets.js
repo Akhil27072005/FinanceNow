@@ -42,7 +42,12 @@ const Budgets = () => {
         budgetService.getBudgets(),
         categoryService.getCategories('expense'),
         subcategoryService.getSubCategories(),
-        transactionService.getTransactions({ type: 'expense' })
+        // Fetch ALL transactions (no pagination) for budget calculation
+        transactionService.getTransactions({ 
+          type: 'expense',
+          limit: 10000, // High limit to get all transactions for budget calculation
+          page: 1
+        })
       ]);
 
       setBudgets(budgetsRes.data || []);
