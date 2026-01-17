@@ -24,7 +24,7 @@ const categorySchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['expense', 'income'],
+    enum: ['expense', 'income', 'savings', 'investment'],
     required: true
   },
   createdAt: {

@@ -20,10 +20,10 @@ const createCategory = async (req, res, next) => {
     }
 
     // Validation: Type must be valid enum
-    if (!['expense', 'income'].includes(type)) {
+    if (!['expense', 'income', 'savings', 'investment'].includes(type)) {
       return res.status(400).json({
         success: false,
-        error: 'Type must be either "expense" or "income"'
+        error: 'Type must be one of: expense, income, savings, investment'
       });
     }
 
@@ -96,10 +96,10 @@ const getCategories = async (req, res, next) => {
 
     // Filter by type if provided
     if (type) {
-      if (!['expense', 'income'].includes(type)) {
+      if (!['expense', 'income', 'savings', 'investment'].includes(type)) {
         return res.status(400).json({
           success: false,
-          error: 'Type must be either "expense" or "income"'
+          error: 'Type must be one of: expense, income, savings, investment'
         });
       }
       filter.type = type;
@@ -174,10 +174,10 @@ const updateCategory = async (req, res, next) => {
 
     // Update type if provided
     if (type !== undefined) {
-      if (!['expense', 'income'].includes(type)) {
+      if (!['expense', 'income', 'savings', 'investment'].includes(type)) {
         return res.status(400).json({
           success: false,
-          error: 'Type must be either "expense" or "income"'
+          error: 'Type must be one of: expense, income, savings, investment'
         });
       }
       category.type = type;

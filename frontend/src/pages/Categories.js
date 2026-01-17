@@ -163,17 +163,30 @@ const Categories = () => {
                         {category.name}
                       </td>
                       <td style={{ padding: '16px' }}>
-                        <span style={{ 
-                          fontSize: '12px',
-                          padding: '4px 10px',
-                          borderRadius: '6px',
-                          fontWeight: 500,
-                          display: 'inline-block',
-                          backgroundColor: category.type === 'expense' ? '#FEE2E2' : '#D1FAE5',
-                          color: category.type === 'expense' ? '#991B1B' : '#065F46'
-                        }}>
-                          {category.type.charAt(0).toUpperCase() + category.type.slice(1)}
-                        </span>
+                        {(() => {
+                          const getTypeStyle = (type) => {
+                            const styles = {
+                              expense: { backgroundColor: '#FEE2E2', color: '#991B1B' },
+                              income: { backgroundColor: '#D1FAE5', color: '#065F46' },
+                              savings: { backgroundColor: '#DBEAFE', color: '#1E40AF' },
+                              investment: { backgroundColor: '#E0E7FF', color: '#3730A3' }
+                            };
+                            return styles[type] || { backgroundColor: '#F3F4F6', color: '#374151' };
+                          };
+                          const style = getTypeStyle(category.type);
+                          return (
+                            <span style={{ 
+                              fontSize: '12px',
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              fontWeight: 500,
+                              display: 'inline-block',
+                              ...style
+                            }}>
+                              {category.type.charAt(0).toUpperCase() + category.type.slice(1)}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td style={{ padding: '16px' }}>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -212,7 +225,9 @@ const Categories = () => {
               onChange={(e) => setFormData({ ...formData, type: e.target.value })}
               options={[
                 { value: 'expense', label: 'Expense' },
-                { value: 'income', label: 'Income' }
+                { value: 'income', label: 'Income' },
+                { value: 'savings', label: 'Savings' },
+                { value: 'investment', label: 'Investment' }
               ]}
               required
             />
