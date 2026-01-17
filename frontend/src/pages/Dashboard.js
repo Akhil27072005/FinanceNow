@@ -51,23 +51,52 @@ const Dashboard = () => {
       setLoading(false); // Show dashboard as soon as KPIs are ready
 
       // Lazy load everything else in parallel (budgets, transactions, alerts, charts)
+      // Fetch all transactions for budget calculation (paginate through all pages)
+      const fetchAllTransactions = async () => {
+        let allTransactions = [];
+        let page = 1;
+        let hasMore = true;
+        
+        while (hasMore) {
+          const response = await transactionService.getTransactions({
+            type: 'expense',
+            startDate: monthStart,
+            endDate: monthEnd,
+            limit: 100, // Max allowed by backend
+            page: page
+          });
+          
+          const transactions = response?.data || [];
+          const total = response?.pagination?.total || 0;
+          
+          allTransactions = [...allTransactions, ...transactions];
+          
+          // Check if there are more pages
+          if (transactions.length < 100 || allTransactions.length >= total) {
+            hasMore = false;
+          } else {
+            page++;
+          }
+        }
+        
+        return allTransactions;
+      };
+
       Promise.all([
         budgetService.getBudgets({ month: selectedMonth }),
-        // Fetch ALL transactions for the month (no pagination) for budget calculation
-        transactionService.getTransactions({ 
-          type: 'expense',
-          startDate: monthStart,
-          endDate: monthEnd,
-          limit: 10000, // High limit to get all transactions for budget calculation
-          page: 1
-        }),
+        fetchAllTransactions(),
         subscriptionService.getAlerts(7)
-      ]).then(([budgetsRes, transactionsRes, alertsResponse]) => {
-        setBudgets(budgetsRes.data || []);
-        setBudgetTransactions(transactionsRes.data || []);
+      ]).then(([budgetsRes, allTransactions, alertsResponse]) => {
+        // budgetsRes is already response.data from service, which is { success: true, data: [...] }
+        setBudgets(budgetsRes?.data || []);
+        setBudgetTransactions(allTransactions);
         setSubscriptionAlerts(alertsResponse);
       }).catch(err => {
         console.error('Error loading secondary data:', err);
+        console.error('Error details:', err.response?.data);
+        // Set empty arrays on error to prevent UI issues
+        setBudgets([]);
+        setBudgetTransactions([]);
       });
 
       // Load charts separately after dashboard is visible

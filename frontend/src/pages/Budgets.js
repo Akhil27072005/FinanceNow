@@ -38,24 +38,52 @@ const Budgets = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [budgetsRes, categoriesRes, subcategoriesRes, transactionsRes] = await Promise.all([
+      
+      // Fetch all transactions for budget calculation (paginate through all pages)
+      const fetchAllTransactions = async () => {
+        let allTransactions = [];
+        let page = 1;
+        let hasMore = true;
+        
+        while (hasMore) {
+          const response = await transactionService.getTransactions({
+            type: 'expense',
+            limit: 100, // Max allowed by backend
+            page: page
+          });
+          
+          const transactions = response?.data || [];
+          const total = response?.pagination?.total || 0;
+          
+          allTransactions = [...allTransactions, ...transactions];
+          
+          // Check if there are more pages
+          if (transactions.length < 100 || allTransactions.length >= total) {
+            hasMore = false;
+          } else {
+            page++;
+          }
+        }
+        
+        return allTransactions;
+      };
+
+      const [budgetsRes, categoriesRes, subcategoriesRes, allTransactions] = await Promise.all([
         budgetService.getBudgets(),
         categoryService.getCategories('expense'),
         subcategoryService.getSubCategories(),
-        // Fetch ALL transactions (no pagination) for budget calculation
-        transactionService.getTransactions({ 
-          type: 'expense',
-          limit: 10000, // High limit to get all transactions for budget calculation
-          page: 1
-        })
+        fetchAllTransactions()
       ]);
 
-      setBudgets(budgetsRes.data || []);
+      // budgetsRes is already response.data from service, which is { success: true, data: [...] }
+      setBudgets(budgetsRes?.data || []);
       setCategories(categoriesRes.data || []);
       setSubcategories(subcategoriesRes.data || []);
-      setTransactions(transactionsRes.data || []);
+      setTransactions(allTransactions);
       setLoading(false);
     } catch (err) {
+      console.error('Error loading budgets:', err);
+      console.error('Error response:', err.response?.data);
       setError(err.response?.data?.error || 'Failed to load data');
       setLoading(false);
     }
