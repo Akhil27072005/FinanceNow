@@ -439,7 +439,7 @@ const getTransaction = async (req, res, next) => {
 const updateTransaction = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const {
+    let {
       type,
       amount,
       date,
@@ -452,6 +452,11 @@ const updateTransaction = async (req, res, next) => {
       account,
       notes
     } = req.body;
+
+    // Normalize empty strings to null for optional reference fields (frontend sends '' when empty)
+    if (categoryId === '' || (typeof categoryId === 'string' && categoryId.trim() === '')) categoryId = null;
+    if (subCategoryId === '' || (typeof subCategoryId === 'string' && subCategoryId.trim() === '')) subCategoryId = null;
+    if (paymentMethodId === '' || (typeof paymentMethodId === 'string' && paymentMethodId.trim() === '')) paymentMethodId = null;
 
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
