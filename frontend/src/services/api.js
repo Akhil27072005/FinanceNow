@@ -5,7 +5,8 @@ const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  withCredentials: true // Send cookies (e.g. refresh token) on cross-origin requests
 });
 
 // Request interceptor - Add access token to requests
