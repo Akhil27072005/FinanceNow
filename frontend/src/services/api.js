@@ -1,8 +1,10 @@
 import axios from 'axios';
 
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000/api',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json'
   },
@@ -29,25 +31,29 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Never try to refresh when the refresh endpoint itself fails
+    const originalUrl = originalRequest?.url || '';
+    if (originalUrl.includes('/auth/refresh')) {
+      return Promise.reject(error);
+    }
+
     // If error is 401 and we haven't tried to refresh yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
-        // Try to refresh the token
+        // Try to refresh the token:
+        // - Email/password login: refresh token is stored in localStorage
+        // - Google OAuth: refresh token is stored as HTTP-only cookie (sent withCredentials)
         const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) {
-          // No refresh token, redirect to login
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          window.location.href = '/login';
-          return Promise.reject(error);
-        }
+        const refreshBody = refreshToken ? { refreshToken } : {};
 
-        const response = await axios.post(
-          `${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/refresh`,
-          { refreshToken }
-        );
+        // Use plain axios with withCredentials so cookies are included cross-origin.
+        // (Do not use the `api` instance here to avoid interceptor recursion.)
+        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, refreshBody, {
+          withCredentials: true,
+          headers: { 'Content-Type': 'application/json' }
+        });
 
         const { accessToken } = response.data;
         localStorage.setItem('accessToken', accessToken);
