@@ -122,6 +122,30 @@ const delPattern = async (pattern) => {
 };
 
 /**
+ * Bump cache namespace version for a user.
+ * Used to invalidate a group of keys without wildcard deletes (Upstash REST has no SCAN).
+ * @param {string} userId
+ * @param {string} namespace - e.g. "analytics", "transactions"
+ * @returns {Promise<string|null>} new version string or null if unavailable
+ */
+const bumpVersion = async (userId, namespace) => {
+  if (!isRedisAvailable()) {
+    return null;
+  }
+
+  try {
+    const redis = getRedis();
+    const versionKey = `cache:version:${userId}:${namespace}`;
+    const newVersion = Date.now().toString();
+    await redis.set(versionKey, newVersion);
+    return newVersion;
+  } catch (error) {
+    console.error(`Cache bumpVersion error for user "${userId}" namespace "${namespace}":`, error.message);
+    return null;
+  }
+};
+
+/**
  * Invalidate all analytics caches for a user
  * Since Upstash REST API doesn't support SCAN, we use a version-based approach
  * or delete specific keys we can construct. For immediate invalidation, we'll
@@ -212,14 +236,14 @@ const invalidateUserCache = async (userId, patterns = []) => {
  * @param {string} userId - User ID for version lookup
  * @returns {Promise<string>} Cache key with version
  */
-const getVersionedKey = async (baseKey, userId) => {
+const getVersionedKey = async (baseKey, userId, namespace = 'analytics') => {
   if (!isRedisAvailable()) {
     return baseKey;
   }
 
   try {
     const redis = getRedis();
-    const versionKey = `cache:version:${userId}:analytics`;
+    const versionKey = `cache:version:${userId}:${namespace}`;
     const version = await redis.get(versionKey);
     
     if (version) {
@@ -230,6 +254,15 @@ const getVersionedKey = async (baseKey, userId) => {
   } catch (error) {
     return baseKey; // Fallback to base key
   }
+};
+
+/**
+ * Invalidate transactions list caches for a user (version-based).
+ * @param {string} userId
+ * @returns {Promise<string|null>} new version string or null if unavailable
+ */
+const invalidateTransactionsCache = async (userId) => {
+  return await bumpVersion(userId, 'transactions');
 };
 
 /**
@@ -273,7 +306,9 @@ module.exports = {
   set,
   del,
   delPattern,
+  bumpVersion,
   invalidateAnalyticsCache,
+  invalidateTransactionsCache,
   invalidateUserCache,
   getVersionedKey,
   invalidateSubscriptionAlertsCache

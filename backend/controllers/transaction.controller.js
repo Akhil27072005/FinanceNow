@@ -186,21 +186,8 @@ const createTransaction = async (req, res, next) => {
     // Invalidate analytics cache (transaction changes affect all analytics)
     await cache.invalidateAnalyticsCache(req.user._id.toString());
     
-    // Invalidate transaction cache (first page cache)
-    // Try to delete common transaction cache keys
-    const userIdStr = req.user._id.toString();
-    const commonCacheKeys = [
-      `transactions:${userIdStr}:page1`,
-      `transactions:${userIdStr}:page1:type:expense`,
-      `transactions:${userIdStr}:page1:type:income`,
-      `transactions:${userIdStr}:page1:type:savings`,
-      `transactions:${userIdStr}:page1:type:investment`
-    ];
-    
-    // Delete common cache keys (ignore errors for non-existent keys)
-    for (const key of commonCacheKeys) {
-      await cache.del(key);
-    }
+    // Invalidate transactions list cache (Upstash REST has no SCAN; use version-based keys)
+    await cache.invalidateTransactionsCache(req.user._id.toString());
 
     res.status(201).json({
       success: true,
@@ -324,7 +311,8 @@ const getTransactions = async (req, res, next) => {
       if (endDate) cacheKeyParts.push(`end:${endDate}`);
       if (categoryId) cacheKeyParts.push(`cat:${categoryId}`);
       if (tag) cacheKeyParts.push(`tag:${tag}`);
-      const cacheKey = cacheKeyParts.join(':');
+      const baseCacheKey = cacheKeyParts.join(':');
+      const cacheKey = await cache.getVersionedKey(baseCacheKey, userIdStr, 'transactions');
 
       // Try to get from cache first
       const cachedData = await cache.get(cacheKey);
@@ -675,9 +663,8 @@ const updateTransaction = async (req, res, next) => {
     // Invalidate analytics cache (transaction changes affect all analytics)
     await cache.invalidateAnalyticsCache(req.user._id.toString());
     
-    // Invalidate transaction cache (first page cache)
-    const userIdStr = req.user._id.toString();
-    await cache.delPattern(`transactions:${userIdStr}:*`);
+    // Invalidate transactions list cache (Upstash REST has no SCAN; use version-based keys)
+    await cache.invalidateTransactionsCache(req.user._id.toString());
 
     res.json({
       success: true,
@@ -720,20 +707,8 @@ const deleteTransaction = async (req, res, next) => {
     // Invalidate analytics cache (transaction changes affect all analytics)
     await cache.invalidateAnalyticsCache(req.user._id.toString());
     
-    // Invalidate transaction cache (first page cache)
-    const userIdStr = req.user._id.toString();
-    const commonCacheKeys = [
-      `transactions:${userIdStr}:page1`,
-      `transactions:${userIdStr}:page1:type:expense`,
-      `transactions:${userIdStr}:page1:type:income`,
-      `transactions:${userIdStr}:page1:type:savings`,
-      `transactions:${userIdStr}:page1:type:investment`
-    ];
-    
-    // Delete common cache keys (ignore errors for non-existent keys)
-    for (const key of commonCacheKeys) {
-      await cache.del(key);
-    }
+    // Invalidate transactions list cache (Upstash REST has no SCAN; use version-based keys)
+    await cache.invalidateTransactionsCache(req.user._id.toString());
 
     res.json({
       success: true,
