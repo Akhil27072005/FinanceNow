@@ -1,6 +1,7 @@
 const Tag = require('../src/models/Tag');
 const Transaction = require('../src/models/Transaction');
 const mongoose = require('mongoose');
+const cache = require('../utils/cache');
 
 /**
  * Create a new tag
@@ -47,6 +48,9 @@ const createTag = async (req, res, next) => {
       throw error;
     }
 
+    // Invalidate cache
+    await cache.del(`ref:${req.user._id.toString()}:tags`);
+
     res.status(201).json({
       success: true,
       data: tag
@@ -62,15 +66,29 @@ const createTag = async (req, res, next) => {
  */
 const getTags = async (req, res, next) => {
   try {
+    const userId = req.user._id.toString();
+    const cacheKey = `ref:${userId}:tags`;
+
+    // Try to get from cache first
+    const cachedData = await cache.get(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
     // Get all tags for user (always scoped to userId for security)
     const tags = await Tag.find({
       userId: req.user._id
     }).sort({ name: 1 });
 
-    res.json({
+    const response = {
       success: true,
       data: tags
-    });
+    };
+
+    // Cache for 1 hour (3600 seconds)
+    await cache.set(cacheKey, response, 3600);
+
+    res.json(response);
   } catch (error) {
     next(error);
   }
@@ -145,6 +163,9 @@ const updateTag = async (req, res, next) => {
       throw error;
     }
 
+    // Invalidate cache
+    await cache.del(`ref:${req.user._id.toString()}:tags`);
+
     res.json({
       success: true,
       data: tag
@@ -198,6 +219,9 @@ const deleteTag = async (req, res, next) => {
 
     // Delete tag
     await Tag.findByIdAndDelete(id);
+
+    // Invalidate cache
+    await cache.del(`ref:${req.user._id.toString()}:tags`);
 
     res.json({
       success: true,

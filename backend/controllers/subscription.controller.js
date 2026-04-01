@@ -2,6 +2,7 @@ const Subscription = require('../src/models/Subscription');
 const Category = require('../src/models/Category');
 const PaymentMethod = require('../src/models/PaymentMethod');
 const mongoose = require('mongoose');
+const cache = require('../utils/cache');
 
 /**
  * Create a new subscription
@@ -127,6 +128,10 @@ const createSubscription = async (req, res, next) => {
 
     // Populate references for response
     await subscription.populate('categoryId paymentMethodId');
+
+    // Invalidate subscription alerts cache
+    const userIdStr = req.user._id.toString();
+    await cache.del(`subscriptions:${userIdStr}:alerts:7`); // Default 7 days
 
     res.status(201).json({
       success: true,
@@ -402,6 +407,10 @@ const updateSubscription = async (req, res, next) => {
     // Populate references for response
     await subscription.populate('categoryId paymentMethodId');
 
+    // Invalidate subscription alerts cache
+    const userIdStr = req.user._id.toString();
+    await cache.del(`subscriptions:${userIdStr}:alerts:7`); // Default 7 days
+
     res.json({
       success: true,
       data: subscription
@@ -440,6 +449,10 @@ const deleteSubscription = async (req, res, next) => {
       });
     }
 
+    // Invalidate subscription alerts cache
+    const userIdStr = req.user._id.toString();
+    await cache.del(`subscriptions:${userIdStr}:alerts:7`); // Default 7 days
+
     res.json({
       success: true,
       message: 'Subscription deleted successfully'
@@ -457,6 +470,7 @@ const getSubscriptionAlerts = async (req, res, next) => {
   try {
     const { days = 7 } = req.query;
     const userId = req.user._id;
+    const userIdStr = userId.toString();
 
     // Validate days parameter
     const daysNum = parseInt(days, 10);
@@ -465,6 +479,15 @@ const getSubscriptionAlerts = async (req, res, next) => {
         success: false,
         error: 'Days must be a positive number'
       });
+    }
+
+    // Generate cache key
+    const cacheKey = `subscriptions:${userIdStr}:alerts:${daysNum}`;
+
+    // Try to get from cache first
+    const cachedData = await cache.get(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
     }
 
     // Get today's date (start of day)
@@ -489,43 +512,43 @@ const getSubscriptionAlerts = async (req, res, next) => {
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    // Query for upcoming subscriptions
-    // nextPaymentDate >= today AND <= today + days, isActive = true
-    const upcomingSubscriptions = await Subscription.find({
-      userId: userId,
-      isActive: true,
-      nextPaymentDate: {
-        $gte: today,
-        $lte: endDate
-      }
-    })
-      .select('_id name amount billingCycle nextPaymentDate')
-      .sort({ nextPaymentDate: 1 }); // Sort by nearest date first
+    // OPTIMIZE: Run all 3 queries in parallel instead of sequentially
+    const [upcomingSubscriptions, overdueSubscriptions, monthlySubscriptions] = await Promise.all([
+      // Query for upcoming subscriptions
+      Subscription.find({
+        userId: userId,
+        isActive: true,
+        nextPaymentDate: {
+          $gte: today,
+          $lte: endDate
+        }
+      })
+        .select('_id name amount billingCycle nextPaymentDate')
+        .sort({ nextPaymentDate: 1 }), // Sort by nearest date first
 
-    // Query for overdue subscriptions
-    // nextPaymentDate < today, isActive = true
-    const overdueSubscriptions = await Subscription.find({
-      userId: userId,
-      isActive: true,
-      nextPaymentDate: {
-        $lt: today
-      }
-    })
-      .select('_id name amount billingCycle nextPaymentDate')
-      .sort({ nextPaymentDate: 1 }); // Sort by oldest first
+      // Query for overdue subscriptions (exclude auto-renew subscriptions)
+      Subscription.find({
+        userId: userId,
+        isActive: true,
+        autoRenew: false, // Only show non-auto-renew subscriptions in overdue
+        nextPaymentDate: {
+          $lt: today
+        }
+      })
+        .select('_id name amount billingCycle nextPaymentDate autoRenew')
+        .sort({ nextPaymentDate: 1 }), // Sort by oldest first
 
-    // Calculate monthly subscription load
-    // Total amount of subscriptions due in the current month
-    // Normalize yearly subscriptions to monthly value
-    const monthlySubscriptions = await Subscription.find({
-      userId: userId,
-      isActive: true,
-      nextPaymentDate: {
-        $gte: currentMonthStart,
-        $lte: currentMonthEnd
-      }
-    })
-      .select('amount billingCycle');
+      // Calculate monthly subscription load
+      Subscription.find({
+        userId: userId,
+        isActive: true,
+        nextPaymentDate: {
+          $gte: currentMonthStart,
+          $lte: currentMonthEnd
+        }
+      })
+        .select('amount billingCycle')
+    ]);
 
     // Calculate total monthly spend (normalize yearly to monthly)
     let monthlySubscriptionSpend = 0;
@@ -562,7 +585,127 @@ const getSubscriptionAlerts = async (req, res, next) => {
       overdue: overdueSubscriptions.map(formatSubscription)
     };
 
+    // Cache for 5 minutes (300 seconds)
+    await cache.set(cacheKey, response, 300);
+
     res.json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Mark subscription as paid
+ * POST /api/subscriptions/:id/mark-paid
+ * Updates the nextPaymentDate to the next billing cycle
+ */
+const markSubscriptionAsPaid = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid subscription ID format'
+      });
+    }
+
+    // Find subscription (must belong to user)
+    const subscription = await Subscription.findOne({
+      _id: id,
+      userId: userId
+    });
+
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        error: 'Subscription not found'
+      });
+    }
+
+    // Log the subscription being updated (for debugging)
+    console.log(`Marking subscription as paid: ${subscription.name} (ID: ${id}), Current nextPaymentDate: ${subscription.nextPaymentDate}, AutoRenew: ${subscription.autoRenew}`);
+
+    // Calculate next payment date based on billing cycle
+    // Always use the original nextPaymentDate (due date) as the base to maintain billing cycle alignment
+    // This ensures the billing cycle stays consistent even if payment is late
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // Use the subscription's original nextPaymentDate (the due date) as the base
+    // This maintains the billing cycle alignment regardless of when it's marked as paid
+    const baseDate = new Date(subscription.nextPaymentDate);
+    baseDate.setHours(0, 0, 0, 0);
+    const newNextDate = new Date(baseDate);
+
+    if (subscription.billingCycle === 'monthly') {
+      newNextDate.setMonth(newNextDate.getMonth() + 1);
+    } else if (subscription.billingCycle === 'yearly') {
+      newNextDate.setFullYear(newNextDate.getFullYear() + 1);
+    }
+
+    // Store old date for logging
+    const oldNextDate = subscription.nextPaymentDate;
+
+    // Update next payment date
+    subscription.nextPaymentDate = newNextDate;
+    await subscription.save();
+
+    // Verify only this subscription was updated (safety check)
+    const updatedSubscription = await Subscription.findOne({
+      _id: id,
+      userId: userId
+    });
+
+    if (!updatedSubscription || updatedSubscription.nextPaymentDate.getTime() !== newNextDate.getTime()) {
+      console.error(`ERROR: Subscription update verification failed for ID: ${id}`);
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to update subscription'
+      });
+    }
+
+    console.log(`Successfully updated subscription: ${subscription.name}, Old date: ${oldNextDate}, New date: ${newNextDate}`);
+
+    // Populate references for response
+    await subscription.populate('categoryId paymentMethodId');
+
+    // Verify no other subscriptions were affected (safety check)
+    const otherSubscriptions = await Subscription.find({
+      userId: userId,
+      _id: { $ne: id },
+      autoRenew: true,
+      isActive: true
+    }).select('_id name nextPaymentDate autoRenew');
+
+    // Log other auto-renew subscriptions to verify they weren't affected
+    if (otherSubscriptions.length > 0) {
+      console.log(`Other auto-renew subscriptions (should be unchanged):`, 
+        otherSubscriptions.map(s => ({
+          id: s._id.toString(),
+          name: s.name,
+          nextPaymentDate: s.nextPaymentDate,
+          autoRenew: s.autoRenew
+        }))
+      );
+    }
+
+    // Invalidate subscription alerts cache
+    await cache.invalidateSubscriptionAlertsCache(userId.toString());
+
+    res.json({
+      success: true,
+      message: 'Subscription marked as paid',
+      subscription: subscription,
+      debug: {
+        updatedId: id,
+        oldDate: oldNextDate,
+        newDate: newNextDate,
+        otherAutoRenewCount: otherSubscriptions.length
+      }
+    });
   } catch (error) {
     next(error);
   }
@@ -574,6 +717,7 @@ module.exports = {
   getSubscription,
   updateSubscription,
   deleteSubscription,
-  getSubscriptionAlerts
+  getSubscriptionAlerts,
+  markSubscriptionAsPaid
 };
 

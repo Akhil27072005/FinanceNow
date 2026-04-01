@@ -9,6 +9,7 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { cardStyle } from '../styles/cardStyles';
 import { BarChart3, CreditCard, AlertTriangle, Bell } from 'lucide-react';
 import DatePicker from '../components/ui/DatePicker';
+import Button from '../components/ui/Button';
 
 /**
  * Dashboard Page
@@ -21,7 +22,9 @@ const Dashboard = () => {
   const [budgets, setBudgets] = useState([]);
   const [budgetTransactions, setBudgetTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [chartsLoading, setChartsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [markingAsPaid, setMarkingAsPaid] = useState(null); // Track which subscription is being marked as paid
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -34,13 +37,84 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
+      setChartsLoading(true);
       setError('');
 
-      // Load dashboard KPIs
+      // Calculate month date range for transactions
+      const monthStart = `${selectedMonth}-01`;
+      const monthEndDate = new Date(new Date(monthStart).getFullYear(), new Date(monthStart).getMonth() + 1, 0);
+      const monthEnd = monthEndDate.toISOString().split('T')[0];
+
+      // Load dashboard KPIs first (most important, show immediately)
       const dashboardResponse = await analyticsService.getDashboard({ month: selectedMonth });
       setDashboardData(dashboardResponse);
+      setLoading(false); // Show dashboard as soon as KPIs are ready
 
-      // Load chart data
+      // Lazy load everything else in parallel (budgets, transactions, alerts, charts)
+      // Fetch all transactions for budget calculation (paginate through all pages)
+      const fetchAllTransactions = async () => {
+        let allTransactions = [];
+        let page = 1;
+        let hasMore = true;
+        
+        while (hasMore) {
+          const response = await transactionService.getTransactions({
+            type: 'expense',
+            startDate: monthStart,
+            endDate: monthEnd,
+            limit: 100, // Max allowed by backend
+            page: page
+          });
+          
+          const transactions = response?.data || [];
+          const total = response?.pagination?.total || 0;
+          
+          allTransactions = [...allTransactions, ...transactions];
+          
+          // Check if there are more pages
+          if (transactions.length < 100 || allTransactions.length >= total) {
+            hasMore = false;
+          } else {
+            page++;
+          }
+        }
+        
+        return allTransactions;
+      };
+
+      Promise.all([
+        budgetService.getBudgets({ month: selectedMonth }),
+        fetchAllTransactions(),
+        subscriptionService.getAlerts(7)
+      ]).then(([budgetsRes, allTransactions, alertsResponse]) => {
+        // budgetsRes is already response.data from service, which is { success: true, data: [...] }
+        setBudgets(budgetsRes?.data || []);
+        setBudgetTransactions(allTransactions);
+        setSubscriptionAlerts(alertsResponse);
+      }).catch(err => {
+        console.error('Error loading secondary data:', err);
+        console.error('Error details:', err.response?.data);
+        // Set empty arrays on error to prevent UI issues
+        setBudgets([]);
+        setBudgetTransactions([]);
+      });
+
+      // Load charts separately after dashboard is visible
+      requestAnimationFrame(() => {
+        loadChartsLazy();
+      });
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to load dashboard data');
+      setLoading(false);
+      setChartsLoading(false);
+    }
+  };
+
+  // Lazy load charts separately after main dashboard loads
+  const loadChartsLazy = async () => {
+    try {
+      setChartsLoading(true);
+      
       const [incomeTrend, expenseTrend, categorySplit] = await Promise.all([
         analyticsService.getCharts('income', 'monthlyTrend', { month: selectedMonth }),
         analyticsService.getCharts('expense', 'monthlyTrend', { month: selectedMonth }),
@@ -52,32 +126,12 @@ const Dashboard = () => {
         expenseTrend: expenseTrend.data,
         categorySplit: categorySplit.data
       });
-
-      // Load subscription alerts
-      const alertsResponse = await subscriptionService.getAlerts(7);
-      setSubscriptionAlerts(alertsResponse);
-
-      // Load budgets and transactions for budget status
-      const monthStart = `${selectedMonth}-01`;
-      const monthEndDate = new Date(new Date(monthStart).getFullYear(), new Date(monthStart).getMonth() + 1, 0);
-      const monthEnd = monthEndDate.toISOString().split('T')[0];
-
-      const [budgetsRes, transactionsRes] = await Promise.all([
-        budgetService.getBudgets({ month: selectedMonth }),
-        transactionService.getTransactions({ 
-          type: 'expense',
-          startDate: monthStart,
-          endDate: monthEnd
-        })
-      ]);
-
-      setBudgets(budgetsRes.data || []);
-      setBudgetTransactions(transactionsRes.data || []);
-
-      setLoading(false);
+      
+      setChartsLoading(false);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load dashboard data');
-      setLoading(false);
+      console.error('Failed to load charts:', err);
+      setChartsLoading(false);
+      // Don't show error for charts, just log it
     }
   };
 
@@ -119,6 +173,29 @@ const Dashboard = () => {
     const diffTime = paymentDate - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  // Handle marking subscription as paid
+  const handleMarkAsPaid = async (subscriptionId) => {
+    try {
+      setMarkingAsPaid(subscriptionId);
+      setError('');
+      const response = await subscriptionService.markAsPaid(subscriptionId);
+      
+      if (response && response.success) {
+        // Reload subscription alerts to reflect the change
+        const alertsResponse = await subscriptionService.getAlerts(7);
+        setSubscriptionAlerts(alertsResponse);
+      } else {
+        setError(response?.error || 'Failed to mark subscription as paid');
+      }
+    } catch (err) {
+      console.error('Error marking subscription as paid:', err);
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to mark subscription as paid';
+      setError(errorMessage);
+    } finally {
+      setMarkingAsPaid(null);
+    }
   };
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
@@ -394,7 +471,19 @@ const Dashboard = () => {
                   Income vs Expenses Trend
                 </h5>
               </div>
-              {combinedTrendData.length > 0 ? (
+              {chartsLoading ? (
+                <div style={{ 
+                  padding: '80px 20px', 
+                  textAlign: 'center',
+                  color: '#9ca3af',
+                  fontSize: '13px'
+                }}>
+                  <div className="spinner-border spinner-border-sm text-primary" role="status" style={{ marginBottom: '8px' }}>
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <p style={{ margin: '8px 0 0 0' }}>Loading chart data...</p>
+                </div>
+              ) : combinedTrendData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={380}>
                   <LineChart data={combinedTrendData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
                     <defs>
@@ -476,7 +565,19 @@ const Dashboard = () => {
               }}>
                 Expense by Category
               </h5>
-              {(() => {
+              {chartsLoading ? (
+                <div style={{ 
+                  padding: '80px 20px', 
+                  textAlign: 'center',
+                  color: '#9ca3af',
+                  fontSize: '13px'
+                }}>
+                  <div className="spinner-border spinner-border-sm text-primary" role="status" style={{ marginBottom: '8px' }}>
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <p style={{ margin: '8px 0 0 0' }}>Loading chart data...</p>
+                </div>
+              ) : (() => {
                 // Process category split data - ensure correct field names and calculate total
                 const processedData = chartData.categorySplit && chartData.categorySplit.length > 0
                   ? chartData.categorySplit.map(item => ({
@@ -740,10 +841,11 @@ const Dashboard = () => {
                             display: 'flex',
                             justifyContent: 'space-between',
                             alignItems: 'center',
-                            border: '1px solid #fde68a'
+                            border: '1px solid #fde68a',
+                            gap: '12px'
                           }}
                         >
-                          <div>
+                          <div style={{ flex: 1 }}>
                             <div style={{ fontWeight: 600, fontSize: '14px', color: '#111827', marginBottom: '2px' }}>
                               {sub.name}
                             </div>
@@ -751,19 +853,44 @@ const Dashboard = () => {
                               {formatCurrency(sub.amount)} • {sub.billingCycle}
                             </div>
                           </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <Badge 
-                              bg="danger"
-                              style={{
-                                padding: '4px 10px',
-                                borderRadius: '6px',
-                                fontSize: '11px',
-                                fontWeight: 500
-                              }}
-                            >
-                              {daysOverdue === 1 ? '1 day overdue' : `${daysOverdue} days overdue`}
-                            </Badge>
-                            <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '4px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <Badge 
+                                bg="danger"
+                                style={{
+                                  padding: '4px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  fontWeight: 500
+                                }}
+                              >
+                                {daysOverdue === 1 ? '1 day overdue' : `${daysOverdue} days overdue`}
+                              </Badge>
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                onClick={() => handleMarkAsPaid(sub.id)}
+                                loading={markingAsPaid === sub.id}
+                                disabled={markingAsPaid !== null}
+                                style={{
+                                  padding: '4px 10px',
+                                  borderRadius: '6px',
+                                  fontSize: '11px',
+                                  fontWeight: 500,
+                                  height: 'auto',
+                                  lineHeight: '1.2',
+                                  minWidth: 'auto',
+                                  whiteSpace: 'nowrap',
+                                  backgroundColor: '#10b981',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  boxShadow: 'none'
+                                }}
+                              >
+                                {markingAsPaid === sub.id ? 'Processing...' : 'Mark as Paid'}
+                              </Button>
+                            </div>
+                            <div style={{ fontSize: '10px', color: '#9ca3af' }}>
                               {formatDateDDMMYYYY(sub.nextPaymentDate)}
                             </div>
                           </div>

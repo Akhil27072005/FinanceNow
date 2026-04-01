@@ -1,6 +1,7 @@
 const PaymentMethod = require('../src/models/PaymentMethod');
 const Transaction = require('../src/models/Transaction');
 const mongoose = require('mongoose');
+const cache = require('../utils/cache');
 
 /**
  * Create a new payment method
@@ -56,6 +57,9 @@ const createPaymentMethod = async (req, res, next) => {
       throw error;
     }
 
+    // Invalidate cache
+    await cache.del(`ref:${req.user._id.toString()}:paymentMethods`);
+
     res.status(201).json({
       success: true,
       data: paymentMethod
@@ -71,15 +75,29 @@ const createPaymentMethod = async (req, res, next) => {
  */
 const getPaymentMethods = async (req, res, next) => {
   try {
+    const userId = req.user._id.toString();
+    const cacheKey = `ref:${userId}:paymentMethods`;
+
+    // Try to get from cache first
+    const cachedData = await cache.get(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
     // Get all payment methods for user (always scoped to userId for security)
     const paymentMethods = await PaymentMethod.find({
       userId: req.user._id
     }).sort({ name: 1 });
 
-    res.json({
+    const response = {
       success: true,
       data: paymentMethods
-    });
+    };
+
+    // Cache for 1 hour (3600 seconds)
+    await cache.set(cacheKey, response, 3600);
+
+    res.json(response);
   } catch (error) {
     next(error);
   }
@@ -161,6 +179,9 @@ const updatePaymentMethod = async (req, res, next) => {
       throw error;
     }
 
+    // Invalidate cache
+    await cache.del(`ref:${req.user._id.toString()}:paymentMethods`);
+
     res.json({
       success: true,
       data: paymentMethod
@@ -214,6 +235,9 @@ const deletePaymentMethod = async (req, res, next) => {
 
     // Delete payment method
     await PaymentMethod.findByIdAndDelete(id);
+
+    // Invalidate cache
+    await cache.del(`ref:${req.user._id.toString()}:paymentMethods`);
 
     res.json({
       success: true,

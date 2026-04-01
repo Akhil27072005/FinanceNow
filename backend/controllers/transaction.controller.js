@@ -4,6 +4,7 @@ const SubCategory = require('../src/models/SubCategory');
 const Tag = require('../src/models/Tag');
 const PaymentMethod = require('../src/models/PaymentMethod');
 const mongoose = require('mongoose');
+const cache = require('../utils/cache');
 
 /**
  * Create a new transaction
@@ -18,7 +19,9 @@ const createTransaction = async (req, res, next) => {
       categoryId,
       subCategoryId,
       tags,
-      paymentMethod,
+      paymentMethodId,
+      paymentMethodDetail,
+      paymentMethod, // Keep for backward compatibility
       account,
       notes
     } = req.body;
@@ -133,9 +136,13 @@ const createTransaction = async (req, res, next) => {
       }
     }
 
+    // Normalize empty strings to null for optional fields
+    const normalizedPaymentMethodId = paymentMethodId && paymentMethodId.trim() !== '' ? paymentMethodId : null;
+    const normalizedPaymentMethodDetail = paymentMethodDetail && paymentMethodDetail.trim() !== '' ? paymentMethodDetail : null;
+
     // Validation: paymentMethodId must belong to user if provided
-    if (paymentMethodId) {
-      if (!mongoose.Types.ObjectId.isValid(paymentMethodId)) {
+    if (normalizedPaymentMethodId) {
+      if (!mongoose.Types.ObjectId.isValid(normalizedPaymentMethodId)) {
         return res.status(400).json({
           success: false,
           error: 'Invalid paymentMethodId format'
@@ -143,7 +150,7 @@ const createTransaction = async (req, res, next) => {
       }
 
       const paymentMethodObj = await PaymentMethod.findOne({
-        _id: paymentMethodId,
+        _id: normalizedPaymentMethodId,
         userId: req.user._id
       });
 
@@ -164,8 +171,8 @@ const createTransaction = async (req, res, next) => {
       categoryId: categoryId || null,
       subCategoryId: subCategoryId || null,
       tags: tags || [],
-      paymentMethodId: paymentMethodId || null,
-      paymentMethodDetail: paymentMethodDetail || null,
+      paymentMethodId: normalizedPaymentMethodId,
+      paymentMethodDetail: normalizedPaymentMethodDetail,
       paymentMethod: paymentMethod || null, // Keep for backward compatibility
       account: account || 'self',
       notes: notes || null
@@ -175,6 +182,12 @@ const createTransaction = async (req, res, next) => {
 
     // Populate references for response
     await transaction.populate('categoryId subCategoryId tags paymentMethodId');
+
+    // Invalidate analytics cache (transaction changes affect all analytics)
+    await cache.invalidateAnalyticsCache(req.user._id.toString());
+    
+    // Invalidate transactions list cache (Upstash REST has no SCAN; use version-based keys)
+    await cache.invalidateTransactionsCache(req.user._id.toString());
 
     res.status(201).json({
       success: true,
@@ -286,15 +299,73 @@ const getTransactions = async (req, res, next) => {
 
     const skip = (pageNum - 1) * limitNum;
 
-    // Execute query
-    const transactions = await Transaction.find(filter)
-      .populate('categoryId subCategoryId tags paymentMethodId')
-      .sort({ date: -1 }) // Sort by date descending
-      .skip(skip)
-      .limit(limitNum);
+    // Only cache first page (page = 1) with default limit (20)
+    const shouldCache = pageNum === 1 && limitNum === 20;
+    const userIdStr = req.user._id.toString();
 
-    // Get total count for pagination metadata
-    const total = await Transaction.countDocuments(filter);
+    if (shouldCache) {
+      // Generate cache key based on filters
+      const cacheKeyParts = [`transactions:${userIdStr}:page1`];
+      if (type) cacheKeyParts.push(`type:${type}`);
+      if (startDate) cacheKeyParts.push(`start:${startDate}`);
+      if (endDate) cacheKeyParts.push(`end:${endDate}`);
+      if (categoryId) cacheKeyParts.push(`cat:${categoryId}`);
+      if (tag) cacheKeyParts.push(`tag:${tag}`);
+      const baseCacheKey = cacheKeyParts.join(':');
+      const cacheKey = await cache.getVersionedKey(baseCacheKey, userIdStr, 'transactions');
+
+      // Try to get from cache first
+      const cachedData = await cache.get(cacheKey);
+      if (cachedData) {
+        return res.json(cachedData);
+      }
+
+      // OPTIMIZE: Run query and count in parallel, use lean() for faster queries
+      // lean() returns plain JavaScript objects instead of Mongoose documents (faster)
+      // Only populate needed fields to reduce overhead
+      const [transactions, total] = await Promise.all([
+        Transaction.find(filter)
+          .populate('categoryId', 'name type') // Only get name and type
+          .populate('subCategoryId', 'name') // Only get name
+          .populate('tags', 'name color') // Only get name and color
+          .populate('paymentMethodId', 'name icon type') // Only get needed fields
+          .sort({ date: -1 }) // Sort by date descending
+          .skip(skip)
+          .limit(limitNum)
+          .lean(), // Use lean() for better performance
+        Transaction.countDocuments(filter)
+      ]);
+
+      const response = {
+        success: true,
+        data: transactions,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          pages: Math.ceil(total / limitNum)
+        }
+      };
+
+      // Cache for 5 minutes (300 seconds) - first page only
+      await cache.set(cacheKey, response, 300);
+
+      return res.json(response);
+    }
+
+    // Execute query (for non-cached pages) - optimized with lean() and selective populate
+    const [transactions, total] = await Promise.all([
+      Transaction.find(filter)
+        .populate('categoryId', 'name type')
+        .populate('subCategoryId', 'name')
+        .populate('tags', 'name color')
+        .populate('paymentMethodId', 'name icon type')
+        .sort({ date: -1 }) // Sort by date descending
+        .skip(skip)
+        .limit(limitNum)
+        .lean(), // Use lean() for better performance
+      Transaction.countDocuments(filter)
+    ]);
 
     res.json({
       success: true,
@@ -356,7 +427,7 @@ const getTransaction = async (req, res, next) => {
 const updateTransaction = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const {
+    let {
       type,
       amount,
       date,
@@ -369,6 +440,11 @@ const updateTransaction = async (req, res, next) => {
       account,
       notes
     } = req.body;
+
+    // Normalize empty strings to null for optional reference fields (frontend sends '' when empty)
+    if (categoryId === '' || (typeof categoryId === 'string' && categoryId.trim() === '')) categoryId = null;
+    if (subCategoryId === '' || (typeof subCategoryId === 'string' && subCategoryId.trim() === '')) subCategoryId = null;
+    if (paymentMethodId === '' || (typeof paymentMethodId === 'string' && paymentMethodId.trim() === '')) paymentMethodId = null;
 
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -584,6 +660,12 @@ const updateTransaction = async (req, res, next) => {
     // Populate references for response
     await transaction.populate('categoryId subCategoryId tags paymentMethodId');
 
+    // Invalidate analytics cache (transaction changes affect all analytics)
+    await cache.invalidateAnalyticsCache(req.user._id.toString());
+    
+    // Invalidate transactions list cache (Upstash REST has no SCAN; use version-based keys)
+    await cache.invalidateTransactionsCache(req.user._id.toString());
+
     res.json({
       success: true,
       data: transaction
@@ -621,6 +703,12 @@ const deleteTransaction = async (req, res, next) => {
         error: 'Transaction not found'
       });
     }
+
+    // Invalidate analytics cache (transaction changes affect all analytics)
+    await cache.invalidateAnalyticsCache(req.user._id.toString());
+    
+    // Invalidate transactions list cache (Upstash REST has no SCAN; use version-based keys)
+    await cache.invalidateTransactionsCache(req.user._id.toString());
 
     res.json({
       success: true,

@@ -39,12 +39,20 @@ export const authService = {
   },
 
   /**
-   * Refresh access token
+   * Refresh access token (from body - for email/password login)
    */
   refreshToken: async (refreshToken) => {
     const response = await api.post('/auth/refresh', {
       refreshToken
     });
+    return response.data;
+  },
+
+  /**
+   * Refresh access token using HTTP-only cookie (for Google OAuth callback when token is missing from URL)
+   */
+  refreshWithCookie: async () => {
+    const response = await api.post('/auth/refresh', {}, { withCredentials: true });
     return response.data;
   },
 

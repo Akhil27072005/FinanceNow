@@ -284,10 +284,12 @@ const googleCallback = async (req, res, next) => {
     await user.save();
 
     // Set refresh token as HTTP-only cookie
+    // In production use sameSite: 'none' so the cookie is sent when frontend (different origin) calls /auth/refresh
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // HTTPS only in production
-      sameSite: 'lax',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days (matches refresh token expiry)
     });
 

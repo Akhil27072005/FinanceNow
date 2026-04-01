@@ -1,6 +1,7 @@
 const Category = require('../src/models/Category');
 const Transaction = require('../src/models/Transaction');
 const mongoose = require('mongoose');
+const cache = require('../utils/cache');
 
 /**
  * Create a new category
@@ -19,10 +20,10 @@ const createCategory = async (req, res, next) => {
     }
 
     // Validation: Type must be valid enum
-    if (!['expense', 'income'].includes(type)) {
+    if (!['expense', 'income', 'savings', 'investment'].includes(type)) {
       return res.status(400).json({
         success: false,
-        error: 'Type must be either "expense" or "income"'
+        error: 'Type must be one of: expense, income, savings, investment'
       });
     }
 
@@ -55,6 +56,10 @@ const createCategory = async (req, res, next) => {
       throw error;
     }
 
+    // Invalidate cache
+    await cache.del(`ref:${req.user._id.toString()}:categories:all`);
+    await cache.del(`ref:${req.user._id.toString()}:categories:${category.type}`);
+
     res.status(201).json({
       success: true,
       data: category
@@ -71,6 +76,18 @@ const createCategory = async (req, res, next) => {
 const getCategories = async (req, res, next) => {
   try {
     const { type } = req.query;
+    const userId = req.user._id.toString();
+
+    // Generate cache key
+    const cacheKey = type 
+      ? `ref:${userId}:categories:${type}`
+      : `ref:${userId}:categories:all`;
+
+    // Try to get from cache first
+    const cachedData = await cache.get(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
 
     // Build filter (always include userId for security)
     const filter = {
@@ -79,10 +96,10 @@ const getCategories = async (req, res, next) => {
 
     // Filter by type if provided
     if (type) {
-      if (!['expense', 'income'].includes(type)) {
+      if (!['expense', 'income', 'savings', 'investment'].includes(type)) {
         return res.status(400).json({
           success: false,
-          error: 'Type must be either "expense" or "income"'
+          error: 'Type must be one of: expense, income, savings, investment'
         });
       }
       filter.type = type;
@@ -91,10 +108,15 @@ const getCategories = async (req, res, next) => {
     // Get categories sorted by name
     const categories = await Category.find(filter).sort({ name: 1 });
 
-    res.json({
+    const response = {
       success: true,
       data: categories
-    });
+    };
+
+    // Cache for 1 hour (3600 seconds)
+    await cache.set(cacheKey, response, 3600);
+
+    res.json(response);
   } catch (error) {
     next(error);
   }
@@ -152,10 +174,10 @@ const updateCategory = async (req, res, next) => {
 
     // Update type if provided
     if (type !== undefined) {
-      if (!['expense', 'income'].includes(type)) {
+      if (!['expense', 'income', 'savings', 'investment'].includes(type)) {
         return res.status(400).json({
           success: false,
-          error: 'Type must be either "expense" or "income"'
+          error: 'Type must be one of: expense, income, savings, investment'
         });
       }
       category.type = type;
@@ -174,6 +196,10 @@ const updateCategory = async (req, res, next) => {
       }
       throw error;
     }
+
+    // Invalidate cache
+    await cache.del(`ref:${req.user._id.toString()}:categories:all`);
+    await cache.del(`ref:${req.user._id.toString()}:categories:${category.type}`);
 
     res.json({
       success: true,
@@ -240,8 +266,15 @@ const deleteCategory = async (req, res, next) => {
       });
     }
 
+    // Get category type before deletion for cache invalidation
+    const categoryType = category.type;
+
     // Delete category
     await Category.findByIdAndDelete(id);
+
+    // Invalidate cache
+    await cache.del(`ref:${req.user._id.toString()}:categories:all`);
+    await cache.del(`ref:${req.user._id.toString()}:categories:${categoryType}`);
 
     res.json({
       success: true,

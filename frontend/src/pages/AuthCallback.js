@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { authService } from '../services/authService';
 
 /**
  * OAuth Callback Handler
@@ -11,34 +12,40 @@ const AuthCallback = () => {
   const { fetchUser } = useAuth();
 
   useEffect(() => {
+    const completeLogin = (accessToken) => {
+      localStorage.setItem('accessToken', accessToken);
+      window.history.replaceState({}, document.title, '/auth/callback');
+      fetchUser()
+        .then(() => navigate('/dashboard'))
+        .catch((err) => {
+          console.error('Error fetching user:', err);
+          navigate('/dashboard');
+        });
+    };
+
     // Extract access token from URL query parameter or hash
     const urlParams = new URLSearchParams(window.location.search);
     const tokenFromQuery = urlParams.get('token');
-    
-    // Also check hash for backward compatibility
     const hash = window.location.hash;
     const match = hash.match(/accessToken=([^&]+)/);
     const tokenFromHash = match ? decodeURIComponent(match[1]) : null;
-    
     const accessToken = tokenFromQuery || tokenFromHash;
-    
+
     if (accessToken) {
-      localStorage.setItem('accessToken', accessToken);
-      // Refresh token is in HTTP-only cookie, no need to extract
-      // Clear the token from URL for security
-      window.history.replaceState({}, document.title, '/auth/callback');
-      
-      // Fetch user data to populate auth context
-      fetchUser().then(() => {
-        navigate('/dashboard');
-      }).catch((error) => {
-        console.error('Error fetching user:', error);
-        navigate('/dashboard'); // Still navigate even if user fetch fails
-      });
-    } else {
-      // No token found, redirect to login
-      navigate('/login?error=authentication_failed');
+      completeLogin(accessToken);
+      return;
     }
+
+    // Token missing from URL (e.g. stripped by host redirect). Try refresh using HTTP-only cookie set by backend.
+    authService
+      .refreshWithCookie()
+      .then((data) => {
+        if (data.accessToken) completeLogin(data.accessToken);
+        else navigate('/login?error=authentication_failed');
+      })
+      .catch(() => {
+        navigate('/login?error=authentication_failed');
+      });
   }, [navigate, fetchUser]);
 
   return (

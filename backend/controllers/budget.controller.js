@@ -2,6 +2,7 @@ const Budget = require('../src/models/Budget');
 const Category = require('../src/models/Category');
 const SubCategory = require('../src/models/SubCategory');
 const mongoose = require('mongoose');
+const cache = require('../utils/cache');
 
 /**
  * Create a new budget
@@ -127,6 +128,11 @@ const createBudget = async (req, res, next) => {
       await budget.populate('subCategoryId');
     }
 
+    // Invalidate cache for this month
+    const userId = req.user._id.toString();
+    await cache.del(`budgets:${userId}:${budget.month}`);
+    await cache.del(`budgets:${userId}`); // Also invalidate general cache
+
     res.status(201).json({
       success: true,
       data: budget
@@ -143,6 +149,20 @@ const createBudget = async (req, res, next) => {
 const getBudgets = async (req, res, next) => {
   try {
     const { month, categoryId, subCategoryId } = req.query;
+    const userId = req.user._id.toString();
+
+    // Generate cache key
+    const cacheKeyParts = [`budgets:${userId}`];
+    if (month) cacheKeyParts.push(month);
+    if (categoryId) cacheKeyParts.push(`cat:${categoryId}`);
+    if (subCategoryId) cacheKeyParts.push(`subcat:${subCategoryId}`);
+    const cacheKey = cacheKeyParts.join(':');
+
+    // Try to get from cache first
+    const cachedData = await cache.get(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
 
     // Build filter (always include userId for security)
     const filter = {
@@ -217,10 +237,15 @@ const getBudgets = async (req, res, next) => {
       .populate('categoryId subCategoryId')
       .sort({ month: -1, createdAt: -1 });
 
-    res.json({
+    const response = {
       success: true,
       data: budgets
-    });
+    };
+
+    // Cache for 30 minutes (1800 seconds)
+    await cache.set(cacheKey, response, 1800);
+
+    res.json(response);
   } catch (error) {
     next(error);
   }
@@ -397,6 +422,11 @@ const updateBudget = async (req, res, next) => {
       await budget.populate('subCategoryId');
     }
 
+    // Invalidate cache for this month (and old month if changed)
+    const userId = req.user._id.toString();
+    await cache.del(`budgets:${userId}:${budget.month}`);
+    await cache.del(`budgets:${userId}`); // Also invalidate general cache
+
     res.json({
       success: true,
       data: budget
@@ -434,6 +464,11 @@ const deleteBudget = async (req, res, next) => {
         error: 'Budget not found'
       });
     }
+
+    // Invalidate cache for this month
+    const userId = req.user._id.toString();
+    await cache.del(`budgets:${userId}:${budget.month}`);
+    await cache.del(`budgets:${userId}`); // Also invalidate general cache
 
     res.json({
       success: true,

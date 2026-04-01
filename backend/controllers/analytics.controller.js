@@ -4,6 +4,7 @@ const Category = require('../src/models/Category');
 const SubCategory = require('../src/models/SubCategory');
 const Tag = require('../src/models/Tag');
 const mongoose = require('mongoose');
+const cache = require('../utils/cache');
 
 /**
  * Utility function to determine date range from query parameters
@@ -12,26 +13,43 @@ const mongoose = require('mongoose');
 const getDateRange = (month, startDate, endDate) => {
   let dateStart, dateEnd;
 
-  if (month) {
+  // Check if month is provided and not empty string
+  if (month && month.trim() !== '') {
     // Validate month format (YYYY-MM)
     const monthRegex = /^\d{4}-\d{2}$/;
     if (!monthRegex.test(month)) {
       throw new Error('Month must be in YYYY-MM format (e.g., 2024-01)');
     }
 
-    // Set start and end of month
+    // Set start and end of month using local time to avoid timezone issues
     const [year, monthNum] = month.split('-').map(Number);
     dateStart = new Date(year, monthNum - 1, 1);
     dateEnd = new Date(year, monthNum, 0, 23, 59, 59, 999); // Last day of month
-  } else if (startDate && endDate) {
-    // Validate date range
-    dateStart = new Date(startDate);
-    dateEnd = new Date(endDate);
+    
+    // Validate the dates were created correctly
+    if (isNaN(dateStart.getTime()) || isNaN(dateEnd.getTime())) {
+      throw new Error('Invalid month provided');
+    }
+  } else if (startDate && endDate && startDate.trim() !== '' && endDate.trim() !== '') {
+    // Validate date range - parse dates more carefully to handle timezones
+    // Parse as local dates to avoid timezone shifts
+    const startParts = startDate.split('-').map(Number);
+    const endParts = endDate.split('-').map(Number);
+    
+    if (startParts.length !== 3 || endParts.length !== 3) {
+      throw new Error('Invalid date format. Use ISO 8601 format (e.g., 2024-01-15)');
+    }
+
+    // Create dates using local time (year, month-1, day) to avoid timezone issues
+    dateStart = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+    dateEnd = new Date(endParts[0], endParts[1] - 1, endParts[2]);
 
     if (isNaN(dateStart.getTime()) || isNaN(dateEnd.getTime())) {
       throw new Error('Invalid date format. Use ISO 8601 format (e.g., 2024-01-15)');
     }
 
+    // Set start date to beginning of day
+    dateStart.setHours(0, 0, 0, 0);
     // Set end date to end of day
     dateEnd.setHours(23, 59, 59, 999);
 
@@ -57,10 +75,22 @@ const getDateRange = (month, startDate, endDate) => {
 const getDashboardAnalytics = async (req, res, next) => {
   try {
     const { month, startDate, endDate } = req.query;
-    const userId = req.user._id;
+    const userId = req.user._id; // Keep as ObjectId for MongoDB queries
+    const userIdStr = userId.toString(); // String version for cache keys
 
     // Determine date range
     const { dateStart, dateEnd } = getDateRange(month, startDate, endDate);
+
+    // Generate cache key
+    const cacheKey = month 
+      ? `analytics:${userIdStr}:dashboard:${month}`
+      : `analytics:${userIdStr}:dashboard:${startDate}:${endDate}`;
+
+    // Try to get from cache first
+    const cachedData = await cache.get(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
 
     // Calculate number of days in range for average daily expense
     const daysInRange = Math.ceil((dateEnd - dateStart) / (1000 * 60 * 60 * 24)) + 1;
@@ -70,7 +100,7 @@ const getDashboardAnalytics = async (req, res, next) => {
     const transactionPipeline = [
       {
         $match: {
-          userId: userId,
+          userId: userId, // Use ObjectId for MongoDB
           date: {
             $gte: dateStart,
             $lte: dateEnd
@@ -110,7 +140,7 @@ const getDashboardAnalytics = async (req, res, next) => {
     const subscriptionPipeline = [
       {
         $match: {
-          userId: userId,
+          userId: userId, // Use ObjectId for MongoDB
           isActive: true
         }
       },
@@ -160,6 +190,9 @@ const getDashboardAnalytics = async (req, res, next) => {
         monthlySubscriptionSpend: Math.round(subscriptionData.totalMonthlySpend * 100) / 100 // Round to 2 decimal places
       }
     };
+
+    // Cache the response for 10 minutes (600 seconds)
+    await cache.set(cacheKey, response, 600);
 
     res.json(response);
   } catch (error) {
@@ -438,7 +471,8 @@ const getTagBasedSpending = async (userId, type, dateStart, dateEnd) => {
 const getChartData = async (req, res, next) => {
   try {
     const { type, month, startDate, endDate, chartType, categoryId } = req.query;
-    const userId = req.user._id;
+    const userId = req.user._id; // Keep as ObjectId for MongoDB queries
+    const userIdStr = userId.toString(); // String version for cache keys
 
     // Validation: type is required
     if (!type) {
@@ -469,8 +503,24 @@ const getChartData = async (req, res, next) => {
       });
     }
 
-    // Determine chart type (default to monthlyTrend if not specified)
+    // Generate cache key
     const chart = chartType || 'monthlyTrend';
+    const cacheKeyParts = [
+      `analytics:${userIdStr}:charts`,
+      type,
+      chart,
+      month || `${startDate}:${endDate}`,
+      categoryId || 'all'
+    ];
+    const cacheKey = cacheKeyParts.join(':');
+
+    // Try to get from cache first
+    const cachedData = await cache.get(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
+
+    // Determine chart type (default to monthlyTrend if not specified)
     let data;
     let chartName;
 
@@ -507,7 +557,7 @@ const getChartData = async (req, res, next) => {
         });
     }
 
-    res.json({
+    const response = {
       success: true,
       chartType: chartName,
       type: type,
@@ -516,7 +566,12 @@ const getChartData = async (req, res, next) => {
         endDate: dateEnd.toISOString()
       },
       data: data
-    });
+    };
+
+    // Cache the response for 10 minutes (600 seconds)
+    await cache.set(cacheKey, response, 600);
+
+    res.json(response);
   } catch (error) {
     next(error);
   }

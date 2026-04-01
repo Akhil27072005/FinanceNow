@@ -2,6 +2,7 @@ const SubCategory = require('../src/models/SubCategory');
 const Category = require('../src/models/Category');
 const Transaction = require('../src/models/Transaction');
 const mongoose = require('mongoose');
+const cache = require('../utils/cache');
 
 /**
  * Create a new subcategory
@@ -72,6 +73,10 @@ const createSubCategory = async (req, res, next) => {
     // Populate category for response
     await subCategory.populate('categoryId');
 
+    // Invalidate cache
+    await cache.del(`ref:${req.user._id.toString()}:subcategories:all`);
+    await cache.del(`ref:${req.user._id.toString()}:subcategories:${subCategory.categoryId.toString()}`);
+
     res.status(201).json({
       success: true,
       data: subCategory
@@ -88,6 +93,18 @@ const createSubCategory = async (req, res, next) => {
 const getSubCategories = async (req, res, next) => {
   try {
     const { categoryId } = req.query;
+    const userId = req.user._id.toString();
+
+    // Generate cache key
+    const cacheKey = categoryId
+      ? `ref:${userId}:subcategories:${categoryId}`
+      : `ref:${userId}:subcategories:all`;
+
+    // Try to get from cache first
+    const cachedData = await cache.get(cacheKey);
+    if (cachedData) {
+      return res.json(cachedData);
+    }
 
     // Build filter (always include userId for security)
     const filter = {
@@ -124,10 +141,15 @@ const getSubCategories = async (req, res, next) => {
       .populate('categoryId')
       .sort({ name: 1 });
 
-    res.json({
+    const response = {
       success: true,
       data: subCategories
-    });
+    };
+
+    // Cache for 1 hour (3600 seconds)
+    await cache.set(cacheKey, response, 3600);
+
+    res.json(response);
   } catch (error) {
     next(error);
   }
@@ -225,6 +247,13 @@ const updateSubCategory = async (req, res, next) => {
     // Populate category for response
     await subCategory.populate('categoryId');
 
+    // Invalidate cache - need to invalidate both old and new category if changed
+    const userId = req.user._id.toString();
+    await cache.del(`ref:${userId}:subcategories:all`);
+    if (subCategory.categoryId) {
+      await cache.del(`ref:${userId}:subcategories:${subCategory.categoryId.toString()}`);
+    }
+
     res.json({
       success: true,
       data: subCategory
@@ -276,8 +305,18 @@ const deleteSubCategory = async (req, res, next) => {
       });
     }
 
+    // Get categoryId before deletion for cache invalidation
+    const categoryId = subCategory.categoryId?.toString();
+
     // Delete subcategory
     await SubCategory.findByIdAndDelete(id);
+
+    // Invalidate cache
+    const userId = req.user._id.toString();
+    await cache.del(`ref:${userId}:subcategories:all`);
+    if (categoryId) {
+      await cache.del(`ref:${userId}:subcategories:${categoryId}`);
+    }
 
     res.json({
       success: true,

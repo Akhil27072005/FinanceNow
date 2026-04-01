@@ -33,6 +33,11 @@ export const subscriptionService = {
   getAlerts: async (days = 7) => {
     const response = await api.get(`/subscriptions/alerts?days=${days}`);
     return response.data;
+  },
+
+  markAsPaid: async (id) => {
+    const response = await api.post(`/subscriptions/${id}/mark-paid`);
+    return response.data;
   }
 };
 

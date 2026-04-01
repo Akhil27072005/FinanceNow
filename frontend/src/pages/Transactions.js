@@ -51,24 +51,34 @@ const Transactions = () => {
     tag: ''
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(20);
+  const [totalTransactions, setTotalTransactions] = useState(0);
 
   useEffect(() => {
     loadData();
-  }, [filters]);
+  }, [filters, currentPage]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const [transactionsRes, categoriesRes, subcategoriesRes, tagsRes, paymentMethodsRes] = await Promise.all([
-        transactionService.getTransactions(filters),
+      // Load transactions with pagination
+      const transactionsRes = await transactionService.getTransactions({
+        ...filters,
+        page: currentPage,
+        limit: itemsPerPage
+      });
+      
+      // Load other data in parallel (these don't need pagination)
+      const [categoriesRes, subcategoriesRes, tagsRes, paymentMethodsRes] = await Promise.all([
         categoryService.getCategories(),
         subcategoryService.getSubCategories(),
         tagService.getTags(),
         paymentMethodService.getPaymentMethods()
       ]);
 
+      // Backend returns { data: [...], pagination: { total, page, limit, pages } }
       setTransactions(transactionsRes.data || []);
+      setTotalTransactions(transactionsRes.pagination?.total || transactionsRes.data?.length || 0);
       setCategories(categoriesRes.data || []);
       setSubcategories(subcategoriesRes.data || []);
       setTags(tagsRes.data || []);
@@ -199,10 +209,10 @@ const Transactions = () => {
     setCurrentPage(1);
   }, [filters]);
 
-  const totalPages = Math.ceil(transactions.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedTransactions = transactions.slice(startIndex, endIndex);
+  // Calculate total pages from total transactions count (server-side pagination)
+  const totalPages = Math.ceil(totalTransactions / itemsPerPage);
+  // Use transactions directly (already paginated from server)
+  const paginatedTransactions = transactions;
 
   return (
     <div>
