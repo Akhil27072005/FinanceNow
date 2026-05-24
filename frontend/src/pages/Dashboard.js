@@ -183,9 +183,12 @@ const Dashboard = () => {
       const response = await subscriptionService.markAsPaid(subscriptionId);
       
       if (response && response.success) {
-        // Reload subscription alerts to reflect the change
-        const alertsResponse = await subscriptionService.getAlerts(7);
+        const [alertsResponse, dashboardResponse] = await Promise.all([
+          subscriptionService.getAlerts(7),
+          analyticsService.getDashboard({ month: selectedMonth })
+        ]);
         setSubscriptionAlerts(alertsResponse);
+        setDashboardData(dashboardResponse);
       } else {
         setError(response?.error || 'Failed to mark subscription as paid');
       }
@@ -425,7 +428,7 @@ const Dashboard = () => {
                     fontWeight: 500,
                     letterSpacing: '0.3px'
                   }}>
-                    Monthly Subscription Spend
+                    Subscription Spend (This Month)
                   </div>
                   <div style={{ 
                     fontSize: '24px', 

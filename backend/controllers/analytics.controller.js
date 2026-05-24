@@ -1,5 +1,6 @@
 const Transaction = require('../src/models/Transaction');
 const Subscription = require('../src/models/Subscription');
+const { getSubscriptionSpendInRange } = require('../utils/subscriptionPayments');
 const Category = require('../src/models/Category');
 const SubCategory = require('../src/models/SubCategory');
 const Tag = require('../src/models/Tag');
@@ -135,41 +136,13 @@ const getDashboardAnalytics = async (req, res, next) => {
     const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : null;
     const avgDailyExpense = daysInRange > 0 ? totalExpenses / daysInRange : 0;
 
-    // Subscription aggregation pipeline
-    // Counts active subscriptions and sums their monthly-equivalent amounts
-    const subscriptionPipeline = [
-      {
-        $match: {
-          userId: userId, // Use ObjectId for MongoDB
-          isActive: true
-        }
-      },
-      {
-        $project: {
-          amount: 1,
-          billingCycle: 1,
-          // Calculate monthly equivalent: yearly subscriptions divided by 12
-          monthlyAmount: {
-            $cond: {
-              if: { $eq: ['$billingCycle', 'yearly'] },
-              then: { $divide: ['$amount', 12] },
-              else: '$amount'
-            }
-          }
-        }
-      },
-      {
-        $group: {
-          _id: null,
-          count: { $sum: 1 },
-          totalMonthlySpend: { $sum: '$monthlyAmount' }
-        }
-      }
-    ];
+    const activeSubscriptionCount = await Subscription.countDocuments({
+      userId,
+      isActive: true
+    });
 
-    // Execute subscription aggregation
-    const subscriptionResults = await Subscription.aggregate(subscriptionPipeline);
-    const subscriptionData = subscriptionResults[0] || { count: 0, totalMonthlySpend: 0 };
+    // Paid subscription spend in selected range (billing due dates in period)
+    const subscriptionSpend = await getSubscriptionSpendInRange(userId, dateStart, dateEnd);
 
     // Build response
     const response = {
@@ -186,8 +159,9 @@ const getDashboardAnalytics = async (req, res, next) => {
         totalSavings,
         totalInvestments: totalInvestments,
         avgDailyExpense: Math.round(avgDailyExpense * 100) / 100, // Round to 2 decimal places
-        activeSubscriptions: subscriptionData.count,
-        monthlySubscriptionSpend: Math.round(subscriptionData.totalMonthlySpend * 100) / 100 // Round to 2 decimal places
+        activeSubscriptions: activeSubscriptionCount,
+        monthlySubscriptionSpend: subscriptionSpend.total,
+        subscriptionPaymentCount: subscriptionSpend.paymentCount
       }
     };
 

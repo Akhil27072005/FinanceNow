@@ -50,7 +50,7 @@ const Subscriptions = () => {
       
       const [subscriptionsRes, categoriesRes, paymentMethodsRes, dashboardRes] = await Promise.all([
         subscriptionService.getSubscriptions(),
-        categoryService.getCategories(),
+        categoryService.getCategories('expense'),
         paymentMethodService.getPaymentMethods(),
         analyticsService.getDashboard({ month: currentMonth })
       ]);
@@ -204,7 +204,7 @@ const Subscriptions = () => {
                   fontWeight: 500,
                   letterSpacing: '0.3px'
                 }}>
-                  Monthly Subscription Spend
+                  Subscription Spend (This Month)
                 </div>
                 <div style={{ 
                   fontSize: '24px', 
@@ -514,7 +514,7 @@ const Subscriptions = () => {
                   onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
                   options={[
                     { value: '', label: 'Select Category' },
-                    ...categories.map(cat => ({ value: cat._id, label: cat.name }))
+                    ...categories.filter(c => c.type === 'expense').map(cat => ({ value: cat._id, label: cat.name }))
                   ]}
                 />
               </Form.Group>

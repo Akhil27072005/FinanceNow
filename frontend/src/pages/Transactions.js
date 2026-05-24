@@ -243,7 +243,7 @@ const Transactions = () => {
             <Col md={2}>
               <Select
                 value={filters.type}
-                onChange={(e) => setFilters({ ...filters, type: e.target.value })}
+                onChange={(e) => setFilters({ ...filters, type: e.target.value, categoryId: '' })}
                 options={[
                   { value: '', label: 'All Types' },
                   { value: 'expense', label: 'Expense' },
@@ -273,7 +273,7 @@ const Transactions = () => {
                 onChange={(e) => setFilters({ ...filters, categoryId: e.target.value })}
                 options={[
                   { value: '', label: 'All Categories' },
-                  ...categories.filter(c => c.type === 'expense' || c.type === filters.type || !filters.type).map(cat => ({
+                  ...categories.filter(c => !filters.type || c.type === filters.type).map(cat => ({
                     value: cat._id,
                     label: cat.name
                   }))
@@ -711,7 +711,7 @@ const Transactions = () => {
                 <Form.Label>Type *</Form.Label>
                 <Select
                   value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value, categoryId: '', subCategoryId: '' })}
                   options={[
                     { value: 'expense', label: 'Expense' },
                     { value: 'income', label: 'Income' },
@@ -771,7 +771,7 @@ const Transactions = () => {
                     onChange={(e) => setFormData({ ...formData, categoryId: e.target.value, subCategoryId: '' })}
                     options={[
                       { value: '', label: 'Select Category' },
-                      ...categories.filter(c => c.type === formData.type || formData.type === 'income').map(cat => ({
+                      ...categories.filter(c => c.type === formData.type).map(cat => ({
                         value: cat._id,
                         label: cat.name
                       }))
