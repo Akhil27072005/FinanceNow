@@ -19,7 +19,8 @@
   --success: #00c853;
   --danger: #ff5252;
   --warning: #ffb300;
-  --info: #2979ff;
+
+  /* --info and accent tokens: theme-accent.css + appTheme.js */
 
   /* Shadows */
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.04);
@@ -70,13 +71,13 @@ textarea,
 }
 
 .btn-primary:hover {
-  background: #1c6be1;
+  background: var(--info-hover);
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
 
 .btn-primary:focus {
-  box-shadow: 0 0 0 2px rgba(41, 121, 255, 0.15);
+  box-shadow: 0 0 0 2px var(--info-focus-ring);
 }
 
 .btn-outline-primary {
@@ -204,7 +205,7 @@ textarea,
 
 .form-control:focus,
 .form-select:focus {
-  box-shadow: 0 0 0 2px rgba(41, 121, 255, 0.15);
+  box-shadow: 0 0 0 2px var(--info-focus-ring);
   border-color: var(--info);
   outline: 0;
 }

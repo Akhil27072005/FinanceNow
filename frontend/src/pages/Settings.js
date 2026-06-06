@@ -16,9 +16,11 @@ const Settings = () => {
   const profileSaveRef = useRef(null);
   const regionalSaveRef = useRef(null);
   const notificationsSaveRef = useRef(null);
+  const appearanceSaveRef = useRef(null);
   const [profileSaving, setProfileSaving] = useState(false);
   const [regionalSaving, setRegionalSaving] = useState(false);
   const [notificationsSaving, setNotificationsSaving] = useState(false);
+  const [appearanceSaving, setAppearanceSaving] = useState(false);
 
   const handleProfileSave = useCallback(async () => {
     if (profileSaveRef.current) await profileSaveRef.current();
@@ -30,6 +32,10 @@ const Settings = () => {
 
   const handleNotificationsSave = useCallback(async () => {
     if (notificationsSaveRef.current) await notificationsSaveRef.current();
+  }, []);
+
+  const handleAppearanceSave = useCallback(async () => {
+    if (appearanceSaveRef.current) await appearanceSaveRef.current();
   }, []);
 
   const panel = useMemo(() => {
@@ -44,7 +50,14 @@ const Settings = () => {
           />
         );
       case 'appearance':
-        return <AppearancePanel />;
+        return (
+          <AppearancePanel
+            onRegisterSave={(fn) => {
+              appearanceSaveRef.current = fn;
+            }}
+            onSavingChange={setAppearanceSaving}
+          />
+        );
       case 'regional':
         return (
           <RegionalPanel
@@ -109,6 +122,15 @@ const Settings = () => {
         onSave={handleNotificationsSave}
         saving={notificationsSaving}
         hint="Save your notification preferences."
+      />
+    );
+  } else if (activeSection === 'appearance') {
+    saveBar = (
+      <SettingsSaveBar
+        visible
+        onSave={handleAppearanceSave}
+        saving={appearanceSaving}
+        hint="Save your color theme and glass intensity."
       />
     );
   } else if (showPlaceholderSave) {

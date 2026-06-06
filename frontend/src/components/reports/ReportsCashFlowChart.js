@@ -11,7 +11,8 @@ import {
   Legend
 } from 'recharts';
 import { useUserFormatters } from '../../hooks/useUserFormatters';
-import { REPORTS_INCOME_COLOR, REPORTS_EXPENSE_COLOR } from '../../constants/reportsChartColors';
+import { REPORTS_INCOME_COLOR } from '../../constants/reportsChartColors';
+import { useThemeChartColors } from '../../hooks/useThemeChartColors';
 import { buildTransactionsLinkSearch } from '../../utils/reportsFilterUtils';
 
 const formatAxis = (v) => {
@@ -28,6 +29,7 @@ const ReportsCashFlowChart = ({
   loading = false
 }) => {
   const { formatCurrency } = useUserFormatters();
+  const { expenseColor } = useThemeChartColors();
 
   const chartData = useMemo(
     () =>
@@ -96,7 +98,7 @@ const ReportsCashFlowChart = ({
         <div className="reports-cashflow__chart">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 4 }} barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(124, 58, 237, 0.08)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--app-accent-ring)" vertical={false} />
               <XAxis
                 dataKey="label"
                 tick={{ fontSize: 11, fill: '#9ca3af' }}
@@ -114,7 +116,7 @@ const ReportsCashFlowChart = ({
               <Tooltip formatter={(v) => formatCurrency(v)} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
               <Bar dataKey="income" name="Income" fill={REPORTS_INCOME_COLOR} radius={[4, 4, 0, 0]} />
-              <Bar dataKey="expense" name="Expense" fill={REPORTS_EXPENSE_COLOR} radius={[4, 4, 0, 0]} />
+              <Bar dataKey="expense" name="Expense" fill={expenseColor} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

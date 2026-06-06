@@ -1,0 +1,48 @@
+/* ============================================
+   THEME ACCENT TOKENS
+   Set on :root by appTheme.js — fallbacks match Violet Dawn
+   ============================================ */
+
+:root {
+  --accent-rgb: 80, 12, 176;
+  --accent-text: #5b21b6;
+  --accent-bright: #7c3aed;
+  --info: #500cb0;
+  --info-hover: #46099c;
+  --info-focus-ring: rgba(80, 12, 176, 0.15);
+  --info-shadow: rgba(80, 12, 176, 0.2);
+  --info-shadow-hover: rgba(80, 12, 176, 0.3);
+  --accent-glass-border: rgba(80, 12, 176, 0.45);
+  --accent-glass-bg: rgba(80, 12, 176, 0.88);
+  --accent-glass-bg-hover: rgba(80, 12, 176, 0.95);
+  --accent-glass-shadow: rgba(80, 12, 176, 0.25);
+  --accent-glass-shadow-hover: rgba(80, 12, 176, 0.3);
+  --picker-accent-soft: rgba(80, 12, 176, 0.1);
+  --picker-accent-mid: rgba(80, 12, 176, 0.18);
+  --picker-accent-strong: rgba(80, 12, 176, 0.82);
+  --picker-glass-shadow: 0 8px 32px rgba(80, 12, 176, 0.06), 0 4px 16px rgba(18, 18, 18, 0.04);
+  --picker-hover-shadow: 0 4px 16px rgba(80, 12, 176, 0.07), 0 2px 10px rgba(249, 115, 22, 0.05);
+  --picker-hover-bg: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.78) 0%,
+    rgba(80, 12, 176, 0.1) 48%,
+    rgba(80, 12, 176, 0.07) 100%
+  );
+  --picker-today-bg: rgba(80, 12, 176, 0.12);
+  --filter-popover-bg: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.97) 0%,
+    rgba(255, 255, 255, 0.94) 48%,
+    rgba(80, 12, 176, 0.07) 100%
+  );
+  --filter-btn-bg: linear-gradient(145deg, rgba(80, 12, 176, 0.1) 0%, rgba(255, 255, 255, 0.35) 100%);
+  --filter-btn-bg-active: linear-gradient(145deg, rgba(80, 12, 176, 0.14) 0%, rgba(255, 255, 255, 0.35) 100%);
+  --filter-control-border: rgba(80, 12, 176, 0.28);
+  --filter-footer-border: rgba(80, 12, 176, 0.22);
+  --glass-accent-ring: rgba(80, 12, 176, 0.12);
+
+  /* Legacy aliases used in page styles */
+  --picker-violet-soft: var(--picker-accent-soft);
+  --picker-violet-mid: var(--picker-accent-mid);
+  --picker-violet-strong: var(--picker-accent-strong);
+}

@@ -7,7 +7,8 @@ import {
   Tooltip
 } from 'recharts';
 import { useUserFormatters } from '../../hooks/useUserFormatters';
-import { REPORTS_INCOME_COLOR, REPORTS_EXPENSE_COLOR } from '../../constants/reportsChartColors';
+import { REPORTS_INCOME_COLOR } from '../../constants/reportsChartColors';
+import { useThemeChartColors } from '../../hooks/useThemeChartColors';
 
 const formatSparkDate = (dateStr) => {
   if (!dateStr) return '';
@@ -23,8 +24,9 @@ const ReportsKpiCard = ({
   loading = false
 }) => {
   const { formatCurrency } = useUserFormatters();
+  const { expenseColor } = useThemeChartColors();
   const isIncome = variant === 'income';
-  const color = isIncome ? REPORTS_INCOME_COLOR : REPORTS_EXPENSE_COLOR;
+  const color = isIncome ? REPORTS_INCOME_COLOR : expenseColor;
   const gradientId = `reports-kpi-${variant}`;
 
   const sparkData = useMemo(
@@ -105,7 +107,7 @@ const ReportsKpiCard = ({
                 contentStyle={{
                   fontSize: 12,
                   borderRadius: 8,
-                  border: '1px solid rgba(124, 58, 237, 0.2)'
+                  border: '1px solid var(--app-accent-ring)'
                 }}
               />
               <Area

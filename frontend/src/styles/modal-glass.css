@@ -1,15 +1,105 @@
 /* Glass modals — dim overlay outside; frosted glass only on the panel */
 
+@import './expand-transitions.css';
+
 .modal-glass {
   position: relative;
   z-index: 1050;
+  --modal-enter-duration: 0.38s;
+  --modal-leave-duration: 0.28s;
+  --modal-panel-enter-delay: 0.18s;
+  --modal-ease: var(--content-reveal-ease);
+  --modal-backdrop-blur: 4px;
 }
 
-/* Outside modal: same as before — light dim only, no blur */
+/* Outside modal: depth ramp — dim + light blur on open */
 .modal-glass__backdrop {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.2);
+  -webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
+  backdrop-filter: blur(var(--modal-backdrop-blur));
+}
+
+/* Backdrop depth ramp */
+.modal-glass-enter--backdrop {
+  transition:
+    background-color var(--modal-enter-duration) var(--modal-ease),
+    -webkit-backdrop-filter var(--modal-enter-duration) var(--modal-ease),
+    backdrop-filter var(--modal-enter-duration) var(--modal-ease);
+}
+
+.modal-glass-enter-from--backdrop {
+  background-color: rgba(0, 0, 0, 0);
+  -webkit-backdrop-filter: blur(0);
+  backdrop-filter: blur(0);
+}
+
+.modal-glass-enter-to--backdrop {
+  background-color: rgba(0, 0, 0, 0.2);
+  -webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
+  backdrop-filter: blur(var(--modal-backdrop-blur));
+}
+
+.modal-glass-leave--backdrop {
+  transition:
+    background-color var(--modal-leave-duration) ease-in,
+    -webkit-backdrop-filter var(--modal-leave-duration) ease-in,
+    backdrop-filter var(--modal-leave-duration) ease-in;
+}
+
+.modal-glass-leave-from--backdrop {
+  background-color: rgba(0, 0, 0, 0.2);
+  -webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
+  backdrop-filter: blur(var(--modal-backdrop-blur));
+}
+
+.modal-glass-leave-to--backdrop {
+  background-color: rgba(0, 0, 0, 0);
+  -webkit-backdrop-filter: blur(0);
+  backdrop-filter: blur(0);
+}
+
+/* Panel scale + fade — follows backdrop slightly */
+.modal-glass-enter--panel {
+  transition:
+    opacity var(--modal-enter-duration) var(--modal-ease) var(--modal-panel-enter-delay),
+    transform calc(var(--modal-enter-duration) + 0.04s) var(--modal-ease) var(--modal-panel-enter-delay);
+}
+
+.modal-glass-enter-from--panel {
+  opacity: 0;
+  transform: scale(0.97);
+}
+
+.modal-glass-enter-to--panel {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.modal-glass-leave--panel {
+  transition:
+    opacity var(--modal-leave-duration) ease-in,
+    transform var(--modal-leave-duration) ease-in;
+}
+
+.modal-glass-leave-from--panel {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.modal-glass-leave-to--panel {
+  opacity: 0;
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-glass-enter--backdrop,
+  .modal-glass-leave--backdrop,
+  .modal-glass-enter--panel,
+  .modal-glass-leave--panel {
+    transition: none !important;
+  }
 }
 
 .modal-glass__scroll {
@@ -48,7 +138,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
   -webkit-backdrop-filter: blur(20px) saturate(1.15);
   backdrop-filter: blur(20px) saturate(1.15);
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
+  transition: box-shadow 0.3s ease;
 }
 
 .modal-glass__panel--sm {
@@ -118,7 +208,7 @@
   max-height: min(72vh, calc(100dvh - 11rem));
   overscroll-behavior: contain;
   scrollbar-width: thin;
-  scrollbar-color: rgba(124, 58, 237, 0.32) transparent;
+  scrollbar-color: rgba(var(--accent-rgb), 0.32) transparent;
 }
 
 .modal-glass__body::-webkit-scrollbar {
@@ -130,20 +220,20 @@
 }
 
 .modal-glass__body::-webkit-scrollbar-thumb {
-  background: rgba(124, 58, 237, 0.28);
+  background: rgba(var(--accent-rgb), 0.28);
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;
 }
 
 .modal-glass__body::-webkit-scrollbar-thumb:hover {
-  background: rgba(124, 58, 237, 0.42);
+  background: rgba(var(--accent-rgb), 0.42);
   background-clip: padding-box;
 }
 
 .modal-glass__scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(124, 58, 237, 0.2) transparent;
+  scrollbar-color: rgba(var(--accent-rgb), 0.2) transparent;
 }
 
 .modal-glass__scroll::-webkit-scrollbar {
@@ -155,7 +245,7 @@
 }
 
 .modal-glass__scroll::-webkit-scrollbar-thumb {
-  background: rgba(124, 58, 237, 0.22);
+  background: rgba(var(--accent-rgb), 0.22);
   border-radius: 999px;
   border: 3px solid transparent;
   background-clip: padding-box;
@@ -204,7 +294,7 @@
 }
 
 .modal-glass__confirm-icon-wrap--primary {
-  color: #4338ca;
+  color: var(--accent-text);
 }
 
 .modal-glass__confirm-message {
@@ -271,7 +361,7 @@
   background-color: rgba(255, 255, 255, 0.3);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 0 0 2px rgba(80, 12, 176, 0.12);
+    0 0 0 2px rgba(var(--accent-rgb), 0.12);
 }
 
 /* DatePicker input inside glass modal */
@@ -310,11 +400,11 @@
   background-color: rgba(255, 255, 255, 0.3);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 0 0 2px rgba(80, 12, 176, 0.12);
+    0 0 0 2px rgba(var(--accent-rgb), 0.12);
 }
 
 .modal-glass__body .datepicker-wrapper svg {
-  color: #7c3aed;
+  color: var(--accent-bright);
 }
 
 /* Glass switches (Bootstrap form-switch) */
@@ -340,21 +430,21 @@
 }
 
 .modal-glass__body .form-check-input:checked {
-  background-color: rgba(80, 12, 176, 0.88);
-  border-color: rgba(80, 12, 176, 0.45);
-  box-shadow: 0 2px 8px rgba(80, 12, 176, 0.22);
+  background-color: rgba(var(--accent-rgb), 0.88);
+  border-color: rgba(var(--accent-rgb), 0.45);
+  box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.22);
 }
 
 .modal-glass__body .form-check-input:focus {
   outline: none;
-  border-color: rgba(124, 58, 237, 0.55);
-  box-shadow: 0 0 0 2px rgba(80, 12, 176, 0.15);
+  border-color: rgba(var(--accent-rgb), 0.55);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
 }
 
 .modal-glass__body .form-check-input:checked:focus {
   box-shadow:
-    0 0 0 2px rgba(80, 12, 176, 0.15),
-    0 2px 8px rgba(80, 12, 176, 0.22);
+    0 0 0 2px rgba(var(--accent-rgb), 0.15),
+    0 2px 8px rgba(var(--accent-rgb), 0.22);
 }
 
 .modal-glass__body .form-check-label {
@@ -365,17 +455,8 @@
 }
 
 /* DatePicker calendar popover in modal (portal) */
-.modal-glass,
 .modal-glass-datepicker__calendar {
-  --picker-glass-shadow: 0 8px 32px rgba(80, 12, 176, 0.08), 0 4px 16px rgba(18, 18, 18, 0.05);
-  --picker-hover-bg: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.78) 0%,
-    rgba(245, 240, 250, 0.62) 48%,
-    rgba(238, 242, 255, 0.55) 100%
-  );
-  --picker-hover-shadow: 0 4px 16px rgba(80, 12, 176, 0.07), 0 2px 10px rgba(249, 115, 22, 0.05);
-  --picker-violet-strong: rgba(80, 12, 176, 0.82);
+  --picker-violet-strong: var(--picker-accent-strong);
 }
 
 .react-datepicker-popper:has(.modal-glass-datepicker__calendar),
@@ -429,7 +510,7 @@
 .modal-glass-datepicker__calendar .react-datepicker__day:hover {
   background: var(--picker-hover-bg) !important;
   border-color: rgba(255, 255, 255, 0.82) !important;
-  color: #5b21b6 !important;
+  color: var(--accent-text) !important;
   box-shadow: var(--picker-hover-shadow) !important;
   transform: none !important;
 }
@@ -437,24 +518,24 @@
 .modal-glass-datepicker__calendar .react-datepicker__day--selected,
 .modal-glass-datepicker__calendar .react-datepicker__day--keyboard-selected {
   background: var(--picker-violet-strong) !important;
-  border-color: rgba(80, 12, 176, 0.45) !important;
+  border-color: rgba(var(--accent-rgb), 0.45) !important;
   color: #fff !important;
   font-weight: 600 !important;
-  box-shadow: 0 2px 10px rgba(80, 12, 176, 0.22) !important;
+  box-shadow: 0 2px 10px rgba(var(--accent-rgb), 0.22) !important;
 }
 
 .modal-glass-datepicker__calendar .react-datepicker__day--selected:hover,
 .modal-glass-datepicker__calendar .react-datepicker__day--keyboard-selected:hover {
-  background: rgba(80, 12, 176, 0.9) !important;
+  background: rgba(var(--accent-rgb), 0.9) !important;
   color: #fff !important;
   transform: none !important;
 }
 
 .modal-glass-datepicker__calendar .react-datepicker__day--today {
-  color: #7c3aed !important;
+  color: var(--accent-bright) !important;
   font-weight: 600 !important;
-  background: rgba(237, 233, 254, 0.55) !important;
-  border-color: rgba(124, 58, 237, 0.25) !important;
+  background: var(--picker-today-bg) !important;
+  border-color: rgba(var(--accent-rgb), 0.25) !important;
 }
 
 .modal-glass-datepicker__calendar .react-datepicker__day--today::before {
@@ -526,7 +607,7 @@
 }
 
 .modal-glass-datepicker__calendar .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
-  border-color: #7c3aed !important;
+  border-color: var(--accent-bright) !important;
 }
 
 /* Compact day calendar — subscription modal only */
@@ -627,7 +708,7 @@
   border-color: rgba(255, 255, 255, 0.75);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 0 0 2px rgba(80, 12, 176, 0.12);
+    0 0 0 2px rgba(var(--accent-rgb), 0.12);
 }
 
 .modal-glass__select-trigger:disabled {
@@ -705,7 +786,7 @@
 }
 
 .modal-glass__select-option--selected {
-  color: #5b21b6;
+  color: var(--accent-text);
   font-weight: 600;
 }
 
@@ -729,7 +810,7 @@
 
 .modal-glass__body .category-icon-picker__item--selected {
   background: rgba(243, 232, 255, 0.55);
-  border-color: rgba(80, 12, 176, 0.35);
+  border-color: rgba(var(--accent-rgb), 0.35);
 }
 
 /* Action buttons */
@@ -766,15 +847,15 @@
 }
 
 .modal-glass__btn--primary {
-  border: 1px solid rgba(80, 12, 176, 0.45);
-  background: rgba(80, 12, 176, 0.88);
+  border: 1px solid var(--accent-glass-border);
+  background: var(--accent-glass-bg);
   color: #fff;
-  box-shadow: 0 4px 14px rgba(80, 12, 176, 0.25);
+  box-shadow: 0 4px 14px var(--accent-glass-shadow);
 }
 
 .modal-glass__btn--primary:hover:not(:disabled) {
-  background: rgba(80, 12, 176, 0.95);
-  box-shadow: 0 6px 18px rgba(80, 12, 176, 0.3);
+  background: var(--accent-glass-bg-hover);
+  box-shadow: 0 6px 18px var(--accent-glass-shadow-hover);
   transform: translateY(-1px);
 }
 

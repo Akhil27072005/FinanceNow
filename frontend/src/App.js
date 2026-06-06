@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { AppThemeProvider } from './contexts/AppThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './components/layout/MainLayout';
 
@@ -30,6 +31,7 @@ import LandingRoute from './components/LandingRoute';
 function App() {
   return (
     <AuthProvider>
+      <AppThemeProvider>
       <Router>
         <Routes>
           {/* Public Routes */}
@@ -155,6 +157,7 @@ function App() {
           <Route path="/" element={<LandingRoute />} />
         </Routes>
       </Router>
+      </AppThemeProvider>
     </AuthProvider>
   );
 }

@@ -19,6 +19,8 @@ import {
 import { burnRateForMonth, getBudgetStatus } from '../../utils/budgetBurnRate';
 import { getMutedTagColor } from '../../utils/tagStatsUtils';
 
+const DRAWER_TRANSITION_MS = 420;
+
 const TransactionDetailDrawer = ({
   transaction,
   paymentMethods = [],
@@ -31,14 +33,53 @@ const TransactionDetailDrawer = ({
   const { formatCurrency, formatDate } = useUserFormatters();
   const [budgetSummary, setBudgetSummary] = useState(null);
   const [budgetLoading, setBudgetLoading] = useState(false);
+  const [panelTransaction, setPanelTransaction] = useState(null);
+  const [drawerVisible, setDrawerVisible] = useState(false);
+
+  useEffect(() => {
+    if (transaction) {
+      setPanelTransaction(transaction);
+    }
+  }, [transaction]);
+
+  useEffect(() => {
+    if (!panelTransaction) {
+      setDrawerVisible(false);
+      return undefined;
+    }
+
+    if (isOpen) {
+      let timeoutId;
+      const frame = requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          timeoutId = window.setTimeout(() => setDrawerVisible(true), 16);
+        });
+      });
+      return () => {
+        cancelAnimationFrame(frame);
+        window.clearTimeout(timeoutId);
+      };
+    }
+
+    setDrawerVisible(false);
+    return undefined;
+  }, [isOpen, panelTransaction]);
+
+  useEffect(() => {
+    if (!isOpen && !drawerVisible && panelTransaction) {
+      const timeoutId = window.setTimeout(() => setPanelTransaction(null), DRAWER_TRANSITION_MS);
+      return () => window.clearTimeout(timeoutId);
+    }
+    return undefined;
+  }, [isOpen, drawerVisible, panelTransaction]);
 
   const monthKey = useMemo(
-    () => (transaction ? getTransactionMonthKey(transaction) : null),
-    [transaction]
+    () => (panelTransaction ? getTransactionMonthKey(panelTransaction) : null),
+    [panelTransaction]
   );
 
-  const transactionId = transaction?._id;
-  const transactionType = transaction?.type;
+  const transactionId = panelTransaction?._id;
+  const transactionType = panelTransaction?.type;
 
   useEffect(() => {
     if (!isOpen || !transactionId || transactionType !== 'expense' || !monthKey) {
@@ -65,23 +106,26 @@ const TransactionDetailDrawer = ({
   }, [isOpen, transactionId, transactionType, monthKey]);
 
   useEffect(() => {
-    if (!isOpen) return undefined;
+    if (!drawerVisible) return undefined;
     const onKey = (e) => {
       if (e.key === 'Escape') onClose();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [isOpen, onClose]);
+  }, [drawerVisible, onClose]);
 
   const displayTransaction = useMemo(
-    () => (transaction ? mergeTransactionPaymentMethod(transaction, paymentMethods) : null),
-    [transaction, paymentMethods]
+    () =>
+      panelTransaction
+        ? mergeTransactionPaymentMethod(panelTransaction, paymentMethods)
+        : null,
+    [panelTransaction, paymentMethods]
   );
 
   const budget = useMemo(() => {
-    if (!transaction || !budgetSummary?.budgets) return null;
-    return findBudgetForTransaction(transaction, budgetSummary.budgets);
-  }, [transaction, budgetSummary]);
+    if (!panelTransaction || !budgetSummary?.budgets) return null;
+    return findBudgetForTransaction(panelTransaction, budgetSummary.budgets);
+  }, [panelTransaction, budgetSummary]);
 
   const spent = budget
     ? budgetSummary?.spentByBudgetId?.[budget._id] ?? 0
@@ -96,7 +140,7 @@ const TransactionDetailDrawer = ({
     : null;
 
   const filterLink = useMemo(() => {
-    if (!transaction) return '/transactions';
+    if (!panelTransaction) return '/transactions';
     const params = new URLSearchParams();
     if (monthKey) {
       params.set('startDate', `${monthKey}-01`);
@@ -104,27 +148,31 @@ const TransactionDetailDrawer = ({
       const last = new Date(y, m, 0).getDate();
       params.set('endDate', `${monthKey}-${String(last).padStart(2, '0')}`);
     }
-    params.set('type', transaction.type || 'expense');
-    if (transaction.categoryId?._id) params.set('categoryId', transaction.categoryId._id);
-    if (transaction.subCategoryId?._id) params.set('subCategoryId', transaction.subCategoryId._id);
+    params.set('type', panelTransaction.type || 'expense');
+    if (panelTransaction.categoryId?._id) {
+      params.set('categoryId', panelTransaction.categoryId._id);
+    }
+    if (panelTransaction.subCategoryId?._id) {
+      params.set('subCategoryId', panelTransaction.subCategoryId._id);
+    }
     return `/transactions?${params.toString()}`;
-  }, [transaction, monthKey]);
+  }, [panelTransaction, monthKey]);
 
   const paymentInfo = useMemo(
     () => (displayTransaction ? getTransactionPaymentDrawerInfo(displayTransaction) : null),
     [displayTransaction]
   );
 
-  if (!transaction) return null;
+  if (!panelTransaction) return null;
 
-  const amount = formatTransactionAmountDisplay(transaction, formatCurrency);
+  const amount = formatTransactionAmountDisplay(panelTransaction, formatCurrency);
   const pm = displayTransaction?.paymentMethodId;
-  const typeTone = getTypeTone(transaction.type);
+  const typeTone = getTypeTone(panelTransaction.type);
 
   return (
     <div
-      className={`txn-detail-drawer ${isOpen ? 'txn-detail-drawer--open' : ''}`}
-      aria-hidden={!isOpen}
+      className={`txn-detail-drawer ${drawerVisible ? 'txn-detail-drawer--open' : ''}`}
+      aria-hidden={!drawerVisible}
     >
       <button
         type="button"
@@ -139,9 +187,9 @@ const TransactionDetailDrawer = ({
               Transaction
             </h2>
             <p className={`txn-detail-drawer__amount ${amount.className}`}>{amount.text}</p>
-            <p className="txn-detail-drawer__date">{formatDate(transaction.date)}</p>
+            <p className="txn-detail-drawer__date">{formatDate(panelTransaction.date)}</p>
             <span className={`txn-detail-drawer__type txn-detail-drawer__type--${typeTone}`}>
-              {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+              {panelTransaction.type.charAt(0).toUpperCase() + panelTransaction.type.slice(1)}
             </span>
           </div>
           <button type="button" className="txn-detail-drawer__close" onClick={onClose} aria-label="Close">
@@ -153,10 +201,10 @@ const TransactionDetailDrawer = ({
           <section className="txn-detail-drawer__segment">
             <h3 className="txn-detail-drawer__segment-title">Classification</h3>
             <div className="txn-detail-drawer__class-row">
-              <TransactionCategoryIcon transaction={transaction} size={22} variant="lg" />
+              <TransactionCategoryIcon transaction={panelTransaction} size={22} variant="lg" />
               <div>
                 <p className="txn-detail-drawer__class-line">
-                  {getCategorySubcategoryLine(transaction)}
+                  {getCategorySubcategoryLine(panelTransaction)}
                 </p>
                 <Link to={filterLink} className="txn-detail-drawer__link">
                   View similar transactions
@@ -174,7 +222,7 @@ const TransactionDetailDrawer = ({
                 </span>
                 <div className="txn-detail-drawer__payment-body">
                   <p className="txn-detail-drawer__payment-name">
-                    {getPaymentMethodDisplayName(transaction)}
+                    {getPaymentMethodDisplayName(panelTransaction)}
                   </p>
                   {paymentInfo?.identifierLine ? (
                     <p className="txn-detail-drawer__payment-identifier">
@@ -200,14 +248,14 @@ const TransactionDetailDrawer = ({
 
           <section className="txn-detail-drawer__segment">
             <h3 className="txn-detail-drawer__segment-title">Tags</h3>
-            {transaction.tags?.length ? (
+            {panelTransaction.tags?.length ? (
               <div className="txn-detail-drawer__tags">
-                {transaction.tags.map((tag, i) => (
+                {panelTransaction.tags.map((tag, i) => (
                   <span
                     key={tag._id || i}
                     className="txn-detail-drawer__tag"
                     style={{
-                      color: tag.color || '#5b21b6',
+                      color: tag.color || 'var(--accent-text)',
                       backgroundColor: getMutedTagColor(tag.color),
                       borderColor: tag.color ? `${tag.color}44` : 'rgba(255,255,255,0.5)'
                     }}
@@ -226,18 +274,18 @@ const TransactionDetailDrawer = ({
             <dl className="txn-detail-drawer__dl">
               <div>
                 <dt>Account</dt>
-                <dd>{transaction.account === 'family' ? 'Family' : 'Self'}</dd>
+                <dd>{panelTransaction.account === 'family' ? 'Family' : 'Self'}</dd>
               </div>
               <div>
                 <dt>Notes</dt>
                 <dd className="txn-detail-drawer__notes">
-                  {transaction.notes?.trim() || '—'}
+                  {panelTransaction.notes?.trim() || '—'}
                 </dd>
               </div>
             </dl>
           </section>
 
-          {transaction.type === 'expense' ? (
+          {panelTransaction.type === 'expense' ? (
             <section className="txn-detail-drawer__segment">
               <h3 className="txn-detail-drawer__segment-title">Budget</h3>
               {budgetLoading ? (
@@ -253,7 +301,7 @@ const TransactionDetailDrawer = ({
                   <div className="txn-detail-drawer__bar-wrap">
                     <div
                       className={`txn-detail-drawer__bar txn-detail-drawer__bar--${status.tone}`}
-                      style={{ width: `${progressPct}%` }}
+                      style={{ '--bar-width': `${progressPct}%` }}
                     />
                   </div>
                   <div className="txn-detail-drawer__budget-metrics">
@@ -317,14 +365,14 @@ const TransactionDetailDrawer = ({
         </div>
 
         <div className="txn-detail-drawer__foot">
-          <Button variant="secondary" glass onClick={() => onDuplicate?.(transaction)}>
+          <Button variant="secondary" glass onClick={() => onDuplicate?.(panelTransaction)}>
             <Copy size={16} strokeWidth={2} />
             Duplicate
           </Button>
-          <Button variant="secondary" glass onClick={() => onEdit?.(transaction)}>
+          <Button variant="secondary" glass onClick={() => onEdit?.(panelTransaction)}>
             Edit
           </Button>
-          <Button variant="danger" glass onClick={() => onDelete?.(transaction._id)}>
+          <Button variant="danger" glass onClick={() => onDelete?.(panelTransaction._id)}>
             Delete
           </Button>
         </div>

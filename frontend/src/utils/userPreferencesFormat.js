@@ -2,13 +2,21 @@
  * Regional display preferences — shared formatting for currency and dates.
  */
 
+import {
+  DEFAULT_THEME_PRESET_ID,
+  DEFAULT_GLASS_INTENSITY,
+  getThemePresetById
+} from '../constants/themePresets';
+
 export const DEFAULT_USER_PREFERENCES = {
   currency: 'INR',
   dateFormat: 'DD/MM/YYYY',
   timezone: 'Asia/Kolkata',
   subscriptionReminderDays: 7,
   emailReminders: false,
-  overdueAlerts: true
+  overdueAlerts: true,
+  themePresetId: DEFAULT_THEME_PRESET_ID,
+  glassIntensity: DEFAULT_GLASS_INTENSITY
 };
 
 const CURRENCY_LOCALES = {
@@ -36,7 +44,14 @@ export const normalizeUserPreferences = (preferences) => {
         ? Math.round(reminderDays)
         : DEFAULT_USER_PREFERENCES.subscriptionReminderDays,
     emailReminders: Boolean(p.emailReminders),
-    overdueAlerts: p.overdueAlerts !== false
+    overdueAlerts: p.overdueAlerts !== false,
+    themePresetId: getThemePresetById(p.themePresetId).id,
+    glassIntensity: (() => {
+      const intensity = Number(p.glassIntensity);
+      return Number.isFinite(intensity) && intensity >= 0 && intensity <= 100
+        ? Math.round(intensity)
+        : DEFAULT_USER_PREFERENCES.glassIntensity;
+    })()
   };
 };
 

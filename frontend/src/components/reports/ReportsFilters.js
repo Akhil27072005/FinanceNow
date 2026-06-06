@@ -127,8 +127,14 @@ const ReportsFilters = ({
               )}
             </button>
 
-            {filtersExpanded ? (
-              <div className="reports-filters__popover" role="dialog" aria-label="Report filters">
+            <div
+              className={`reports-filters__popover popover-reveal ${
+                filtersExpanded ? 'popover-reveal--open' : ''
+              }`}
+              role="dialog"
+              aria-label="Report filters"
+              aria-hidden={!filtersExpanded}
+            >
                 <p className="reports-filters__popover-title">Filter reports</p>
                 <div className="reports-filters__popover-grid">
                   <label className="reports-filters__field">
@@ -237,7 +243,6 @@ const ReportsFilters = ({
                   </button>
                 </div>
               </div>
-            ) : null}
           </div>
         </div>
       </div>

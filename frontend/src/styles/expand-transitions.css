@@ -1,0 +1,91 @@
+/* Shared smooth expand + content reveal motion */
+
+:root {
+  --content-reveal-duration: 0.58s;
+  --content-reveal-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --content-reveal-slide: 10px;
+  --content-reveal-stagger: 55ms;
+  --expand-duration: 0.42s;
+  --expand-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --popover-reveal-duration: 0.36s;
+}
+
+/* Height-based expand (sidebar groups, collapsible sections) */
+.expand-section {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--expand-duration) var(--expand-ease),
+    opacity calc(var(--expand-duration) * 0.85) ease;
+}
+
+.expand-section--open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.expand-section__inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Popover / filter panel reveal */
+.popover-reveal {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.98);
+  visibility: hidden;
+  pointer-events: none;
+  transform-origin: top right;
+  transition:
+    opacity var(--popover-reveal-duration) var(--content-reveal-ease),
+    transform calc(var(--popover-reveal-duration) + 0.04s) var(--content-reveal-ease),
+    visibility var(--popover-reveal-duration);
+}
+
+.popover-reveal--open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Date/month picker calendar — same entrance motion as filter popover-reveal */
+@keyframes popover-reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.datepicker-popover-reveal .react-datepicker,
+.datepicker-popover-reveal .react-datepicker__month-dropdown,
+.datepicker-popover-reveal .react-datepicker__year-dropdown {
+  transform-origin: top center;
+  animation: popover-reveal-in var(--popover-reveal-duration) var(--content-reveal-ease) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .expand-section,
+  .expand-section--open,
+  .popover-reveal,
+  .popover-reveal--open {
+    transition: none;
+    opacity: 1;
+    transform: none;
+    visibility: visible;
+    pointer-events: auto;
+    grid-template-rows: 1fr;
+  }
+
+  .datepicker-popover-reveal .react-datepicker,
+  .datepicker-popover-reveal .react-datepicker__month-dropdown,
+  .datepicker-popover-reveal .react-datepicker__year-dropdown {
+    animation: none;
+  }
+}

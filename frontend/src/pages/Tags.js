@@ -262,6 +262,7 @@ const Tags = () => {
           tag={activeTag}
           stats={activeStats}
           recentTransactions={recentTransactions}
+          loading={loading}
           loadingDetail={loadingDetail}
           monthLabel={monthLabel}
           taggedSpendTotal={taggedSpendTotal}

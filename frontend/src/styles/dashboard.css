@@ -69,17 +69,17 @@
 .dashboard-month-picker__calendar {
   --picker-glass-bg: rgba(255, 255, 255, 0.52);
   --picker-glass-border: rgba(255, 255, 255, 0.75);
-  --picker-glass-shadow: 0 8px 32px rgba(80, 12, 176, 0.06), 0 4px 16px rgba(18, 18, 18, 0.04);
+  --picker-glass-shadow: 0 8px 32px rgba(var(--accent-rgb), 0.06), 0 4px 16px rgba(18, 18, 18, 0.04);
   --picker-hover-bg: linear-gradient(
     145deg,
     rgba(255, 255, 255, 0.78) 0%,
     rgba(245, 240, 250, 0.62) 48%,
     rgba(238, 242, 255, 0.55) 100%
   );
-  --picker-hover-shadow: 0 4px 16px rgba(80, 12, 176, 0.07), 0 2px 10px rgba(249, 115, 22, 0.05);
-  --picker-violet-soft: rgba(80, 12, 176, 0.1);
-  --picker-violet-mid: rgba(80, 12, 176, 0.18);
-  --picker-violet-strong: rgba(80, 12, 176, 0.82);
+  --picker-hover-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.07), 0 2px 10px rgba(249, 115, 22, 0.05);
+  --picker-violet-soft: rgba(var(--accent-rgb), 0.1);
+  --picker-violet-mid: rgba(var(--accent-rgb), 0.18);
+  --picker-violet-strong: rgba(var(--accent-rgb), 0.82);
 }
 
 /* Glass month selector input */
@@ -176,7 +176,7 @@
   background: var(--picker-hover-bg) !important;
   border-color: rgba(255, 255, 255, 0.85) !important;
   box-shadow: var(--picker-hover-shadow) !important;
-  color: #5b21b6 !important;
+  color: var(--accent-text) !important;
 }
 
 .dashboard-month-picker__calendar .react-datepicker__month-read-view--down-arrow,
@@ -186,7 +186,7 @@
 
 .dashboard-month-picker__calendar .react-datepicker__year-read-view:hover .react-datepicker__year-read-view--down-arrow,
 .dashboard-month-picker__calendar .react-datepicker__month-read-view:hover .react-datepicker__month-read-view--down-arrow {
-  border-color: #7c3aed !important;
+  border-color: var(--accent-bright) !important;
 }
 
 /* Scrollable year/month dropdown lists */
@@ -198,7 +198,7 @@
   border: 1px solid rgba(255, 255, 255, 0.78) !important;
   border-radius: 14px !important;
   padding: 6px !important;
-  box-shadow: 0 8px 28px rgba(80, 12, 176, 0.1), 0 4px 14px rgba(249, 115, 22, 0.06) !important;
+  box-shadow: 0 8px 28px rgba(var(--accent-rgb), 0.1), 0 4px 14px rgba(249, 115, 22, 0.06) !important;
   -webkit-backdrop-filter: blur(20px) saturate(1.15) !important;
   backdrop-filter: blur(20px) saturate(1.15) !important;
   max-height: 200px;
@@ -223,8 +223,8 @@
 .dashboard-month-picker__calendar .react-datepicker__year-option:hover,
 .dashboard-month-picker__calendar .react-datepicker__month-option:hover {
   background: var(--picker-hover-bg) !important;
-  color: #5b21b6 !important;
-  box-shadow: 0 2px 8px rgba(80, 12, 176, 0.06) !important;
+  color: var(--accent-text) !important;
+  box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.06) !important;
 }
 
 .dashboard-month-picker__calendar .react-datepicker__year-option--selected,
@@ -233,7 +233,7 @@
 .dashboard-month-picker__calendar .react-datepicker__month-option--selected:hover {
   background: var(--picker-violet-strong) !important;
   color: #fff !important;
-  box-shadow: 0 2px 10px rgba(80, 12, 176, 0.2) !important;
+  box-shadow: 0 2px 10px rgba(var(--accent-rgb), 0.2) !important;
 }
 
 /* Month grid tiles */
@@ -254,7 +254,7 @@
 .dashboard-month-picker__calendar .react-datepicker__month-text:hover {
   background: var(--picker-hover-bg) !important;
   border-color: rgba(255, 255, 255, 0.82) !important;
-  color: #5b21b6 !important;
+  color: var(--accent-text) !important;
   box-shadow: var(--picker-hover-shadow) !important;
   transform: none !important;
 }
@@ -262,16 +262,16 @@
 .dashboard-month-picker__calendar .react-datepicker__month-text--selected,
 .dashboard-month-picker__calendar .react-datepicker__month-text--keyboard-selected {
   background: var(--picker-violet-strong) !important;
-  border-color: rgba(80, 12, 176, 0.45) !important;
+  border-color: rgba(var(--accent-rgb), 0.45) !important;
   color: #fff !important;
   font-weight: 600 !important;
-  box-shadow: 0 2px 10px rgba(80, 12, 176, 0.22) !important;
+  box-shadow: 0 2px 10px rgba(var(--accent-rgb), 0.22) !important;
 }
 
 .dashboard-month-picker__calendar .react-datepicker__month-text--selected:hover,
 .dashboard-month-picker__calendar .react-datepicker__month-text--keyboard-selected:hover {
-  background: rgba(80, 12, 176, 0.9) !important;
-  border-color: rgba(80, 12, 176, 0.5) !important;
+  background: rgba(var(--accent-rgb), 0.9) !important;
+  border-color: rgba(var(--accent-rgb), 0.5) !important;
   color: #fff !important;
   transform: none !important;
 }
@@ -294,7 +294,7 @@
 .dashboard-month-picker__calendar .react-datepicker__year-text:hover {
   background: var(--picker-hover-bg) !important;
   border-color: rgba(255, 255, 255, 0.82) !important;
-  color: #5b21b6 !important;
+  color: var(--accent-text) !important;
   box-shadow: var(--picker-hover-shadow) !important;
   transform: none !important;
 }
@@ -302,14 +302,14 @@
 .dashboard-month-picker__calendar .react-datepicker__year-text--selected,
 .dashboard-month-picker__calendar .react-datepicker__year-text--keyboard-selected {
   background: var(--picker-violet-strong) !important;
-  border-color: rgba(80, 12, 176, 0.45) !important;
+  border-color: rgba(var(--accent-rgb), 0.45) !important;
   color: #fff !important;
-  box-shadow: 0 2px 10px rgba(80, 12, 176, 0.22) !important;
+  box-shadow: 0 2px 10px rgba(var(--accent-rgb), 0.22) !important;
 }
 
 .dashboard-month-picker__calendar .react-datepicker__year-text--selected:hover,
 .dashboard-month-picker__calendar .react-datepicker__year-text--keyboard-selected:hover {
-  background: rgba(80, 12, 176, 0.9) !important;
+  background: rgba(var(--accent-rgb), 0.9) !important;
   color: #fff !important;
   transform: none !important;
 }
@@ -335,7 +335,7 @@
 }
 
 .dashboard-month-picker__calendar .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
-  border-color: #7c3aed !important;
+  border-color: var(--accent-bright) !important;
 }
 
 .dashboard-page__grid {
@@ -638,10 +638,18 @@
 }
 
 .expense-split-card__bar-segment {
-  min-width: 4px;
+  min-width: 0;
   height: 100%;
   border-radius: 4px;
-  transition: flex-grow 0.3s ease;
+  flex-grow: 0;
+  flex-basis: 0;
+  transition: flex-grow var(--content-reveal-duration, 0.58s) var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.expense-split-card--ready .expense-split-card__bar-segment {
+  flex-grow: var(--segment-grow, 1);
+  transition-delay: calc(var(--segment-i, 0) * var(--content-reveal-stagger, 55ms) + 80ms);
+  min-width: 4px;
 }
 
 .expense-split-card__bar--empty .expense-split-card__bar-segment {
@@ -665,6 +673,56 @@
   grid-template-columns: auto auto 1fr auto;
   align-items: center;
   gap: 14px 20px;
+  opacity: 0;
+  transform: translateY(var(--content-reveal-slide, 10px));
+  transition:
+    opacity var(--content-reveal-duration, 0.58s) ease,
+    transform var(--content-reveal-duration, 0.58s) var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.expense-split-card--ready .expense-split-card__row {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: calc(180ms + var(--row-i, 0) * var(--content-reveal-stagger, 55ms));
+}
+
+.expense-split-card__header,
+.expense-split-card__allocation-label {
+  opacity: 0;
+  transform: translateY(var(--content-reveal-slide, 10px));
+  transition:
+    opacity var(--content-reveal-duration, 0.58s) ease,
+    transform var(--content-reveal-duration, 0.58s) var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.expense-split-card--ready .expense-split-card__header {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 40ms;
+}
+
+.expense-split-card--ready .expense-split-card__allocation-label {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 120ms;
+}
+
+.expense-split-card__empty {
+  padding: 48px 24px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+  opacity: 0;
+  transform: translateY(var(--content-reveal-slide, 10px));
+  transition:
+    opacity var(--content-reveal-duration, 0.58s) ease,
+    transform var(--content-reveal-duration, 0.58s) var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.expense-split-card--ready .expense-split-card__empty {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 200ms;
 }
 
 .expense-split-card__row-icon {
@@ -687,6 +745,14 @@
   height: 44px;
   border-radius: 9999px;
   flex-shrink: 0;
+  transform: scaleY(0);
+  transform-origin: center bottom;
+  transition: transform calc(var(--content-reveal-duration, 0.58s) + 0.08s) var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.expense-split-card--ready .expense-split-card__row-accent {
+  transform: scaleY(1);
+  transition-delay: calc(220ms + var(--row-i, 0) * var(--content-reveal-stagger, 55ms));
 }
 
 .expense-split-card__row-main {
@@ -729,12 +795,19 @@
   margin: 0;
 }
 
-.expense-split-card__empty,
-.expense-split-card__loading {
-  padding: 48px 24px;
-  text-align: center;
-  color: #9ca3af;
-  font-size: 14px;
+.expense-split-card--loading-state .expense-split-card__header,
+.expense-split-card--loading-state .expense-split-card__allocation-label {
+  opacity: 1;
+  transform: none;
+}
+
+.expense-split-card--loading-state {
+  gap: 0;
+}
+
+.expense-split-card__allocation-label--skeleton {
+  opacity: 0.45;
+  margin-top: 16px;
 }
 
 .expense-split-card__skeleton {
@@ -753,13 +826,71 @@
 .expense-split-card__skeleton--total {
   height: 36px;
   width: 200px;
-  margin-bottom: 28px;
+  margin-bottom: 8px;
 }
 
 .expense-split-card__skeleton--bar {
   height: 12px;
   width: 100%;
   border-radius: 9999px;
+}
+
+.expense-split-card__skeleton-rows {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.expense-split-card__skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.expense-split-card__skeleton--icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.expense-split-card__skeleton--line {
+  height: 14px;
+  flex: 1;
+  max-width: 72%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .expense-split-card__bar-segment,
+  .expense-split-card--ready .expense-split-card__bar-segment,
+  .expense-split-card__row,
+  .expense-split-card--ready .expense-split-card__row {
+    transition: none;
+    animation: none;
+    opacity: 1;
+    transform: none;
+    flex-grow: var(--segment-grow, 1);
+  }
+
+  .expense-split-card__header,
+  .expense-split-card__allocation-label,
+  .expense-split-card--ready .expense-split-card__header,
+  .expense-split-card--ready .expense-split-card__allocation-label {
+    opacity: 1;
+    animation: none;
+    transform: none;
+  }
+
+  .expense-split-card__row-accent,
+  .expense-split-card--ready .expense-split-card__row-accent {
+    transition: none;
+    transform: none;
+  }
+
+  .expense-split-card__skeleton {
+    animation: none;
+  }
 }
 
 @keyframes dashboard-shimmer {

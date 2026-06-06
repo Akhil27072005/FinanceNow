@@ -62,7 +62,7 @@ const TransactionRow = ({
                   key={tag._id || index}
                   className="txn-row__tag"
                   style={{
-                    color: tag.color || '#5b21b6',
+                    color: tag.color || 'var(--accent-text)',
                     backgroundColor: getMutedTagColor(tag.color),
                     borderColor: tag.color ? `${tag.color}44` : 'rgba(255,255,255,0.5)'
                   }}

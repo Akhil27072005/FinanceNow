@@ -79,6 +79,17 @@ const userSchema = new mongoose.Schema({
     overdueAlerts: {
       type: Boolean,
       default: true
+    },
+    themePresetId: {
+      type: String,
+      default: 'violetDawn',
+      trim: true
+    },
+    glassIntensity: {
+      type: Number,
+      default: 65,
+      min: 0,
+      max: 100
     }
   },
   createdAt: {

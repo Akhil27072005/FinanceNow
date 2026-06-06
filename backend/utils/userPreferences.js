@@ -8,13 +8,33 @@ const ALLOWED_TIMEZONES = [
   'UTC'
 ];
 
+const ALLOWED_THEME_PRESET_IDS = [
+  'violetDawn',
+  'royalPlum',
+  'oceanTeal',
+  'forestGreen',
+  'sunsetCoral',
+  'roseBlush',
+  'midnightBlue',
+  'slateSteel',
+  'amberGold',
+  'lavenderMist',
+  'mintFresh',
+  'berryWine',
+  'skyCyan',
+  'charcoalNoir',
+  'electricIndigo'
+];
+
 const DEFAULT_PREFERENCES = {
   currency: 'INR',
   dateFormat: 'DD/MM/YYYY',
   timezone: 'Asia/Kolkata',
   subscriptionReminderDays: 7,
   emailReminders: false,
-  overdueAlerts: true
+  overdueAlerts: true,
+  themePresetId: 'violetDawn',
+  glassIntensity: 65
 };
 
 const serializePreferences = (preferences) => {
@@ -31,7 +51,16 @@ const serializePreferences = (preferences) => {
         ? Math.round(reminderDays)
         : DEFAULT_PREFERENCES.subscriptionReminderDays,
     emailReminders: Boolean(p.emailReminders),
-    overdueAlerts: p.overdueAlerts !== false
+    overdueAlerts: p.overdueAlerts !== false,
+    themePresetId: ALLOWED_THEME_PRESET_IDS.includes(p.themePresetId)
+      ? p.themePresetId
+      : DEFAULT_PREFERENCES.themePresetId,
+    glassIntensity: (() => {
+      const intensity = Number(p.glassIntensity);
+      return Number.isFinite(intensity) && intensity >= 0 && intensity <= 100
+        ? Math.round(intensity)
+        : DEFAULT_PREFERENCES.glassIntensity;
+    })()
   };
 };
 
@@ -98,8 +127,36 @@ const parseNotificationPreferencesBody = (body) => {
   return { updates };
 };
 
+const parseAppearancePreferencesBody = (body) => {
+  const updates = {};
+  const errors = [];
+
+  if (body.themePresetId !== undefined) {
+    if (!ALLOWED_THEME_PRESET_IDS.includes(body.themePresetId)) {
+      errors.push('Invalid theme preset');
+    } else {
+      updates.themePresetId = body.themePresetId;
+    }
+  }
+
+  if (body.glassIntensity !== undefined) {
+    const intensity = Number(body.glassIntensity);
+    if (!Number.isFinite(intensity) || intensity < 0 || intensity > 100) {
+      errors.push('Glass intensity must be between 0 and 100');
+    } else {
+      updates.glassIntensity = Math.round(intensity);
+    }
+  }
+
+  if (errors.length > 0) {
+    return { error: errors.join('. ') };
+  }
+
+  return { updates };
+};
+
 /**
- * Merge regional + notification preference updates from request body.
+ * Merge regional + notification + appearance preference updates from request body.
  */
 const parsePreferencesBody = (body) => {
   const regional = parseRegionalPreferencesBody(body);
@@ -112,9 +169,15 @@ const parsePreferencesBody = (body) => {
     return notifications;
   }
 
+  const appearance = parseAppearancePreferencesBody(body);
+  if (appearance.error) {
+    return appearance;
+  }
+
   const updates = {
     ...regional.updates,
-    ...notifications.updates
+    ...notifications.updates,
+    ...appearance.updates
   };
 
   if (Object.keys(updates).length === 0) {
@@ -128,9 +191,11 @@ module.exports = {
   ALLOWED_CURRENCIES,
   ALLOWED_DATE_FORMATS,
   ALLOWED_TIMEZONES,
+  ALLOWED_THEME_PRESET_IDS,
   DEFAULT_PREFERENCES,
   serializePreferences,
   parseRegionalPreferencesBody,
   parseNotificationPreferencesBody,
+  parseAppearancePreferencesBody,
   parsePreferencesBody
 };

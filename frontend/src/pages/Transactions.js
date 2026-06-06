@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Plus } from 'lucide-react';
 import { mapTransactionToFormData } from '../utils/transactionDisplayUtils';
@@ -79,6 +79,42 @@ const Transactions = () => {
     categoryId: categoryFromUrl,
     subCategoryId: subCategoryFromUrl
   });
+  const typeTabsRef = useRef(null);
+  const typeTabRefs = useRef({});
+  const [typeTabIndicator, setTypeTabIndicator] = useState({ left: 0, width: 0, ready: false });
+
+  const updateTypeTabIndicator = useCallback(() => {
+    const container = typeTabsRef.current;
+    const activeKey = filters.type || 'all';
+    const activeTab = typeTabRefs.current[activeKey];
+    if (!container || !activeTab) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const tabRect = activeTab.getBoundingClientRect();
+    setTypeTabIndicator({
+      left: tabRect.left - containerRect.left + container.scrollLeft,
+      width: tabRect.width,
+      ready: true
+    });
+  }, [filters.type]);
+
+  useLayoutEffect(() => {
+    updateTypeTabIndicator();
+  }, [updateTypeTabIndicator]);
+
+  useEffect(() => {
+    window.addEventListener('resize', updateTypeTabIndicator);
+    return () => window.removeEventListener('resize', updateTypeTabIndicator);
+  }, [updateTypeTabIndicator]);
+
+  useEffect(() => {
+    const container = typeTabsRef.current;
+    if (!container) return undefined;
+
+    const observer = new ResizeObserver(updateTypeTabIndicator);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [updateTypeTabIndicator]);
 
   useEffect(() => {
     setFilters((prev) => {
@@ -302,23 +338,44 @@ const Transactions = () => {
 
       <div className="glass-panel transactions-filters">
         <div className="transactions-filters__bar">
-          <div className="transactions-filters__tabs" role="tablist" aria-label="Transaction type">
-            {TYPE_TABS.map((tab) => (
-              <button
-                key={tab.value || 'all'}
-                type="button"
-                role="tab"
-                aria-selected={filters.type === tab.value}
-                className={`transactions-filters__tab ${
-                  filters.type === tab.value ? 'transactions-filters__tab--active' : ''
-                }`}
-                onClick={() =>
-                  setFilters({ ...filters, type: tab.value, categoryId: '', subCategoryId: '' })
-                }
-              >
-                {tab.label}
-              </button>
-            ))}
+          <div
+            className="transactions-filters__tabs"
+            ref={typeTabsRef}
+            role="tablist"
+            aria-label="Transaction type"
+          >
+            <span
+              className={`transactions-filters__tab-indicator ${
+                typeTabIndicator.ready ? 'transactions-filters__tab-indicator--ready' : ''
+              }`}
+              style={{
+                width: typeTabIndicator.width,
+                transform: `translateX(${typeTabIndicator.left}px)`
+              }}
+              aria-hidden
+            />
+            {TYPE_TABS.map((tab) => {
+              const tabKey = tab.value || 'all';
+              return (
+                <button
+                  key={tabKey}
+                  ref={(el) => {
+                    typeTabRefs.current[tabKey] = el;
+                  }}
+                  type="button"
+                  role="tab"
+                  aria-selected={filters.type === tab.value}
+                  className={`transactions-filters__tab ${
+                    filters.type === tab.value ? 'transactions-filters__tab--active' : ''
+                  }`}
+                  onClick={() =>
+                    setFilters({ ...filters, type: tab.value, categoryId: '', subCategoryId: '' })
+                  }
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
 
           <div className="transactions-filters__bar-end">
@@ -351,8 +408,14 @@ const Transactions = () => {
                 )}
               </button>
 
-              {filtersExpanded ? (
-                <div className="transactions-filters__popover" role="dialog" aria-label="More filters">
+              <div
+                className={`transactions-filters__popover popover-reveal ${
+                  filtersExpanded ? 'popover-reveal--open' : ''
+                }`}
+                role="dialog"
+                aria-label="More filters"
+                aria-hidden={!filtersExpanded}
+              >
                   <p className="transactions-filters__popover-title">Filter transactions</p>
                   <div className="transactions-filters__popover-grid">
                     <label className="transactions-filters__field">
@@ -421,7 +484,6 @@ const Transactions = () => {
                     </button>
                   </div>
                 </div>
-              ) : null}
             </div>
           </div>
         </div>

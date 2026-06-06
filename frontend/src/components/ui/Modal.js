@@ -15,12 +15,12 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
       <Dialog as="div" className="modal-glass" onClose={onClose}>
         <Transition.Child
           as={React.Fragment}
-          enter="ease-out duration-300"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-200"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
+          enter="modal-glass-enter--backdrop"
+          enterFrom="modal-glass-enter-from--backdrop"
+          enterTo="modal-glass-enter-to--backdrop"
+          leave="modal-glass-leave--backdrop"
+          leaveFrom="modal-glass-leave-from--backdrop"
+          leaveTo="modal-glass-leave-to--backdrop"
         >
           <div className="modal-glass__backdrop" aria-hidden />
         </Transition.Child>
@@ -29,12 +29,12 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
           <div className="modal-glass__center">
             <Transition.Child
               as={React.Fragment}
-              enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
-              leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
+              enter="modal-glass-enter--panel"
+              enterFrom="modal-glass-enter-from--panel"
+              enterTo="modal-glass-enter-to--panel"
+              leave="modal-glass-leave--panel"
+              leaveFrom="modal-glass-leave-from--panel"
+              leaveTo="modal-glass-leave-to--panel"
             >
               <Dialog.Panel className={panelClass}>
                 {title && (

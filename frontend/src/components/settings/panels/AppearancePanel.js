@@ -1,5 +1,9 @@
-import React, { useRef, useState, useMemo, useEffect } from 'react';
+import React, { useRef, useState, useMemo, useEffect, useCallback } from 'react';
 import { Check } from 'lucide-react';
+import GlassAlert from '../../ui/GlassAlert';
+import { useAuth } from '../../../contexts/AuthContext';
+import { authService } from '../../../services/authService';
+import { applyAppTheme } from '../../../utils/appTheme';
 import SettingsSection from '../SettingsSection';
 import SettingsRow from '../SettingsRow';
 import ThemePreview from '../ThemePreview';
@@ -11,14 +15,30 @@ import {
   getThemePresetById
 } from '../../../constants/themePresets';
 
-const AppearancePanel = () => {
+const AppearancePanel = ({ onRegisterSave, onSavingChange }) => {
+  const { user, updateUser } = useAuth();
   const fileInputRef = useRef(null);
   const [presetId, setPresetId] = useState(DEFAULT_THEME_PRESET_ID);
   const [glassIntensity, setGlassIntensity] = useState(DEFAULT_GLASS_INTENSITY);
   const [backgroundObjectUrl, setBackgroundObjectUrl] = useState(null);
   const [backgroundName, setBackgroundName] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const preset = useMemo(() => getThemePresetById(presetId), [presetId]);
+
+  useEffect(() => {
+    const prefs = user?.preferences;
+    if (prefs) {
+      setPresetId(getThemePresetById(prefs.themePresetId).id);
+      const intensity = Number(prefs.glassIntensity);
+      setGlassIntensity(
+        Number.isFinite(intensity) && intensity >= 0 && intensity <= 100
+          ? Math.round(intensity)
+          : DEFAULT_GLASS_INTENSITY
+      );
+    }
+  }, [user?.preferences]);
 
   useEffect(() => {
     return () => {
@@ -54,12 +74,63 @@ const AppearancePanel = () => {
     clearBackground();
   };
 
+  const handleSave = useCallback(async () => {
+    try {
+      setError('');
+      setSuccess('');
+      onSavingChange?.(true);
+
+      const res = await authService.updatePreferences({
+        themePresetId: presetId,
+        glassIntensity
+      });
+
+      const nextPreferences = res.preferences
+        ? { ...user?.preferences, ...res.preferences }
+        : {
+            ...user?.preferences,
+            themePresetId: presetId,
+            glassIntensity
+          };
+
+      if (res.user) {
+        updateUser(res.user);
+      } else if (res.preferences) {
+        updateUser({ preferences: nextPreferences });
+      } else {
+        updateUser({ preferences: nextPreferences });
+      }
+
+      applyAppTheme(nextPreferences);
+      setSuccess('Appearance saved. Your theme is applied across the app.');
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to save appearance');
+    } finally {
+      onSavingChange?.(false);
+    }
+  }, [glassIntensity, onSavingChange, presetId, updateUser, user?.preferences]);
+
+  useEffect(() => {
+    onRegisterSave?.(handleSave);
+    return () => onRegisterSave?.(null);
+  }, [handleSave, onRegisterSave]);
+
   return (
     <SettingsSection
       title="Appearance"
-      description="Customize colors and glass styling. Changes below are preview only until saved to your account."
-      badge="Preview only"
+      description="Customize colors and glass styling for the app shell, sidebar, and panels."
     >
+      {error && (
+        <GlassAlert variant="danger" onClose={() => setError('')} className="mb-3">
+          {error}
+        </GlassAlert>
+      )}
+      {success && (
+        <GlassAlert variant="success" onClose={() => setSuccess('')} className="mb-3">
+          {success}
+        </GlassAlert>
+      )}
+
       <div className="settings-appearance">
         <div className="settings-appearance__preview-wrap">
           <p className="settings-appearance__preview-label">Live preview</p>
@@ -173,7 +244,7 @@ const AppearancePanel = () => {
 
           <div className="settings-appearance__reset">
             <Button variant="secondary" type="button" glass onClick={handleReset}>
-              Reset appearance preview
+              Reset to default theme
             </Button>
           </div>
         </div>

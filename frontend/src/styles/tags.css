@@ -4,18 +4,18 @@
 .tags-month-picker__calendar {
   --picker-glass-bg: rgba(255, 255, 255, 0.52);
   --picker-glass-border: rgba(255, 255, 255, 0.75);
-  --picker-glass-shadow: 0 8px 32px rgba(80, 12, 176, 0.06), 0 4px 16px rgba(18, 18, 18, 0.04);
+  --picker-glass-shadow: 0 8px 32px rgba(var(--accent-rgb), 0.06), 0 4px 16px rgba(18, 18, 18, 0.04);
   --picker-hover-bg: linear-gradient(
     145deg,
     rgba(255, 255, 255, 0.78) 0%,
     rgba(245, 240, 250, 0.62) 48%,
     rgba(243, 232, 255, 0.55) 100%
   );
-  --picker-hover-shadow: 0 4px 16px rgba(80, 12, 176, 0.07), 0 2px 10px rgba(249, 115, 22, 0.05);
-  --picker-violet-soft: rgba(80, 12, 176, 0.1);
-  --picker-violet-mid: rgba(80, 12, 176, 0.18);
-  --picker-violet-strong: rgba(80, 12, 176, 0.82);
-  --glass-accent-ring: rgba(80, 12, 176, 0.12);
+  --picker-hover-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.07), 0 2px 10px rgba(249, 115, 22, 0.05);
+  --picker-violet-soft: rgba(var(--accent-rgb), 0.1);
+  --picker-violet-mid: rgba(var(--accent-rgb), 0.18);
+  --picker-violet-strong: rgba(var(--accent-rgb), 0.82);
+  --glass-accent-ring: rgba(var(--accent-rgb), 0.12);
 }
 
 .tags-page__header {
@@ -174,7 +174,7 @@
   background: rgba(255, 255, 255, 0.2);
   font-size: 13px;
   font-weight: 600;
-  color: #5b21b6;
+  color: var(--accent-text);
   cursor: pointer;
   transition: background 0.2s ease;
 }
@@ -232,7 +232,7 @@
     rgba(243, 232, 255, 0.58) 100%
   );
   border-color: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 4px 16px rgba(80, 12, 176, 0.07);
+  box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.07);
 }
 
 .tag-nav__swatch {
@@ -269,7 +269,7 @@
 }
 
 .tag-nav__amount {
-  color: #5b21b6;
+  color: var(--accent-text);
   font-weight: 600;
 }
 
@@ -296,14 +296,14 @@
 }
 
 .tag-nav__action:hover {
-  color: #5b21b6;
+  color: var(--accent-text);
   background: linear-gradient(
     145deg,
     rgba(255, 255, 255, 0.78) 0%,
     rgba(243, 232, 255, 0.55) 100%
   );
   border-color: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 2px 8px rgba(80, 12, 176, 0.08);
+  box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.08);
 }
 
 .tag-nav__action--delete:hover {
@@ -336,6 +336,17 @@
 
 .tag-detail__header {
   margin-bottom: 20px;
+  opacity: 0;
+  transform: translateY(var(--content-reveal-slide, 10px));
+  transition:
+    opacity var(--content-reveal-duration, 0.58s) ease,
+    transform var(--content-reveal-duration, 0.58s) var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.tag-detail--ready .tag-detail__header {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 40ms;
 }
 
 .tag-detail__pill {
@@ -366,6 +377,17 @@
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.55);
   background: rgba(255, 255, 255, 0.22);
+  opacity: 0;
+  transform: translateY(var(--content-reveal-slide, 10px));
+  transition:
+    opacity var(--content-reveal-duration, 0.58s) ease,
+    transform var(--content-reveal-duration, 0.58s) var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.tag-detail--ready .tag-detail__stat {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: calc(100ms + var(--stat-i, 0) * var(--content-reveal-stagger, 55ms));
 }
 
 .tag-detail__stat-label {
@@ -397,8 +419,29 @@
 .tag-detail__bar {
   height: 100%;
   border-radius: 9999px;
-  transition: width 0.35s ease;
+  width: 0;
+  min-width: 0;
+  transition: width var(--content-reveal-duration, 0.58s) var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.tag-detail--ready .tag-detail__bar {
+  width: var(--bar-width, 0%);
   min-width: 4px;
+  transition-delay: 220ms;
+}
+
+.tag-detail__section {
+  opacity: 0;
+  transform: translateY(var(--content-reveal-slide, 10px));
+  transition:
+    opacity var(--content-reveal-duration, 0.58s) ease,
+    transform var(--content-reveal-duration, 0.58s) var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.tag-detail--ready .tag-detail__section {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 300ms;
 }
 
 .tag-detail__section-head {
@@ -422,7 +465,7 @@
   gap: 4px;
   font-size: 13px;
   font-weight: 600;
-  color: #5b21b6;
+  color: var(--accent-text);
   text-decoration: none;
 }
 
@@ -454,6 +497,130 @@
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.45);
   background: rgba(255, 255, 255, 0.18);
+  opacity: 0;
+  transform: translateY(var(--content-reveal-slide, 10px));
+  transition:
+    opacity var(--content-reveal-duration, 0.58s) ease,
+    transform var(--content-reveal-duration, 0.58s) var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.tag-detail--ready .tag-detail__txn {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: calc(340ms + var(--txn-i, 0) * var(--content-reveal-stagger, 55ms));
+}
+
+.tag-detail__list-empty {
+  opacity: 0;
+  transform: translateY(var(--content-reveal-slide, 10px));
+  transition:
+    opacity var(--content-reveal-duration, 0.58s) ease,
+    transform var(--content-reveal-duration, 0.58s) var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1));
+}
+
+.tag-detail--ready .tag-detail__list-empty {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 340ms;
+}
+
+.tag-detail--loading-state .tag-detail__header {
+  opacity: 1;
+  transform: none;
+}
+
+.tag-detail__skeleton {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: tag-detail-shimmer 1.2s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.tag-detail__stat--skeleton {
+  opacity: 1;
+  transform: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tag-detail__skeleton--label {
+  height: 10px;
+  width: 72%;
+}
+
+.tag-detail__skeleton--value {
+  height: 18px;
+  width: 56%;
+}
+
+.tag-detail__skeleton--bar {
+  height: 100%;
+  width: 100%;
+  border-radius: 9999px;
+}
+
+.tag-detail__skeleton-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tag-detail__skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.tag-detail__skeleton--icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.tag-detail__skeleton--line {
+  height: 14px;
+  flex: 1;
+  max-width: 68%;
+}
+
+@keyframes tag-detail-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tag-detail__header,
+  .tag-detail--ready .tag-detail__header,
+  .tag-detail__stat,
+  .tag-detail--ready .tag-detail__stat,
+  .tag-detail__section,
+  .tag-detail--ready .tag-detail__section,
+  .tag-detail__txn,
+  .tag-detail--ready .tag-detail__txn,
+  .tag-detail__list-empty,
+  .tag-detail--ready .tag-detail__list-empty {
+    transition: none;
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .tag-detail__bar,
+  .tag-detail--ready .tag-detail__bar {
+    transition: none;
+    width: var(--bar-width, 0%);
+  }
+
+  .tag-detail__skeleton {
+    animation: none;
+  }
 }
 
 .tag-detail__txn-icon {
@@ -572,7 +739,7 @@
 .tags-month-picker__calendar .react-datepicker__year-read-view:hover,
 .tags-month-picker__calendar .react-datepicker__month-read-view:hover {
   background: var(--picker-hover-bg) !important;
-  color: #5b21b6 !important;
+  color: var(--accent-text) !important;
 }
 
 .tags-month-picker__calendar .react-datepicker__month-text:hover {
@@ -581,7 +748,7 @@
     rgba(255, 255, 255, 0.75) 0%,
     rgba(243, 232, 255, 0.55) 100%
   ) !important;
-  color: #5b21b6 !important;
+  color: var(--accent-text) !important;
 }
 
 .tags-month-picker__calendar .react-datepicker__month-text--selected,
@@ -592,7 +759,7 @@
 
 .tags-month-picker__calendar .react-datepicker__month-text--selected:hover,
 .tags-month-picker__calendar .react-datepicker__month-text--keyboard-selected:hover {
-  background: rgba(80, 12, 176, 0.92) !important;
+  background: rgba(var(--accent-rgb), 0.92) !important;
   color: #fff !important;
 }
 
@@ -601,5 +768,5 @@
 }
 
 .tags-month-picker__calendar .react-datepicker__navigation-icon::before {
-  border-color: #5b21b6 !important;
+  border-color: var(--accent-text) !important;
 }

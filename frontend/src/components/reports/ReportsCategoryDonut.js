@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useUserFormatters } from '../../hooks/useUserFormatters';
-import { REPORTS_CHART_COLORS } from '../../constants/reportsChartColors';
+import { useThemeChartColors } from '../../hooks/useThemeChartColors';
 import { buildTransactionsLinkSearch } from '../../utils/reportsFilterUtils';
 
 const ReportsCategoryDonut = ({
@@ -11,6 +11,7 @@ const ReportsCategoryDonut = ({
   loading = false
 }) => {
   const { formatCurrency } = useUserFormatters();
+  const { palette: chartColors } = useThemeChartColors();
 
   const { chartRows, total } = useMemo(() => {
     const rows = (data || []).map((item) => ({
@@ -48,7 +49,7 @@ const ReportsCategoryDonut = ({
               <li key={row.name}>
                 <span
                   className="reports-donut__dot"
-                  style={{ background: REPORTS_CHART_COLORS[i % REPORTS_CHART_COLORS.length] }}
+                  style={{ background: chartColors[i % chartColors.length] }}
                   aria-hidden
                 />
                 <span className="reports-donut__legend-name">{row.name}</span>
@@ -70,7 +71,7 @@ const ReportsCategoryDonut = ({
                   {chartRows.map((_, index) => (
                     <Cell
                       key={index}
-                      fill={REPORTS_CHART_COLORS[index % REPORTS_CHART_COLORS.length]}
+                      fill={chartColors[index % chartColors.length]}
                     />
                   ))}
                 </Pie>

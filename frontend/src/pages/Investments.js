@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { portfolioService } from '../services/portfolioService';
+import { categoryService } from '../services/categoryService';
 import GlassAlert from '../components/ui/GlassAlert';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
 import InvestmentsKpiStrip from '../components/investments/InvestmentsKpiStrip';
@@ -46,6 +47,8 @@ const Investments = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const [historyHolding, setHistoryHolding] = useState(null);
+  const [investmentCategories, setInvestmentCategories] = useState([]);
+  const [updatingCategory, setUpdatingCategory] = useState(false);
 
   const loadSummary = useCallback(async ({ initial = false } = {}) => {
     try {
@@ -66,6 +69,27 @@ const Investments = () => {
   useEffect(() => {
     loadSummary({ initial: true });
   }, [loadSummary]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const catRes = await categoryService.getCategories('investment');
+        if (!cancelled) {
+          setInvestmentCategories(catRes?.data || []);
+        }
+      } catch {
+        if (!cancelled) {
+          setInvestmentCategories([]);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const holdings = summary?.holdings;
@@ -104,7 +128,8 @@ const Investments = () => {
       const res = await portfolioService.createHolding({
         displayName: holding.displayName,
         assetKey: holding.assetKey,
-        assetType: holding.assetType || 'stock_etf'
+        assetType: holding.assetType || 'stock_etf',
+        categoryId: holding.categoryId || null
       });
       const newId = res?.data?._id ?? res?.data?.id;
       if (newId) setSelectedHoldingId(String(newId));
@@ -145,6 +170,29 @@ const Investments = () => {
       setError(err.response?.data?.error || 'Failed to save');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleUpdateCategory = async (holdingId, categoryId) => {
+    if (!holdingId) return;
+
+    setUpdatingCategory(true);
+    setError('');
+    try {
+      const res = await portfolioService.updateHolding(holdingId, {
+        categoryId: categoryId || null
+      });
+      const updatedHolding = res?.data;
+      if (updatedHolding) {
+        setSummary((prev) => mergeHoldingIntoSummary(prev, updatedHolding));
+        if (historyHolding && String(historyHolding.id) === String(updatedHolding.id)) {
+          setHistoryHolding((prev) => (prev ? { ...prev, ...updatedHolding } : prev));
+        }
+      }
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to update category');
+    } finally {
+      setUpdatingCategory(false);
     }
   };
 
@@ -210,11 +258,14 @@ const Investments = () => {
         <InvestmentsTransactionPanel
           holdings={holdings}
           selectedHoldingId={selectedHoldingId}
+          investmentCategories={investmentCategories}
           onSelectHolding={handleSelectHolding}
           onAddHolding={handleAddHolding}
+          onUpdateCategory={handleUpdateCategory}
           onSubmitActivity={handleActivity}
           onViewHistory={handleViewHistory}
           submitting={submitting}
+          updatingCategory={updatingCategory}
         />
       </div>
 

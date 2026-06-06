@@ -7,6 +7,7 @@ const {
   getHoldingActivities,
   getRecentActivities,
   createHolding,
+  updateHolding,
   deleteHolding,
   createActivity
 } = require('../controllers/portfolio.controller');
@@ -16,6 +17,7 @@ router.get('/holdings', authenticateUser, getHoldings);
 router.get('/holdings/:id/activities', authenticateUser, getHoldingActivities);
 router.get('/activities/recent', authenticateUser, getRecentActivities);
 router.post('/holdings', authenticateUser, createHolding);
+router.patch('/holdings/:id', authenticateUser, updateHolding);
 router.delete('/holdings/:id', authenticateUser, deleteHolding);
 router.post('/activities', authenticateUser, createActivity);
 

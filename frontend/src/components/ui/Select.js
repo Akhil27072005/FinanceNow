@@ -62,7 +62,7 @@ const Select = ({
                 ? undefined
                 : (e) => {
                     e.currentTarget.style.borderColor = 'var(--info)';
-                    e.currentTarget.style.boxShadow = '0 0 0 2px rgba(41, 121, 255, 0.1)';
+                    e.currentTarget.style.boxShadow = '0 0 0 2px var(--info-focus-ring)';
                   }
             }
             onMouseLeave={
@@ -78,7 +78,7 @@ const Select = ({
                 ? undefined
                 : (e) => {
                     e.currentTarget.style.borderColor = 'var(--info)';
-                    e.currentTarget.style.boxShadow = '0 0 0 2px rgba(41, 121, 255, 0.15)';
+                    e.currentTarget.style.boxShadow = '0 0 0 2px var(--info-focus-ring)';
                   }
             }
             onBlur={
@@ -124,7 +124,7 @@ const Select = ({
                     >
                       <span>{option.label}</span>
                       {value === option.value && (
-                        <Check size={16} strokeWidth={2} style={{ color: '#7c3aed' }} />
+                        <Check size={16} strokeWidth={2} style={{ color: 'var(--accent-bright)' }} />
                       )}
                     </button>
                   )}

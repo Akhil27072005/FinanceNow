@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Button from '../ui/Button';
 import Select from '../ui/Select';
 import DatePicker from '../ui/DatePicker';
@@ -7,11 +8,14 @@ import { useUserFormatters } from '../../hooks/useUserFormatters';
 const InvestmentsTransactionPanel = ({
   holdings = [],
   selectedHoldingId,
+  investmentCategories = [],
   onSelectHolding,
   onAddHolding,
+  onUpdateCategory,
   onSubmitActivity,
   onViewHistory,
-  submitting = false
+  submitting = false,
+  updatingCategory = false
 }) => {
   const { formatCurrency } = useUserFormatters();
   const [panelMode, setPanelMode] = useState('add');
@@ -21,6 +25,8 @@ const InvestmentsTransactionPanel = ({
   const [showAddForm, setShowAddForm] = useState(false);
   const [newName, setNewName] = useState('');
   const [newSymbol, setNewSymbol] = useState('');
+  const [newCategoryId, setNewCategoryId] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [fieldError, setFieldError] = useState('');
 
   const selected = holdings.find((h) => String(h.id) === String(selectedHoldingId));
@@ -36,6 +42,27 @@ const InvestmentsTransactionPanel = ({
     [holdings]
   );
 
+  const categoryOptions = useMemo(
+    () => [
+      { value: '', label: 'Select category…' },
+      ...investmentCategories.map((cat) => ({
+        value: String(cat._id),
+        label: cat.name
+      }))
+    ],
+    [investmentCategories]
+  );
+
+  useEffect(() => {
+    setSelectedCategoryId(selected?.categoryId ? String(selected.categoryId) : '');
+  }, [selected?.id, selected?.categoryId]);
+
+  const handleCategoryChange = async (value) => {
+    setSelectedCategoryId(value);
+    if (!selectedHoldingId) return;
+    await onUpdateCategory?.(selectedHoldingId, value || null);
+  };
+
   const handleAddHolding = async (e) => {
     e.preventDefault();
     const name = newName.trim();
@@ -44,10 +71,12 @@ const InvestmentsTransactionPanel = ({
     await onAddHolding?.({
       displayName: name,
       assetKey: newSymbol.trim() || name,
-      assetType: 'stock_etf'
+      assetType: 'stock_etf',
+      categoryId: newCategoryId || null
     });
     setNewName('');
     setNewSymbol('');
+    setNewCategoryId('');
     setShowAddForm(false);
   };
 
@@ -152,6 +181,33 @@ const InvestmentsTransactionPanel = ({
         ) : null}
       </div>
 
+      {selected ? (
+        <div className="investments-field">
+          <label htmlFor="holding-category">Category</label>
+          <Select
+            glass
+            id="holding-category"
+            value={selectedCategoryId}
+            onChange={(e) => handleCategoryChange(e.target.value)}
+            options={categoryOptions}
+            disabled={submitting || updatingCategory || investmentCategories.length === 0}
+          />
+          {investmentCategories.length === 0 ? (
+            <p className="investments-field__hint">
+              No investment categories yet.{' '}
+              <Link to="/categories" className="investments-panel__link">
+                Create categories
+              </Link>{' '}
+              with type Investment.
+            </p>
+          ) : (
+            <p className="investments-field__hint">
+              Classifies this holding and tags new investment transactions.
+            </p>
+          )}
+        </div>
+      ) : null}
+
       <div className="investments-field">
         <button
           type="button"
@@ -183,6 +239,17 @@ const InvestmentsTransactionPanel = ({
                 onChange={(e) => setNewSymbol(e.target.value)}
                 placeholder="e.g. AAPL"
                 disabled={submitting}
+              />
+            </div>
+            <div className="investments-field">
+              <label htmlFor="new-category">Category (optional)</label>
+              <Select
+                glass
+                id="new-category"
+                value={newCategoryId}
+                onChange={(e) => setNewCategoryId(e.target.value)}
+                options={categoryOptions}
+                disabled={submitting || investmentCategories.length === 0}
               />
             </div>
             <Button

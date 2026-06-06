@@ -232,8 +232,12 @@ const Subscriptions = () => {
             </div>
           </div>
 
-          {!inactiveCollapsed && (
-            <>
+          <div
+            className={`expand-section subscriptions-section__expand ${
+              !inactiveCollapsed ? 'expand-section--open' : ''
+            }`}
+          >
+            <div className="expand-section__inner">
               {loading ? (
                 <div className="subscriptions-empty">Loading…</div>
               ) : inactiveSubscriptions.length === 0 ? (
@@ -255,8 +259,8 @@ const Subscriptions = () => {
                   ))}
                 </div>
               )}
-            </>
-          )}
+            </div>
+          </div>
         </section>
       )}
 

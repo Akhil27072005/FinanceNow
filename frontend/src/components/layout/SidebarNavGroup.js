@@ -58,18 +58,26 @@ const SidebarNavGroup = ({
         )}
       </button>
 
-      {!collapsed && open && (
-        <div className="sidebar-nav-group__children">
-          {childItems.map((child) => (
-            <div key={child.to} className="sidebar-nav-group__child">
-              <SidebarNavItem
-                to={child.to}
-                label={child.label}
-                icon={child.icon}
-                isActive={child.isActive}
-              />
+      {!collapsed && (
+        <div
+          className={`expand-section sidebar-nav-group__expand ${
+            open ? 'expand-section--open' : ''
+          }`}
+        >
+          <div className="expand-section__inner">
+            <div className="sidebar-nav-group__children">
+              {childItems.map((child) => (
+                <div key={child.to} className="sidebar-nav-group__child">
+                  <SidebarNavItem
+                    to={child.to}
+                    label={child.label}
+                    icon={child.icon}
+                    isActive={child.isActive}
+                  />
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       )}
     </div>

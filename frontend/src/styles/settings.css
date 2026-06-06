@@ -26,16 +26,16 @@
 
 .settings-page .modal-glass__btn--primary,
 .settings-page .settings-glass-btn--primary {
-  border: 1px solid rgba(80, 12, 176, 0.45);
-  background: rgba(80, 12, 176, 0.88);
+  border: 1px solid var(--accent-glass-border);
+  background: var(--accent-glass-bg);
   color: #fff;
-  box-shadow: 0 4px 14px rgba(80, 12, 176, 0.25);
+  box-shadow: 0 4px 14px var(--accent-glass-shadow);
 }
 
 .settings-page .modal-glass__btn--primary:hover:not(:disabled),
 .settings-page .settings-glass-btn--primary:hover:not(:disabled) {
-  background: rgba(80, 12, 176, 0.95);
-  box-shadow: 0 6px 18px rgba(80, 12, 176, 0.3);
+  background: var(--accent-glass-bg-hover);
+  box-shadow: 0 6px 18px var(--accent-glass-shadow-hover);
   transform: translateY(-1px);
 }
 
@@ -102,7 +102,7 @@
   background-color: rgba(255, 255, 255, 0.3);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 0 0 2px rgba(80, 12, 176, 0.12);
+    0 0 0 2px rgba(var(--accent-rgb), 0.12);
 }
 
 .settings-page .settings-number-input {
@@ -122,15 +122,15 @@
 }
 
 .settings-page .settings-switch .form-check-input:checked {
-  background-color: rgba(80, 12, 176, 0.88);
-  border-color: rgba(80, 12, 176, 0.45);
-  box-shadow: 0 2px 8px rgba(80, 12, 176, 0.22);
+  background-color: rgba(var(--accent-rgb), 0.88);
+  border-color: rgba(var(--accent-rgb), 0.45);
+  box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.22);
 }
 
 .settings-page .settings-switch .form-check-input:focus {
   outline: none;
-  border-color: rgba(124, 58, 237, 0.55);
-  box-shadow: 0 0 0 2px rgba(80, 12, 176, 0.15);
+  border-color: rgba(var(--accent-rgb), 0.55);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
 }
 
 .settings-page .settings-switch .form-check-label {
@@ -219,13 +219,13 @@
 
 .settings-nav__item:hover {
   background: rgba(237, 233, 254, 0.45);
-  color: #5b21b6;
+  color: var(--accent-text);
 }
 
 .settings-nav__item--active {
-  background: rgba(80, 12, 176, 0.12);
-  border-color: rgba(80, 12, 176, 0.22);
-  color: #5b21b6;
+  background: rgba(var(--accent-rgb), 0.12);
+  border-color: rgba(var(--accent-rgb), 0.22);
+  color: var(--accent-text);
   font-weight: 600;
 }
 
@@ -287,7 +287,7 @@
   padding: 4px 10px;
   border-radius: 999px;
   background: rgba(237, 233, 254, 0.9);
-  color: #5b21b6;
+  color: var(--accent-text);
   white-space: nowrap;
 }
 
@@ -364,9 +364,9 @@
   justify-content: center;
   font-size: 24px;
   font-weight: 700;
-  color: #5b21b6;
+  color: var(--accent-text);
   background: rgba(237, 233, 254, 0.85);
-  border: 1px solid rgba(124, 58, 237, 0.25);
+  border: 1px solid rgba(var(--accent-rgb), 0.25);
 }
 
 .settings-profile__fields {
@@ -446,12 +446,12 @@
 }
 
 .settings-preset-card:hover {
-  border-color: rgba(124, 58, 237, 0.35);
+  border-color: rgba(var(--accent-rgb), 0.35);
 }
 
 .settings-preset-card--selected {
-  border-color: #7c3aed;
-  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+  border-color: var(--accent-bright);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.2);
 }
 
 .settings-preset-card__swatch {
@@ -476,7 +476,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #7c3aed;
+  background: var(--accent-bright);
   color: #fff;
   display: flex;
   align-items: center;
@@ -486,12 +486,12 @@
 .settings-glass-slider {
   width: 100%;
   max-width: 280px;
-  accent-color: #7c3aed;
+  accent-color: var(--accent-bright);
 }
 
 .settings-bg-upload__zone {
   min-height: 100px;
-  border: 2px dashed rgba(124, 58, 237, 0.35);
+  border: 2px dashed rgba(var(--accent-rgb), 0.35);
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.2);
   display: flex;
@@ -503,7 +503,7 @@
 }
 
 .settings-bg-upload__zone:hover {
-  border-color: rgba(124, 58, 237, 0.55);
+  border-color: rgba(var(--accent-rgb), 0.55);
 }
 
 .settings-bg-upload__placeholder {
@@ -728,14 +728,14 @@
 }
 
 .settings-page .settings-radio-group .form-check-input:checked {
-  background-color: rgba(80, 12, 176, 0.88);
-  border-color: rgba(80, 12, 176, 0.45);
+  background-color: rgba(var(--accent-rgb), 0.88);
+  border-color: rgba(var(--accent-rgb), 0.45);
 }
 
 .settings-page .settings-radio-group .form-check-input:focus {
   outline: none;
-  border-color: rgba(124, 58, 237, 0.55);
-  box-shadow: 0 0 0 2px rgba(80, 12, 176, 0.15);
+  border-color: rgba(var(--accent-rgb), 0.55);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
 }
 
 .settings-page .settings-radio-group .form-check-label {
@@ -750,7 +750,7 @@
   border-color: rgba(255, 255, 255, 0.75);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 0 0 2px rgba(80, 12, 176, 0.12);
+    0 0 0 2px rgba(var(--accent-rgb), 0.12);
 }
 
 
@@ -813,7 +813,7 @@
   font-size: 14px;
   font-weight: 500;
   font-family: inherit;
-  color: #7c3aed;
+  color: var(--accent-bright);
   cursor: pointer;
   text-decoration: none;
 }

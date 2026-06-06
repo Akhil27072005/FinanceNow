@@ -59,14 +59,14 @@ const IconButton = ({
       backgroundColor: 'transparent'
     },
     duplicate: {
-      color: '#5b21b6',
+      color: 'var(--accent-text)',
       backgroundColor: 'transparent'
     }
   };
 
   const hoverStyles = {
     edit: {
-      backgroundColor: 'rgba(41, 121, 255, 0.1)',
+      backgroundColor: 'var(--app-accent-soft)',
       transform: 'scale(1.05)'
     },
     delete: {

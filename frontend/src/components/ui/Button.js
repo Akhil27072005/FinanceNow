@@ -74,7 +74,7 @@ const Button = ({
     primary: {
       backgroundColor: 'var(--info)',
       color: '#ffffff',
-      boxShadow: '0 2px 4px rgba(41, 121, 255, 0.2)',
+      boxShadow: '0 2px 4px var(--info-shadow)',
       border: 'none'
     },
     secondary: {
@@ -99,9 +99,9 @@ const Button = ({
 
   const hoverStyles = {
     primary: {
-      backgroundColor: '#1c6be1',
+      backgroundColor: 'var(--info-hover)',
       transform: 'translateY(-1px)',
-      boxShadow: '0 4px 8px rgba(41, 121, 255, 0.3)'
+      boxShadow: '0 4px 8px var(--info-shadow-hover)'
     },
     secondary: {
       backgroundColor: 'var(--bg-main)',

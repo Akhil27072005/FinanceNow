@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ShoppingBag,
   Utensils,
@@ -41,6 +41,8 @@ const TotalExpensesSplitCard = ({
 }) => {
   const { formatCurrency } = useUserFormatters();
 
+  const [isReady, setIsReady] = useState(false);
+
   const rows = useMemo(
     () => buildSplitRows(splitData, totalExpenses),
     [splitData, totalExpenses]
@@ -48,13 +50,42 @@ const TotalExpensesSplitCard = ({
 
   const hasData = totalExpenses > 0 || rows.length > 0;
 
+  useEffect(() => {
+    if (loading) {
+      setIsReady(false);
+      return undefined;
+    }
+
+    let timeoutId;
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        timeoutId = window.setTimeout(() => setIsReady(true), 70);
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.clearTimeout(timeoutId);
+    };
+  }, [loading, splitData, totalExpenses]);
+
   if (loading) {
     return (
-      <div className="expense-split-card glass-panel">
+      <div className="expense-split-card glass-panel expense-split-card--loading-state">
         <div className="expense-split-card__skeleton expense-split-card__skeleton--title" />
         <div className="expense-split-card__skeleton expense-split-card__skeleton--total" />
+        <p className="expense-split-card__allocation-label expense-split-card__allocation-label--skeleton">
+          Allocation
+        </p>
         <div className="expense-split-card__skeleton expense-split-card__skeleton--bar" />
-        <div className="expense-split-card__loading">Loading expense breakdown…</div>
+        <div className="expense-split-card__skeleton-rows">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="expense-split-card__skeleton-row">
+              <div className="expense-split-card__skeleton expense-split-card__skeleton--icon" />
+              <div className="expense-split-card__skeleton expense-split-card__skeleton--line" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -70,7 +101,9 @@ const TotalExpensesSplitCard = ({
   }
 
   return (
-    <div className="expense-split-card glass-panel">
+    <div
+      className={`expense-split-card glass-panel ${isReady ? 'expense-split-card--ready' : ''}`}
+    >
       <div className="expense-split-card__header">
         <div>
           <p className="expense-split-card__title">Total expenses</p>
@@ -90,13 +123,13 @@ const TotalExpensesSplitCard = ({
         aria-label="Expense allocation by sub-category"
       >
         {hasData ? (
-          rows.map((row) => (
+          rows.map((row, index) => (
             <div
               key={row.id}
               className="expense-split-card__bar-segment"
               style={{
-                flexGrow: row.percent,
-                flexBasis: 0,
+                '--segment-grow': row.percent,
+                '--segment-i': index,
                 backgroundColor: row.color
               }}
               title={`${row.subCategory}: ${formatSplitPercent(row.percent)}`}
@@ -112,7 +145,11 @@ const TotalExpensesSplitCard = ({
       ) : (
         <div className="expense-split-card__list">
           {rows.map((row, index) => (
-            <div key={row.id} className="expense-split-card__row">
+            <div
+              key={row.id}
+              className="expense-split-card__row"
+              style={{ '--row-i': index }}
+            >
               <div className="expense-split-card__row-icon">
                 {row.isUncategorized ? (
                   <Wallet size={22} strokeWidth={2} aria-hidden />

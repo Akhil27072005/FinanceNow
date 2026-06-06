@@ -16,6 +16,11 @@ export const portfolioService = {
     return response.data;
   },
 
+  updateHolding: async (id, payload) => {
+    const response = await api.patch(`/portfolio/holdings/${id}`, payload);
+    return response.data;
+  },
+
   deleteHolding: async (id) => {
     const response = await api.delete(`/portfolio/holdings/${id}`);
     return response.data;

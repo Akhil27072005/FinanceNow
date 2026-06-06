@@ -69,7 +69,17 @@ const InvestmentsHoldingsTable = ({
                 <div className="investments-holding-row__name-wrap">
                   <p className="investments-holding-row__name">{row.displayName}</p>
                   <p className="investments-holding-row__symbol">
-                    {symbol && symbol !== row.displayName ? symbol : '\u00a0'}
+                    {row.categoryName ? (
+                      <span className="investments-holding-row__category">{row.categoryName}</span>
+                    ) : null}
+                    {symbol && symbol !== row.displayName ? (
+                      <span>
+                        {row.categoryName ? ' · ' : ''}
+                        {symbol}
+                      </span>
+                    ) : (
+                      !row.categoryName ? '\u00a0' : null
+                    )}
                   </p>
                 </div>
               </div>

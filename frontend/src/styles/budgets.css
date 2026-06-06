@@ -107,7 +107,7 @@
 }
 
 .budgets-kpi__value--spent {
-  color: #5b21b6;
+  color: var(--accent-text);
 }
 
 .budgets-kpi__value--good {
@@ -234,7 +234,7 @@
 
 .budget-card__status--neutral {
   background: rgba(237, 233, 254, 0.9);
-  color: #5b21b6;
+  color: var(--accent-text);
 }
 
 .budget-card__actions {
@@ -284,7 +284,7 @@
 }
 
 .budget-card__bar-fill--neutral {
-  background: #7c3aed;
+  background: var(--accent-bright);
 }
 
 .budget-card__pct {
@@ -308,7 +308,7 @@
 }
 
 .budget-card__pct--neutral {
-  color: #7c3aed;
+  color: var(--accent-bright);
 }
 
 .budget-card__bar-meta {
@@ -430,7 +430,7 @@
 .budget-card__link {
   font-size: 13px;
   font-weight: 700;
-  color: #5b21b6;
+  color: var(--accent-text);
   text-decoration: none;
 }
 
@@ -463,14 +463,14 @@
   font-size: 14px;
   font-weight: 800;
   border-radius: 12px;
-  border: 1px solid rgba(80, 12, 176, 0.45);
-  background: rgba(80, 12, 176, 0.88);
+  border: 1px solid rgba(var(--accent-rgb), 0.45);
+  background: rgba(var(--accent-rgb), 0.88);
   color: #fff;
   cursor: pointer;
 }
 
 .budgets-empty__cta:hover {
-  background: rgba(80, 12, 176, 0.95);
+  background: rgba(var(--accent-rgb), 0.95);
 }
 
 @media (max-width: 980px) {

@@ -1,6 +1,5 @@
 /**
- * Static appearance presets for Settings preview UI only.
- * Persistence / global application — future User.preferences work.
+ * Appearance presets — applied globally via appTheme utilities.
  */
 export const DEFAULT_THEME_PRESET_ID = 'violetDawn';
 export const DEFAULT_GLASS_INTENSITY = 65;
@@ -191,15 +190,27 @@ export const THEME_PRESETS = [
 export const getThemePresetById = (id) =>
   THEME_PRESETS.find((p) => p.id === id) || THEME_PRESETS[0];
 
-/** Map glass intensity 0–100 to preview CSS values */
-export const glassIntensityToPreviewVars = (intensity) => {
+/** Map glass intensity 0–100 to app shell glass CSS variables */
+export const glassIntensityToGlassVars = (intensity) => {
   const t = Math.min(100, Math.max(0, intensity)) / 100;
   const blur = 8 + t * 20;
   const bgAlpha = 0.35 + t * 0.3;
+  const bgAlphaStrong = 0.45 + t * 0.35;
   const saturate = 1.05 + t * 0.2;
   return {
-    '--preview-glass-blur': `${blur}px`,
-    '--preview-glass-bg': `rgba(255, 255, 255, ${bgAlpha.toFixed(2)})`,
-    '--preview-glass-saturate': String(saturate.toFixed(2))
+    '--glass-blur': `${blur}px`,
+    '--glass-bg': `rgba(255, 255, 255, ${bgAlpha.toFixed(2)})`,
+    '--glass-bg-strong': `rgba(255, 255, 255, ${bgAlphaStrong.toFixed(2)})`,
+    '--glass-saturate': String(saturate.toFixed(2))
+  };
+};
+
+/** Map glass intensity 0–100 to settings preview CSS values */
+export const glassIntensityToPreviewVars = (intensity) => {
+  const glass = glassIntensityToGlassVars(intensity);
+  return {
+    '--preview-glass-blur': glass['--glass-blur'],
+    '--preview-glass-bg': glass['--glass-bg'],
+    '--preview-glass-saturate': glass['--glass-saturate']
   };
 };

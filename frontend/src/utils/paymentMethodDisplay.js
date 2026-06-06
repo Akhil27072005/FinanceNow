@@ -21,7 +21,17 @@ export function isLogoUrl(icon) {
 }
 
 export function getCardGradient(network) {
-  if (!network) return 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #a78bfa 100%)';
+  if (!network) {
+    if (typeof document !== 'undefined') {
+      const root = getComputedStyle(document.documentElement);
+      const accent = root.getPropertyValue('--info').trim();
+      const bright = root.getPropertyValue('--accent-bright').trim();
+      if (accent && bright) {
+        return `linear-gradient(135deg, ${accent} 0%, ${bright} 55%, ${bright}cc 100%)`;
+      }
+    }
+    return 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 50%, #a78bfa 100%)';
+  }
   const key = String(network).toLowerCase();
   return NETWORK_GRADIENTS[key] || NETWORK_GRADIENTS.visa;
 }

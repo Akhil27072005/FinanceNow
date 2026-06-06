@@ -66,8 +66,8 @@
 }
 
 .txn-form__type-tab--active {
-  color: #5b21b6;
-  border-color: rgba(124, 58, 237, 0.45);
+  color: var(--accent-text);
+  border-color: rgba(var(--accent-rgb), 0.45);
   background: linear-gradient(
     145deg,
     rgba(237, 233, 254, 0.65) 0%,
@@ -75,7 +75,7 @@
   );
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 2px 8px rgba(80, 12, 176, 0.08);
+    0 2px 8px rgba(var(--accent-rgb), 0.08);
 }
 
 .txn-form__type-tab--active.txn-form__type-tab--income {

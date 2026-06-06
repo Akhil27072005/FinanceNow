@@ -33,6 +33,7 @@ const DatePicker = ({
     .join(' ');
 
   const popperClassName = [
+    'datepicker-popover-reveal',
     popperClassNameProp,
     useGlass && 'modal-glass-datepicker-popper transactions-filters-datepicker-popper'
   ]

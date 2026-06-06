@@ -6,31 +6,57 @@ const Category = require('../src/models/Category');
 const { parseActivityDate, buildHoldingRow } = require('../utils/portfolioUtils');
 const cache = require('../utils/cache');
 
-async function ensureInvestmentCategory(userId, displayName) {
-  const name = (displayName || 'Investments').trim();
-  let category = await Category.findOne({
+async function getOrCreatePrimaryInvestmentCategory(userId) {
+  const named = await Category.findOne({
     userId,
     type: 'investment',
-    name
+    name: { $in: ['Investments', 'Investment'] }
+  }).sort({ createdAt: 1 });
+
+  if (named) return named;
+
+  const anyInvestment = await Category.findOne({
+    userId,
+    type: 'investment'
+  }).sort({ createdAt: 1 });
+
+  if (anyInvestment) return anyInvestment;
+
+  return Category.create({
+    userId,
+    name: 'Investments',
+    type: 'investment',
+    icon: 'lucide:trending-up'
+  });
+}
+
+async function validateInvestmentCategory(userId, categoryId) {
+  if (categoryId === undefined || categoryId === null || categoryId === '') {
+    return { ok: true, category: null };
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+    return { ok: false, error: 'Invalid category id' };
+  }
+
+  const category = await Category.findOne({
+    _id: categoryId,
+    userId,
+    type: 'investment'
   });
 
   if (!category) {
-    category = await Category.create({
-      userId,
-      name,
-      type: 'investment',
-      icon: 'lucide:trending-up'
-    });
+    return { ok: false, error: 'Investment category not found' };
   }
 
-  return category;
+  return { ok: true, category };
 }
 
 const getPortfolioSummary = async (req, res, next) => {
   try {
-    const holdings = await PortfolioHolding.find({ userId: req.user._id }).sort({
-      updatedAt: -1
-    });
+    const holdings = await PortfolioHolding.find({ userId: req.user._id })
+      .populate('categoryId', 'name icon type')
+      .sort({ updatedAt: -1 });
 
     const rows = holdings.map((h) => buildHoldingRow(h));
     const totalInvested = rows.reduce((s, r) => s + r.totalCostBasis, 0);
@@ -67,7 +93,7 @@ const getHoldings = async (req, res, next) => {
 
 const createHolding = async (req, res, next) => {
   try {
-    const { assetKey: bodyAssetKey, symbol, displayName, assetType } = req.body;
+    const { assetKey: bodyAssetKey, symbol, displayName, assetType, categoryId } = req.body;
 
     const assetKey = (bodyAssetKey || symbol || '').trim();
     const name = (displayName || assetKey).trim();
@@ -91,7 +117,13 @@ const createHolding = async (req, res, next) => {
       });
     }
 
-    const category = await ensureInvestmentCategory(req.user._id, name);
+    const categoryResult = await validateInvestmentCategory(req.user._id, categoryId);
+    if (!categoryResult.ok) {
+      return res.status(400).json({ success: false, error: categoryResult.error });
+    }
+
+    const category =
+      categoryResult.category || (await getOrCreatePrimaryInvestmentCategory(req.user._id));
 
     const holding = await PortfolioHolding.create({
       userId: req.user._id,
@@ -108,7 +140,9 @@ const createHolding = async (req, res, next) => {
       totalCostBasis: 0
     });
 
-    res.status(201).json({ success: true, data: holding });
+    await holding.populate('categoryId', 'name icon type');
+
+    res.status(201).json({ success: true, data: buildHoldingRow(holding) });
   } catch (error) {
     next(error);
   }
@@ -195,6 +229,52 @@ const getRecentActivities = async (req, res, next) => {
         };
       })
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateHolding = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { categoryId } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, error: 'Invalid holding id' });
+    }
+
+    const holding = await PortfolioHolding.findOne({
+      _id: id,
+      userId: req.user._id
+    });
+
+    if (!holding) {
+      return res.status(404).json({ success: false, error: 'Holding not found' });
+    }
+
+    if (categoryId === undefined) {
+      return res.status(400).json({
+        success: false,
+        error: 'categoryId is required (use null or empty string for default)'
+      });
+    }
+
+    const categoryResult = await validateInvestmentCategory(req.user._id, categoryId);
+    if (!categoryResult.ok) {
+      return res.status(400).json({ success: false, error: categoryResult.error });
+    }
+
+    if (categoryResult.category) {
+      holding.categoryId = categoryResult.category._id;
+    } else {
+      const category = await getOrCreatePrimaryInvestmentCategory(req.user._id);
+      holding.categoryId = category._id;
+    }
+
+    await holding.save();
+    await holding.populate('categoryId', 'name icon type');
+
+    res.json({ success: true, data: buildHoldingRow(holding) });
   } catch (error) {
     next(error);
   }
@@ -289,10 +369,7 @@ const createActivity = async (req, res, next) => {
       await holding.save();
 
       if (!holding.categoryId) {
-        const category = await ensureInvestmentCategory(
-          req.user._id,
-          holding.displayName
-        );
+        const category = await getOrCreatePrimaryInvestmentCategory(req.user._id);
         holding.categoryId = category._id;
         await holding.save();
       }
@@ -325,6 +402,8 @@ const createActivity = async (req, res, next) => {
       await cache.invalidateTransactionsCache(req.user._id.toString());
     }
 
+    await holding.populate('categoryId', 'name icon type');
+
     res.status(201).json({
       success: true,
       data: {
@@ -343,6 +422,7 @@ module.exports = {
   getHoldingActivities,
   getRecentActivities,
   createHolding,
+  updateHolding,
   deleteHolding,
   createActivity
 };
