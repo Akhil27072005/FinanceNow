@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './components/layout/MainLayout';
@@ -19,7 +19,9 @@ import PaymentMethods from './pages/PaymentMethods';
 import Subscriptions from './pages/Subscriptions';
 import Budgets from './pages/Budgets';
 import Reports from './pages/Reports';
+import Investments from './pages/Investments';
 import Settings from './pages/Settings';
+import LandingRoute from './components/LandingRoute';
 
 /**
  * Main App Component
@@ -129,6 +131,16 @@ function App() {
             }
           />
           <Route
+            path="/investments"
+            element={
+              <ProtectedRoute>
+                <MainLayout>
+                  <Investments />
+                </MainLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/settings"
             element={
               <ProtectedRoute>
@@ -139,8 +151,8 @@ function App() {
             }
           />
 
-          {/* Default redirect */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          {/* Landing (guests) or redirect to dashboard (authenticated) */}
+          <Route path="/" element={<LandingRoute />} />
         </Routes>
       </Router>
     </AuthProvider>

@@ -1,0 +1,815 @@
+@import './content-glass.css';
+
+.subscriptions-page__header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.subscriptions-page__title {
+  font-weight: 800;
+  margin: 0;
+  font-size: 26px;
+  color: #111827;
+  letter-spacing: -0.03em;
+}
+
+.subscriptions-page__month {
+  min-width: 160px;
+}
+
+.subscriptions-kpi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.subscriptions-kpi__tile {
+  padding: 16px 18px;
+}
+
+.subscriptions-kpi__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  margin: 0 0 6px;
+}
+
+.subscriptions-kpi__value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.subscriptions-kpi__value--paid {
+  color: #5b21b6;
+}
+
+.subscriptions-kpi__value--scheduled {
+  color: #7c3aed;
+}
+
+.subscriptions-kpi__value--count {
+  color: #111827;
+}
+
+.subscriptions-kpi__hint {
+  font-size: 11px;
+  color: #9ca3af;
+  margin: 4px 0 0;
+}
+
+.subscriptions-section {
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+
+.subscriptions-section__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.subscriptions-section__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.subscriptions-section__count {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  margin-left: 8px;
+}
+
+.subscriptions-section__collapse {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: #5b21b6;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.subscriptions-section__collapse:hover {
+  background: rgba(237, 233, 254, 0.5);
+}
+
+.subscriptions-list {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.4fr)
+    8.5rem
+    13.5rem
+    minmax(9rem, 1fr)
+    minmax(0, max-content);
+  column-gap: 28px;
+  row-gap: 10px;
+}
+
+.subscriptions-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* Row — subgrid aligns columns across all rows in the list */
+.subscription-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(8px) saturate(1.08);
+  backdrop-filter: blur(8px) saturate(1.08);
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.subscription-row:hover {
+  background: rgba(255, 255, 255, 0.32);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.subscription-row--inactive {
+  opacity: 0.72;
+}
+
+.subscription-row__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.subscription-row__logo {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.35);
+  overflow: hidden;
+}
+
+.subscription-row__logo--letter {
+  font-size: 16px;
+  font-weight: 700;
+  color: #5b21b6;
+}
+
+.subscription-row__name-wrap {
+  min-width: 0;
+}
+
+.subscription-row__name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #111827;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.subscription-row__category {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 2px 0 0;
+  min-height: 1.25em;
+  line-height: 1.25;
+}
+
+.subscription-row__amount {
+  font-weight: 700;
+  font-size: 15px;
+  color: #111827;
+  white-space: nowrap;
+  justify-self: start;
+}
+
+.subscription-row__meta {
+  display: grid;
+  grid-template-rows: 22px auto;
+  align-content: center;
+  gap: 6px;
+  justify-self: start;
+  width: 100%;
+}
+
+.subscription-row__date {
+  font-size: 13px;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.subscription-row__badges {
+  display: grid;
+  grid-template-columns: auto 5.5rem 4.75rem;
+  gap: 6px;
+  align-items: center;
+  min-height: 22px;
+}
+
+.subscription-row__badge-slot {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+}
+
+.subscription-row__badge-slot--auto {
+  width: 5.5rem;
+}
+
+.subscription-row__badge-slot--status {
+  width: 4.75rem;
+}
+
+.subscription-row__pill {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.subscription-row__pill--cycle {
+  background: rgba(237, 233, 254, 0.9);
+  color: #5b21b6;
+}
+
+.subscription-row__pill--auto {
+  background: rgba(219, 234, 254, 0.85);
+  color: #1e40af;
+}
+
+.subscription-row__pill--overdue {
+  background: rgba(254, 226, 226, 0.9);
+  color: #be123c;
+}
+
+.subscription-row__pill--soon {
+  background: rgba(254, 243, 199, 0.9);
+  color: #b45309;
+}
+
+.subscription-row__payment {
+  min-width: 0;
+  justify-self: start;
+}
+
+.subscription-row__payment-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.subscription-row__payment-name {
+  font-size: 13px;
+  color: #374151;
+}
+
+.subscription-row__payment-name--empty {
+  color: #9ca3af;
+}
+
+.subscription-row__actions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+  justify-self: end;
+}
+
+.subscription-row__mark-paid--reserved {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.subscription-row__mark-paid {
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid rgba(80, 12, 176, 0.35);
+  background: rgba(80, 12, 176, 0.12);
+  color: #5b21b6;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease;
+}
+
+.subscription-row__mark-paid:hover:not(:disabled) {
+  background: rgba(80, 12, 176, 0.22);
+}
+
+.subscription-row__mark-paid:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.subscription-row__toggle {
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.15);
+  color: #6b7280;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.subscription-row__toggle:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.35);
+  color: #374151;
+}
+
+.subscription-row__history {
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  background: transparent;
+  color: #7c3aed;
+  cursor: pointer;
+}
+
+.subscription-row__history:hover {
+  background: rgba(237, 233, 254, 0.4);
+}
+
+/* History drawer */
+.subscription-history-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 1060;
+  pointer-events: none;
+}
+
+.subscription-history-drawer--open {
+  pointer-events: auto;
+}
+
+.subscription-history-drawer__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.subscription-history-drawer--open .subscription-history-drawer__backdrop {
+  opacity: 1;
+}
+
+.subscription-history-drawer__panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: min(400px, 100vw);
+  padding: 24px 20px;
+  background: rgba(255, 255, 255, 0.12);
+  border-left: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: -12px 0 40px rgba(80, 12, 176, 0.08);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+  backdrop-filter: blur(20px) saturate(1.15);
+  transform: translateX(100%);
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.subscription-history-drawer--open .subscription-history-drawer__panel {
+  transform: translateX(0);
+}
+
+.subscription-history-drawer__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.subscription-history-drawer__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.subscription-history-drawer__sub {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 4px 0 0;
+}
+
+.subscription-history-drawer__close {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+}
+
+.subscription-history-drawer__list {
+  flex: 1;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.subscription-history-drawer__item {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.subscription-history-drawer__item-date {
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.subscription-history-drawer__item-source {
+  font-size: 11px;
+  color: #9ca3af;
+  text-transform: capitalize;
+}
+
+.subscription-history-drawer__item-amount {
+  font-weight: 700;
+  font-size: 14px;
+  color: #5b21b6;
+}
+
+.subscription-history-drawer__empty {
+  color: #9ca3af;
+  font-size: 14px;
+  text-align: center;
+  padding: 24px;
+}
+
+@supports not (grid-template-columns: subgrid) {
+  .subscription-row {
+    grid-template-columns:
+      minmax(0, 1.4fr)
+      8.5rem
+      13.5rem
+      minmax(9rem, 1fr)
+      minmax(0, max-content);
+    column-gap: 28px;
+  }
+}
+
+@media (max-width: 900px) {
+  .subscriptions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .subscription-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    column-gap: 20px;
+    row-gap: 12px;
+  }
+
+  .subscription-row__brand {
+    grid-column: 1 / -1;
+  }
+
+  .subscription-row__actions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    justify-self: stretch;
+  }
+
+  .subscription-row__meta {
+    width: auto;
+  }
+}
+
+/* Month picker — glass + purple palette (aligned with dashboard) */
+.subscriptions-page__month .datepicker-wrapper,
+.subscriptions-page__month .datepicker-input-wrapper,
+.subscriptions-page__month .react-datepicker-wrapper {
+  width: 100%;
+}
+
+.subscriptions-page,
+.subscriptions-month-picker__calendar {
+  --picker-glass-bg: rgba(255, 255, 255, 0.52);
+  --picker-glass-border: rgba(255, 255, 255, 0.75);
+  --picker-glass-shadow: 0 8px 32px rgba(80, 12, 176, 0.06), 0 4px 16px rgba(18, 18, 18, 0.04);
+  --picker-hover-bg: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.78) 0%,
+    rgba(245, 240, 250, 0.62) 48%,
+    rgba(238, 242, 255, 0.55) 100%
+  );
+  --picker-hover-shadow: 0 4px 16px rgba(80, 12, 176, 0.07), 0 2px 10px rgba(249, 115, 22, 0.05);
+  --picker-violet-soft: rgba(80, 12, 176, 0.1);
+  --picker-violet-mid: rgba(80, 12, 176, 0.18);
+  --picker-violet-strong: rgba(80, 12, 176, 0.82);
+}
+
+.subscriptions-page__month .form-control,
+.subscriptions-page__month .datepicker-input-wrapper .react-datepicker__input-container input {
+  height: 36px;
+  padding: 6px 36px 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 12px;
+  background: var(--picker-glass-bg);
+  border: 1px solid var(--picker-glass-border);
+  color: #111827;
+  box-shadow: var(--picker-glass-shadow);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+  backdrop-filter: blur(20px) saturate(1.15);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.subscriptions-page__month .form-control:hover,
+.subscriptions-page__month .datepicker-input-wrapper .react-datepicker__input-container input:hover {
+  background: var(--picker-hover-bg);
+  border-color: rgba(255, 255, 255, 0.88);
+  box-shadow: var(--picker-hover-shadow);
+}
+
+.subscriptions-page__month .form-control:focus,
+.subscriptions-page__month .datepicker-input-wrapper .react-datepicker__input-container input:focus {
+  outline: none;
+  background: var(--picker-hover-bg);
+  border-color: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 0 0 2px var(--picker-violet-soft),
+    var(--picker-hover-shadow);
+}
+
+.subscriptions-page__month .datepicker-wrapper svg {
+  color: #7c3aed;
+}
+
+.react-datepicker-popper:has(.subscriptions-month-picker__calendar) {
+  z-index: 10020 !important;
+}
+
+.subscriptions-month-picker__calendar {
+  font-family: Inter, system-ui, -apple-system, sans-serif !important;
+  background: rgba(255, 255, 255, 0.58) !important;
+  border: 1px solid rgba(255, 255, 255, 0.78) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--picker-glass-shadow) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.15) !important;
+  backdrop-filter: blur(20px) saturate(1.15) !important;
+}
+
+.subscriptions-month-picker__calendar.react-datepicker--month-only {
+  min-width: 260px !important;
+  max-width: 280px !important;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__triangle {
+  display: none !important;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__header {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5) !important;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__current-month {
+  font-weight: 600 !important;
+  color: #111827 !important;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__year-read-view,
+.subscriptions-month-picker__calendar .react-datepicker__month-read-view {
+  font-weight: 600 !important;
+  color: #111827 !important;
+  border-radius: 10px !important;
+  padding: 4px 10px !important;
+  background: rgba(255, 255, 255, 0.42) !important;
+  border: 1px solid rgba(255, 255, 255, 0.58) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  backdrop-filter: blur(10px) saturate(1.1);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__year-read-view:hover,
+.subscriptions-month-picker__calendar .react-datepicker__month-read-view:hover {
+  background: var(--picker-hover-bg) !important;
+  border-color: rgba(255, 255, 255, 0.85) !important;
+  box-shadow: var(--picker-hover-shadow) !important;
+  color: #5b21b6 !important;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__month-read-view--down-arrow,
+.subscriptions-month-picker__calendar .react-datepicker__year-read-view--down-arrow {
+  border-color: #9ca3af !important;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__year-read-view:hover .react-datepicker__year-read-view--down-arrow,
+.subscriptions-month-picker__calendar .react-datepicker__month-read-view:hover .react-datepicker__month-read-view--down-arrow {
+  border-color: #7c3aed !important;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__year-dropdown,
+.subscriptions-month-picker__calendar .react-datepicker__month-dropdown,
+.subscriptions-month-picker__calendar .react-datepicker__year-dropdown-container,
+.subscriptions-month-picker__calendar .react-datepicker__month-dropdown-container {
+  background: rgba(255, 255, 255, 0.62) !important;
+  border: 1px solid rgba(255, 255, 255, 0.78) !important;
+  border-radius: 14px !important;
+  padding: 6px !important;
+  box-shadow: 0 8px 28px rgba(80, 12, 176, 0.1), 0 4px 14px rgba(249, 115, 22, 0.06) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.15) !important;
+  backdrop-filter: blur(20px) saturate(1.15) !important;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__year-option,
+.subscriptions-month-picker__calendar .react-datepicker__month-option {
+  border-radius: 8px !important;
+  margin: 2px 0 !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  background: transparent !important;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__year-option:hover,
+.subscriptions-month-picker__calendar .react-datepicker__month-option:hover {
+  background: var(--picker-hover-bg) !important;
+  color: #5b21b6 !important;
+  box-shadow: 0 2px 8px rgba(80, 12, 176, 0.06) !important;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__year-option--selected,
+.subscriptions-month-picker__calendar .react-datepicker__month-option--selected,
+.subscriptions-month-picker__calendar .react-datepicker__year-option--selected:hover,
+.subscriptions-month-picker__calendar .react-datepicker__month-option--selected:hover {
+  background: var(--picker-violet-strong) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 10px rgba(80, 12, 176, 0.2) !important;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__month-text {
+  background: rgba(255, 255, 255, 0.38) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  border-radius: 10px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  transform: none !important;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__month-text:hover {
+  background: var(--picker-hover-bg) !important;
+  border-color: rgba(255, 255, 255, 0.82) !important;
+  color: #5b21b6 !important;
+  box-shadow: var(--picker-hover-shadow) !important;
+  transform: none !important;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__month-text--selected,
+.subscriptions-month-picker__calendar .react-datepicker__month-text--keyboard-selected {
+  background: var(--picker-violet-strong) !important;
+  border-color: rgba(80, 12, 176, 0.45) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 10px rgba(80, 12, 176, 0.22) !important;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__month-text--selected:hover,
+.subscriptions-month-picker__calendar .react-datepicker__month-text--keyboard-selected:hover {
+  background: rgba(80, 12, 176, 0.9) !important;
+  border-color: rgba(80, 12, 176, 0.5) !important;
+  color: #fff !important;
+  transform: none !important;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__year-text {
+  background: rgba(255, 255, 255, 0.38) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  border-radius: 10px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  transform: none !important;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__year-text:hover {
+  background: var(--picker-hover-bg) !important;
+  border-color: rgba(255, 255, 255, 0.82) !important;
+  color: #5b21b6 !important;
+  box-shadow: var(--picker-hover-shadow) !important;
+  transform: none !important;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__year-text--selected,
+.subscriptions-month-picker__calendar .react-datepicker__year-text--keyboard-selected {
+  background: var(--picker-violet-strong) !important;
+  border-color: rgba(80, 12, 176, 0.45) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 10px rgba(80, 12, 176, 0.22) !important;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__year-text--selected:hover,
+.subscriptions-month-picker__calendar .react-datepicker__year-text--keyboard-selected:hover {
+  background: rgba(80, 12, 176, 0.9) !important;
+  color: #fff !important;
+  transform: none !important;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__navigation {
+  background: rgba(255, 255, 255, 0.42) !important;
+  border: 1px solid rgba(255, 255, 255, 0.58) !important;
+  border-radius: 8px !important;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__navigation:hover {
+  background: var(--picker-hover-bg) !important;
+  border-color: rgba(255, 255, 255, 0.85) !important;
+  box-shadow: var(--picker-hover-shadow) !important;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__navigation-icon::before {
+  border-color: #6b7280 !important;
+}
+
+.subscriptions-month-picker__calendar .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
+  border-color: #7c3aed !important;
+}

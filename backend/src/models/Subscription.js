@@ -60,6 +60,10 @@ const subscriptionSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  metadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now

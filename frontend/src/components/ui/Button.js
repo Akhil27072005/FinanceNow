@@ -1,21 +1,43 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import { useModalGlass } from '../../contexts/ModalGlassContext';
 
 /**
  * Custom Button Component
  * Replaces Bootstrap buttons with modern fintech styling
  */
-const Button = ({ 
-  children, 
-  variant = 'primary', 
+const Button = ({
+  children,
+  variant = 'primary',
   size = 'md',
   type = 'button',
   disabled = false,
   loading = false,
   onClick,
   className = '',
-  ...props 
+  glass = false,
+  ...props
 }) => {
+  const inModalGlass = useModalGlass();
+  const useGlass = glass || inModalGlass;
+  const [isHovered, setIsHovered] = React.useState(false);
+
+  if (useGlass) {
+    const glassClass = `modal-glass__btn modal-glass__btn--${variant} settings-glass-btn settings-glass-btn--${variant} ${className}`.trim();
+    return (
+      <button
+        type={type}
+        disabled={disabled || loading}
+        onClick={onClick}
+        className={glassClass}
+        {...props}
+      >
+        {loading && <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />}
+        {children}
+      </button>
+    );
+  }
+
   const baseStyles = {
     display: 'inline-flex',
     alignItems: 'center',
@@ -96,8 +118,6 @@ const Button = ({
     }
   };
 
-  const [isHovered, setIsHovered] = React.useState(false);
-
   const combinedStyles = {
     ...baseStyles,
     ...sizeStyles[size],
@@ -124,4 +144,3 @@ const Button = ({
 };
 
 export default Button;
-

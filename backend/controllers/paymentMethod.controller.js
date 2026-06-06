@@ -2,6 +2,7 @@ const PaymentMethod = require('../src/models/PaymentMethod');
 const Transaction = require('../src/models/Transaction');
 const mongoose = require('mongoose');
 const cache = require('../utils/cache');
+const { sanitizePaymentMethodMetadata } = require('../utils/paymentMethodMetadata');
 
 /**
  * Create a new payment method
@@ -9,7 +10,8 @@ const cache = require('../utils/cache');
  */
 const createPaymentMethod = async (req, res, next) => {
   try {
-    const { name, icon, type, detailLabel } = req.body;
+    const { name, icon, type, detailLabel, metadata } = req.body;
+    const methodType = type || 'other';
 
     // Validation: Required fields
     if (!name) {
@@ -40,8 +42,9 @@ const createPaymentMethod = async (req, res, next) => {
       userId: req.user._id,
       name: trimmedName,
       icon: icon.trim(),
-      type: type || 'other',
-      detailLabel: detailLabel ? detailLabel.trim() : null
+      type: methodType,
+      detailLabel: detailLabel ? detailLabel.trim() : null,
+      metadata: sanitizePaymentMethodMetadata(metadata, methodType)
     });
 
     try {
@@ -110,7 +113,7 @@ const getPaymentMethods = async (req, res, next) => {
 const updatePaymentMethod = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, icon, type, detailLabel } = req.body;
+    const { name, icon, type, detailLabel, metadata } = req.body;
 
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -163,6 +166,13 @@ const updatePaymentMethod = async (req, res, next) => {
 
     if (detailLabel !== undefined) {
       paymentMethod.detailLabel = detailLabel ? detailLabel.trim() : null;
+    }
+
+    if (metadata !== undefined) {
+      paymentMethod.metadata = sanitizePaymentMethodMetadata(
+        metadata,
+        paymentMethod.type
+      );
     }
 
     // Save (uniqueness is enforced by schema index)

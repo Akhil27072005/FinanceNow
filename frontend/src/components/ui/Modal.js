@@ -1,23 +1,18 @@
 import React from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { X } from 'lucide-react';
+import { ModalGlassContext } from '../../contexts/ModalGlassContext';
+import '../../styles/modal-glass.css';
 
 /**
- * Custom Modal Component using Headless UI
- * Replaces Bootstrap modals with modern fintech styling
+ * Glass modal — frosted panel over blurred page-tinted backdrop
  */
 const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
-  const sizeStyles = {
-    sm: { maxWidth: '28rem' },
-    md: { maxWidth: '32rem' },
-    lg: { maxWidth: '42rem' },
-    xl: { maxWidth: '56rem' }
-  };
+  const panelClass = `modal-glass__panel modal-glass__panel--${size}`;
 
   return (
     <Transition show={isOpen} as={React.Fragment}>
-      <Dialog as="div" style={{ position: 'relative', zIndex: 50 }} onClose={onClose}>
-        {/* Backdrop */}
+      <Dialog as="div" className="modal-glass" onClose={onClose}>
         <Transition.Child
           as={React.Fragment}
           enter="ease-out duration-300"
@@ -27,28 +22,11 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
           leaveFrom="opacity-100"
           leaveTo="opacity-0"
         >
-          <div style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.2)',
-            backdropFilter: 'blur(4px)'
-          }} />
+          <div className="modal-glass__backdrop" aria-hidden />
         </Transition.Child>
 
-        {/* Modal Container */}
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          overflowY: 'auto',
-          zIndex: 50
-        }}>
-          <div style={{
-            display: 'flex',
-            minHeight: '100%',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '1rem'
-          }}>
+        <div className="modal-glass__scroll">
+          <div className="modal-glass__center">
             <Transition.Child
               as={React.Fragment}
               enter="ease-out duration-300"
@@ -58,64 +36,26 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel
-                style={{
-                  width: '100%',
-                  ...sizeStyles[size],
-                  transform: 'translateZ(0)',
-                  overflow: 'hidden',
-                  borderRadius: '16px',
-                  backgroundColor: 'var(--bg-card)',
-                  padding: '1.5rem',
-                  textAlign: 'left',
-                  boxShadow: '0 20px 60px rgba(0, 0, 0, 0.15)',
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                {/* Header */}
+              <Dialog.Panel className={panelClass}>
                 {title && (
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '1rem',
-                    paddingBottom: '1rem',
-                    borderBottom: '1px solid var(--border-light)'
-                  }}>
-                    <Dialog.Title
-                      as="h3"
-                      style={{
-                        fontSize: '18px',
-                        fontWeight: 600,
-                        lineHeight: '1.5',
-                        color: 'var(--text-primary)',
-                        margin: 0
-                      }}
-                    >
+                  <div className="modal-glass__header">
+                    <Dialog.Title as="h3" className="modal-glass__title">
                       {title}
                     </Dialog.Title>
                     <button
+                      type="button"
                       onClick={onClose}
-                      style={{
-                        padding: '4px',
-                        color: '#9ca3af',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        transition: 'color 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = '#4b5563'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = '#9ca3af'}
+                      className="modal-glass__close"
+                      aria-label="Close"
                     >
-                      <X size={20} strokeWidth={1.75} />
+                      <X size={18} strokeWidth={2} aria-hidden />
                     </button>
                   </div>
                 )}
 
-                {/* Content */}
-                <div style={{ marginTop: '0.5rem' }}>
-                  {children}
-                </div>
+                <ModalGlassContext.Provider value={true}>
+                  <div className="modal-glass__body">{children}</div>
+                </ModalGlassContext.Provider>
               </Dialog.Panel>
             </Transition.Child>
           </div>
@@ -126,4 +66,3 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
 };
 
 export default Modal;
-

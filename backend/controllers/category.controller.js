@@ -3,13 +3,39 @@ const Transaction = require('../src/models/Transaction');
 const mongoose = require('mongoose');
 const cache = require('../utils/cache');
 
+const ICON_PATTERN = /^[a-z0-9-]+:[a-z0-9-]+$/i;
+const MAX_ICON_LENGTH = 100;
+
+const validateIcon = (icon) => {
+  if (icon === undefined || icon === null || icon === '') {
+    return { ok: true, value: undefined };
+  }
+  if (typeof icon !== 'string') {
+    return { ok: false, error: 'Icon must be a string' };
+  }
+  const trimmed = icon.trim();
+  if (!trimmed) {
+    return { ok: true, value: undefined };
+  }
+  if (trimmed.length > MAX_ICON_LENGTH) {
+    return { ok: false, error: `Icon must be at most ${MAX_ICON_LENGTH} characters` };
+  }
+  if (!ICON_PATTERN.test(trimmed)) {
+    return {
+      ok: false,
+      error: 'Icon must be in the format "collection:name" (e.g. lucide:shopping-cart)'
+    };
+  }
+  return { ok: true, value: trimmed };
+};
+
 /**
  * Create a new category
  * POST /api/categories
  */
 const createCategory = async (req, res, next) => {
   try {
-    const { name, type } = req.body;
+    const { name, type, icon } = req.body;
 
     // Validation: Required fields
     if (!name || !type) {
@@ -36,11 +62,17 @@ const createCategory = async (req, res, next) => {
       });
     }
 
+    const iconResult = validateIcon(icon);
+    if (!iconResult.ok) {
+      return res.status(400).json({ success: false, error: iconResult.error });
+    }
+
     // Create category (uniqueness is enforced by schema index)
     const category = new Category({
       userId: req.user._id,
       name: trimmedName,
-      type
+      type,
+      ...(iconResult.value && { icon: iconResult.value })
     });
 
     try {
@@ -129,7 +161,7 @@ const getCategories = async (req, res, next) => {
 const updateCategory = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, type } = req.body;
+    const { name, type, icon } = req.body;
 
     // Validate ObjectId
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -151,6 +183,8 @@ const updateCategory = async (req, res, next) => {
         error: 'Category not found'
       });
     }
+
+    const typeBeforeUpdate = category.type;
 
     // Prevent userId override
     if (req.body.userId) {
@@ -183,6 +217,16 @@ const updateCategory = async (req, res, next) => {
       category.type = type;
     }
 
+    if (icon !== undefined) {
+      const iconResult = validateIcon(icon);
+      if (!iconResult.ok) {
+        return res.status(400).json({ success: false, error: iconResult.error });
+      }
+      if (iconResult.value) {
+        category.icon = iconResult.value;
+      }
+    }
+
     // Save (uniqueness is enforced by schema index)
     try {
       await category.save();
@@ -200,6 +244,9 @@ const updateCategory = async (req, res, next) => {
     // Invalidate cache
     await cache.del(`ref:${req.user._id.toString()}:categories:all`);
     await cache.del(`ref:${req.user._id.toString()}:categories:${category.type}`);
+    if (typeBeforeUpdate !== category.type) {
+      await cache.del(`ref:${req.user._id.toString()}:categories:${typeBeforeUpdate}`);
+    }
 
     res.json({
       success: true,

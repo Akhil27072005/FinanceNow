@@ -6,13 +6,35 @@ const cache = require('../utils/cache');
 const {
   advanceAutoRenewSubscriptions,
   recordManualSubscriptionPayment,
-  getSubscriptionSpendInRange
+  getSubscriptionSpendInRange,
+  getProjectedSubscriptionSpendForMonth,
+  getSubscriptionPaymentHistory
 } = require('../utils/subscriptionPayments');
+const { sanitizeSubscriptionMetadata } = require('../utils/subscriptionMetadata');
 
 const invalidateSubscriptionRelatedCaches = async (userId) => {
   const userIdStr = userId.toString();
   await cache.invalidateSubscriptionAlertsCache(userIdStr);
   await cache.invalidateAnalyticsCache(userIdStr);
+};
+
+const parseMonthRange = (monthStr) => {
+  if (monthStr && /^\d{4}-\d{2}$/.test(monthStr)) {
+    const [year, month] = monthStr.split('-').map(Number);
+    return {
+      month: monthStr,
+      dateStart: new Date(year, month - 1, 1),
+      dateEnd: new Date(year, month, 0, 23, 59, 59, 999)
+    };
+  }
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  return {
+    month: `${y}-${String(m + 1).padStart(2, '0')}`,
+    dateStart: new Date(y, m, 1),
+    dateEnd: new Date(y, m + 1, 0, 23, 59, 59, 999)
+  };
 };
 
 /**
@@ -31,7 +53,8 @@ const createSubscription = async (req, res, next) => {
       paymentMethodId,
       paymentMethodDetail,
       isActive,
-      autoRenew
+      autoRenew,
+      metadata
     } = req.body;
 
     // Validation: Required fields
@@ -132,7 +155,8 @@ const createSubscription = async (req, res, next) => {
       paymentMethodId: paymentMethodId || null,
       paymentMethodDetail: paymentMethodDetail || null,
       isActive: isActive !== undefined ? isActive : true,
-      autoRenew: autoRenew !== undefined ? autoRenew : true
+      autoRenew: autoRenew !== undefined ? autoRenew : true,
+      metadata: sanitizeSubscriptionMetadata(metadata)
     });
 
     await subscription.save();
@@ -140,9 +164,7 @@ const createSubscription = async (req, res, next) => {
     // Populate references for response
     await subscription.populate('categoryId paymentMethodId');
 
-    // Invalidate subscription alerts cache
-    const userIdStr = req.user._id.toString();
-    await cache.del(`subscriptions:${userIdStr}:alerts:7`); // Default 7 days
+    await invalidateSubscriptionRelatedCaches(req.user._id);
 
     res.status(201).json({
       success: true,
@@ -264,7 +286,8 @@ const updateSubscription = async (req, res, next) => {
       paymentMethodId,
       paymentMethodDetail,
       isActive,
-      autoRenew
+      autoRenew,
+      metadata
     } = req.body;
 
     // Validate ObjectId
@@ -428,14 +451,15 @@ const updateSubscription = async (req, res, next) => {
       subscription.autoRenew = autoRenew;
     }
 
+    if (metadata !== undefined) {
+      subscription.metadata = sanitizeSubscriptionMetadata(metadata);
+    }
+
     await subscription.save();
 
-    // Populate references for response
     await subscription.populate('categoryId paymentMethodId');
 
-    // Invalidate subscription alerts cache
-    const userIdStr = req.user._id.toString();
-    await cache.del(`subscriptions:${userIdStr}:alerts:7`); // Default 7 days
+    await invalidateSubscriptionRelatedCaches(req.user._id);
 
     res.json({
       success: true,
@@ -482,6 +506,96 @@ const deleteSubscription = async (req, res, next) => {
     res.json({
       success: true,
       message: 'Subscription deleted successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Monthly summary: paid vs scheduled subscription spend
+ * GET /api/subscriptions/summary?month=YYYY-MM
+ */
+const getSubscriptionSummary = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    const { month: monthStr } = req.query;
+
+    const advanceResult = await advanceAutoRenewSubscriptions(userId);
+    if (advanceResult.changed) {
+      await invalidateSubscriptionRelatedCaches(userId);
+    }
+
+    const { month, dateStart, dateEnd } = parseMonthRange(monthStr);
+
+    const [paid, projected, activeCount] = await Promise.all([
+      getSubscriptionSpendInRange(userId, dateStart, dateEnd),
+      getProjectedSubscriptionSpendForMonth(userId, dateStart, dateEnd),
+      Subscription.countDocuments({ userId, isActive: true })
+    ]);
+
+    const paidTotal = paid.total;
+    const scheduledTotal = projected.total;
+
+    res.json({
+      success: true,
+      month,
+      summary: {
+        activeCount,
+        paidThisMonth: paidTotal,
+        scheduledThisMonth: scheduledTotal,
+        remainingThisMonth: Math.max(
+          0,
+          Math.round((scheduledTotal - paidTotal) * 100) / 100
+        ),
+        paymentCount: paid.paymentCount,
+        projectedCount: projected.projectedCount
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Payment history for a subscription
+ * GET /api/subscriptions/:id/payments
+ */
+const getSubscriptionPayments = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid subscription ID format'
+      });
+    }
+
+    const subscription = await Subscription.findOne({
+      _id: id,
+      userId
+    }).select('name amount billingCycle');
+
+    if (!subscription) {
+      return res.status(404).json({
+        success: false,
+        error: 'Subscription not found'
+      });
+    }
+
+    const payments = await getSubscriptionPaymentHistory(userId, id);
+
+    res.json({
+      success: true,
+      subscription: {
+        id: subscription._id.toString(),
+        name: subscription.name,
+        amount: subscription.amount,
+        billingCycle: subscription.billingCycle
+      },
+      data: payments
     });
   } catch (error) {
     next(error);
@@ -668,6 +782,8 @@ module.exports = {
   getSubscription,
   updateSubscription,
   deleteSubscription,
+  getSubscriptionSummary,
+  getSubscriptionPayments,
   getSubscriptionAlerts,
   markSubscriptionAsPaid
 };

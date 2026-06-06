@@ -1,9 +1,6 @@
 const Transaction = require('../src/models/Transaction');
 const Subscription = require('../src/models/Subscription');
 const { getSubscriptionSpendInRange } = require('../utils/subscriptionPayments');
-const Category = require('../src/models/Category');
-const SubCategory = require('../src/models/SubCategory');
-const Tag = require('../src/models/Tag');
 const mongoose = require('mongoose');
 const cache = require('../utils/cache');
 
@@ -14,34 +11,27 @@ const cache = require('../utils/cache');
 const getDateRange = (month, startDate, endDate) => {
   let dateStart, dateEnd;
 
-  // Check if month is provided and not empty string
   if (month && month.trim() !== '') {
-    // Validate month format (YYYY-MM)
     const monthRegex = /^\d{4}-\d{2}$/;
     if (!monthRegex.test(month)) {
       throw new Error('Month must be in YYYY-MM format (e.g., 2024-01)');
     }
 
-    // Set start and end of month using local time to avoid timezone issues
     const [year, monthNum] = month.split('-').map(Number);
     dateStart = new Date(year, monthNum - 1, 1);
-    dateEnd = new Date(year, monthNum, 0, 23, 59, 59, 999); // Last day of month
-    
-    // Validate the dates were created correctly
+    dateEnd = new Date(year, monthNum, 0, 23, 59, 59, 999);
+
     if (isNaN(dateStart.getTime()) || isNaN(dateEnd.getTime())) {
       throw new Error('Invalid month provided');
     }
   } else if (startDate && endDate && startDate.trim() !== '' && endDate.trim() !== '') {
-    // Validate date range - parse dates more carefully to handle timezones
-    // Parse as local dates to avoid timezone shifts
     const startParts = startDate.split('-').map(Number);
     const endParts = endDate.split('-').map(Number);
-    
+
     if (startParts.length !== 3 || endParts.length !== 3) {
       throw new Error('Invalid date format. Use ISO 8601 format (e.g., 2024-01-15)');
     }
 
-    // Create dates using local time (year, month-1, day) to avoid timezone issues
     dateStart = new Date(startParts[0], startParts[1] - 1, startParts[2]);
     dateEnd = new Date(endParts[0], endParts[1] - 1, endParts[2]);
 
@@ -49,16 +39,13 @@ const getDateRange = (month, startDate, endDate) => {
       throw new Error('Invalid date format. Use ISO 8601 format (e.g., 2024-01-15)');
     }
 
-    // Set start date to beginning of day
     dateStart.setHours(0, 0, 0, 0);
-    // Set end date to end of day
     dateEnd.setHours(23, 59, 59, 999);
 
     if (dateStart > dateEnd) {
       throw new Error('startDate must be before or equal to endDate');
     }
   } else {
-    // Default to current month
     const now = new Date();
     const year = now.getFullYear();
     const monthNum = now.getMonth();
@@ -69,126 +56,204 @@ const getDateRange = (month, startDate, endDate) => {
   return { dateStart, dateEnd };
 };
 
+const normalizeAccount = (account) => {
+  if (!account || account === 'all') return null;
+  if (account === 'self') return 'self';
+  return null;
+};
+
+const buildTransactionMatch = (userId, dateStart, dateEnd, options = {}) => {
+  const match = {
+    userId,
+    date: {
+      $gte: dateStart,
+      $lte: dateEnd
+    }
+  };
+
+  if (options.type) {
+    match.type = options.type;
+  }
+
+  const account = normalizeAccount(options.account);
+  if (account === 'self') {
+    match.account = 'self';
+  }
+
+  if (options.categoryId) {
+    if (!mongoose.Types.ObjectId.isValid(options.categoryId)) {
+      throw new Error('Invalid categoryId format');
+    }
+    match.categoryId = new mongoose.Types.ObjectId(options.categoryId);
+  }
+
+  if (options.subCategoryId) {
+    if (!mongoose.Types.ObjectId.isValid(options.subCategoryId)) {
+      throw new Error('Invalid subCategoryId format');
+    }
+    match.subCategoryId = new mongoose.Types.ObjectId(options.subCategoryId);
+  }
+
+  if (options.paymentMethodRequired) {
+    match.paymentMethodId = { $ne: null };
+  }
+
+  if (!options.categoryId && options.categoryRequired) {
+    match.categoryId = { $ne: null };
+  }
+
+  if (!options.subCategoryId && options.subCategoryRequired) {
+    match.subCategoryId = { $ne: null };
+  }
+
+  if (options.tagsRequired) {
+    match.tags = { $exists: true, $ne: [] };
+  }
+
+  return match;
+};
+
+const getPriorDateRange = (dateStart, dateEnd) => {
+  const durationMs = dateEnd.getTime() - dateStart.getTime();
+  const priorEnd = new Date(dateStart.getTime() - 1);
+  priorEnd.setHours(23, 59, 59, 999);
+  const priorStart = new Date(priorEnd.getTime() - durationMs);
+  priorStart.setHours(0, 0, 0, 0);
+  return { priorStart, priorEnd };
+};
+
+const pctChange = (current, prior) => {
+  if (prior === 0 || prior == null) {
+    return current > 0 ? 100 : 0;
+  }
+  return Math.round(((current - prior) / prior) * 1000) / 10;
+};
+
+const aggregateTransactionTotals = async (userId, dateStart, dateEnd, account) => {
+  const pipeline = [
+    {
+      $match: buildTransactionMatch(userId, dateStart, dateEnd, { account })
+    },
+    {
+      $group: {
+        _id: '$type',
+        total: { $sum: '$amount' }
+      }
+    }
+  ];
+
+  const results = await Transaction.aggregate(pipeline);
+  const totals = {};
+  results.forEach((row) => {
+    totals[row._id] = row.total;
+  });
+  return totals;
+};
+
+const buildKpisFromTotals = (totals, daysInRange, subscriptionSpend, activeSubscriptionCount) => {
+  const totalIncome = totals.income || 0;
+  const totalExpenses = totals.expense || 0;
+  const totalSavings = totals.savings || 0;
+  const totalInvestments = totals.investment || 0;
+  const netSavings = totalIncome - totalExpenses;
+  const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : null;
+  const avgDailyExpense = daysInRange > 0 ? totalExpenses / daysInRange : 0;
+
+  return {
+    totalIncome,
+    totalExpenses,
+    netSavings,
+    savingsRate: savingsRate !== null ? Math.round(savingsRate * 100) / 100 : null,
+    totalSavings,
+    totalInvestments,
+    avgDailyExpense: Math.round(avgDailyExpense * 100) / 100,
+    activeSubscriptions: activeSubscriptionCount,
+    monthlySubscriptionSpend: subscriptionSpend.total,
+    subscriptionPaymentCount: subscriptionSpend.paymentCount
+  };
+};
+
 /**
  * Get dashboard analytics KPIs
  * GET /api/analytics/dashboard
  */
 const getDashboardAnalytics = async (req, res, next) => {
   try {
-    const { month, startDate, endDate } = req.query;
-    const userId = req.user._id; // Keep as ObjectId for MongoDB queries
-    const userIdStr = userId.toString(); // String version for cache keys
+    const { month, startDate, endDate, account, includeComparison } = req.query;
+    const userId = req.user._id;
+    const userIdStr = userId.toString();
+    const accountScope = normalizeAccount(account) || 'all';
 
-    // Determine date range
     const { dateStart, dateEnd } = getDateRange(month, startDate, endDate);
 
-    // Generate cache key
-    const cacheKey = month 
-      ? `analytics:${userIdStr}:dashboard:${month}`
-      : `analytics:${userIdStr}:dashboard:${startDate}:${endDate}`;
+    const cacheKey = month
+      ? `analytics:${userIdStr}:dashboard:${month}:${accountScope}:${includeComparison === 'true' ? 'cmp' : 'base'}`
+      : `analytics:${userIdStr}:dashboard:${startDate}:${endDate}:${accountScope}:${includeComparison === 'true' ? 'cmp' : 'base'}`;
 
-    // Try to get from cache first
     const cachedData = await cache.get(cacheKey);
     if (cachedData) {
       return res.json(cachedData);
     }
 
-    // Calculate number of days in range for average daily expense
     const daysInRange = Math.ceil((dateEnd - dateStart) / (1000 * 60 * 60 * 24)) + 1;
 
-    // Transaction aggregation pipeline
-    // Groups by type and sums amounts for income, expense, savings, and investment
-    const transactionPipeline = [
-      {
-        $match: {
-          userId: userId, // Use ObjectId for MongoDB
-          date: {
-            $gte: dateStart,
-            $lte: dateEnd
-          }
-        }
-      },
-      {
-        $group: {
-          _id: '$type',
-          total: { $sum: '$amount' }
-        }
-      }
-    ];
-
-    // Execute transaction aggregation
-    const transactionResults = await Transaction.aggregate(transactionPipeline);
-
-    // Convert aggregation results to object for easy lookup
-    const transactionTotals = {};
-    transactionResults.forEach(result => {
-      transactionTotals[result._id] = result.total;
-    });
-
-    // Extract KPI values from transaction totals
-    const totalIncome = transactionTotals.income || 0;
-    const totalExpenses = transactionTotals.expense || 0;
-    const totalSavings = transactionTotals.savings || 0;
-    const totalInvestments = transactionTotals.investment || 0;
-
-    // Calculate derived KPIs
-    const netSavings = totalIncome - totalExpenses;
-    const savingsRate = totalIncome > 0 ? (netSavings / totalIncome) * 100 : null;
-    const avgDailyExpense = daysInRange > 0 ? totalExpenses / daysInRange : 0;
-
+    const totals = await aggregateTransactionTotals(userId, dateStart, dateEnd, account);
     const activeSubscriptionCount = await Subscription.countDocuments({
       userId,
       isActive: true
     });
-
-    // Paid subscription spend in selected range (billing due dates in period)
     const subscriptionSpend = await getSubscriptionSpendInRange(userId, dateStart, dateEnd);
 
-    // Build response
+    const kpis = buildKpisFromTotals(totals, daysInRange, subscriptionSpend, activeSubscriptionCount);
+
     const response = {
       success: true,
       range: {
         startDate: dateStart.toISOString(),
         endDate: dateEnd.toISOString()
       },
-      kpis: {
-        totalIncome,
-        totalExpenses,
-        netSavings,
-        savingsRate: savingsRate !== null ? Math.round(savingsRate * 100) / 100 : null, // Round to 2 decimal places
-        totalSavings,
-        totalInvestments: totalInvestments,
-        avgDailyExpense: Math.round(avgDailyExpense * 100) / 100, // Round to 2 decimal places
-        activeSubscriptions: activeSubscriptionCount,
-        monthlySubscriptionSpend: subscriptionSpend.total,
-        subscriptionPaymentCount: subscriptionSpend.paymentCount
-      }
+      account: accountScope,
+      kpis
     };
 
-    // Cache the response for 10 minutes (600 seconds)
-    await cache.set(cacheKey, response, 600);
+    if (includeComparison === 'true') {
+      const { priorStart, priorEnd } = getPriorDateRange(dateStart, dateEnd);
+      const priorTotals = await aggregateTransactionTotals(userId, priorStart, priorEnd, account);
+      const priorDays = Math.ceil((priorEnd - priorStart) / (1000 * 60 * 60 * 24)) + 1;
+      const priorSubscriptionSpend = await getSubscriptionSpendInRange(userId, priorStart, priorEnd);
+      const priorKpis = buildKpisFromTotals(
+        priorTotals,
+        priorDays,
+        priorSubscriptionSpend,
+        activeSubscriptionCount
+      );
 
+      response.priorRange = {
+        startDate: priorStart.toISOString(),
+        endDate: priorEnd.toISOString()
+      };
+      response.priorKpis = priorKpis;
+      response.changes = {
+        totalIncome: pctChange(kpis.totalIncome, priorKpis.totalIncome),
+        totalExpenses: pctChange(kpis.totalExpenses, priorKpis.totalExpenses),
+        netSavings: pctChange(kpis.netSavings, priorKpis.netSavings),
+        totalSavings: pctChange(kpis.totalSavings, priorKpis.totalSavings),
+        totalInvestments: pctChange(kpis.totalInvestments, priorKpis.totalInvestments),
+        avgDailyExpense: pctChange(kpis.avgDailyExpense, priorKpis.avgDailyExpense)
+      };
+    }
+
+    await cache.set(cacheKey, response, 600);
     res.json(response);
   } catch (error) {
     next(error);
   }
 };
 
-/**
- * Get monthly trend chart data (Line Chart)
- * Groups transactions by date and sums amounts per day
- */
-const getMonthlyTrend = async (userId, type, dateStart, dateEnd) => {
+const getMonthlyTrend = async (userId, type, dateStart, dateEnd, account) => {
   const pipeline = [
     {
-      $match: {
-        userId: userId,
-        type: type,
-        date: {
-          $gte: dateStart,
-          $lte: dateEnd
-        }
-      }
+      $match: buildTransactionMatch(userId, dateStart, dateEnd, { type, account })
     },
     {
       $group: {
@@ -205,30 +270,20 @@ const getMonthlyTrend = async (userId, type, dateStart, dateEnd) => {
         amount: { $round: ['$amount', 2] }
       }
     },
-    {
-      $sort: { date: 1 } // Sort ascending by date for line chart
-    }
+    { $sort: { date: 1 } }
   ];
 
-  return await Transaction.aggregate(pipeline);
+  return Transaction.aggregate(pipeline);
 };
 
-/**
- * Get category split chart data (Pie/Bar Chart)
- * Groups transactions by category and sums amounts
- */
-const getCategorySplit = async (userId, type, dateStart, dateEnd) => {
+const getCategorySplit = async (userId, type, dateStart, dateEnd, account) => {
   const pipeline = [
     {
-      $match: {
-        userId: userId,
-        type: type,
-        date: {
-          $gte: dateStart,
-          $lte: dateEnd
-        },
-        categoryId: { $ne: null } // Only include transactions with categories
-      }
+      $match: buildTransactionMatch(userId, dateStart, dateEnd, {
+        type,
+        account,
+        categoryRequired: true
+      })
     },
     {
       $group: {
@@ -247,7 +302,7 @@ const getCategorySplit = async (userId, type, dateStart, dateEnd) => {
     {
       $unwind: {
         path: '$category',
-        preserveNullAndEmptyArrays: true // Handle missing categories gracefully
+        preserveNullAndEmptyArrays: true
       }
     },
     {
@@ -258,30 +313,20 @@ const getCategorySplit = async (userId, type, dateStart, dateEnd) => {
         amount: { $round: ['$amount', 2] }
       }
     },
-    {
-      $sort: { amount: -1 } // Sort descending by amount
-    }
+    { $sort: { amount: -1 } }
   ];
 
-  return await Transaction.aggregate(pipeline);
+  return Transaction.aggregate(pipeline);
 };
 
-/**
- * Get payment method split chart data (Bar Chart)
- * Groups transactions by payment method and sums amounts
- */
-const getPaymentMethodSplit = async (userId, type, dateStart, dateEnd) => {
+const getPaymentMethodSplit = async (userId, type, dateStart, dateEnd, account) => {
   const pipeline = [
     {
-      $match: {
-        userId: userId,
-        type: type,
-        date: {
-          $gte: dateStart,
-          $lte: dateEnd
-        },
-        paymentMethodId: { $ne: null } // Only include transactions with payment methods
-      }
+      $match: buildTransactionMatch(userId, dateStart, dateEnd, {
+        type,
+        account,
+        paymentMethodRequired: true
+      })
     },
     {
       $group: {
@@ -300,7 +345,7 @@ const getPaymentMethodSplit = async (userId, type, dateStart, dateEnd) => {
     {
       $unwind: {
         path: '$paymentMethod',
-        preserveNullAndEmptyArrays: true // Handle missing payment methods gracefully
+        preserveNullAndEmptyArrays: true
       }
     },
     {
@@ -308,43 +353,29 @@ const getPaymentMethodSplit = async (userId, type, dateStart, dateEnd) => {
         _id: 0,
         paymentMethodId: '$_id',
         paymentMethod: { $ifNull: ['$paymentMethod.name', 'Unknown'] },
+        icon: '$paymentMethod.icon',
         amount: { $round: ['$amount', 2] }
       }
     },
-    {
-      $sort: { amount: -1 } // Sort descending by amount
-    }
+    { $sort: { amount: -1 } }
   ];
 
-  return await Transaction.aggregate(pipeline);
+  return Transaction.aggregate(pipeline);
 };
 
-/**
- * Get sub-category split chart data
- * Groups transactions by subcategory, optionally filtered by categoryId
- */
-const getSubCategorySplit = async (userId, type, dateStart, dateEnd, categoryId = null) => {
-  const matchStage = {
-    userId: userId,
-    type: type,
-    date: {
-      $gte: dateStart,
-      $lte: dateEnd
-    },
-    subCategoryId: { $ne: null } // Only include transactions with subcategories
+const getSubCategorySplit = async (userId, type, dateStart, dateEnd, categoryId, account) => {
+  const matchOptions = {
+    type,
+    account,
+    subCategoryRequired: true
   };
-
-  // Filter by categoryId if provided
   if (categoryId) {
-    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
-      throw new Error('Invalid categoryId format');
-    }
-    matchStage.categoryId = new mongoose.Types.ObjectId(categoryId);
+    matchOptions.categoryId = categoryId;
   }
 
   const pipeline = [
     {
-      $match: matchStage
+      $match: buildTransactionMatch(userId, dateStart, dateEnd, matchOptions)
     },
     {
       $group: {
@@ -363,7 +394,21 @@ const getSubCategorySplit = async (userId, type, dateStart, dateEnd, categoryId 
     {
       $unwind: {
         path: '$subcategory',
-        preserveNullAndEmptyArrays: true // Handle missing subcategories gracefully
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: 'categories',
+        localField: 'subcategory.categoryId',
+        foreignField: '_id',
+        as: 'category'
+      }
+    },
+    {
+      $unwind: {
+        path: '$category',
+        preserveNullAndEmptyArrays: true
       }
     },
     {
@@ -371,37 +416,27 @@ const getSubCategorySplit = async (userId, type, dateStart, dateEnd, categoryId 
         _id: 0,
         subCategoryId: '$_id',
         subCategory: { $ifNull: ['$subcategory.name', 'Uncategorized'] },
+        categoryId: '$subcategory.categoryId',
+        category: { $ifNull: ['$category.name', null] },
         amount: { $round: ['$amount', 2] }
       }
     },
-    {
-      $sort: { amount: -1 } // Sort descending by amount
-    }
+    { $sort: { amount: -1 } }
   ];
 
-  return await Transaction.aggregate(pipeline);
+  return Transaction.aggregate(pipeline);
 };
 
-/**
- * Get tag-based spending chart data
- * Unwinds tags and groups by tagId to sum amounts
- */
-const getTagBasedSpending = async (userId, type, dateStart, dateEnd) => {
+const getTagBasedSpending = async (userId, type, dateStart, dateEnd, account) => {
   const pipeline = [
     {
-      $match: {
-        userId: userId,
-        type: type,
-        date: {
-          $gte: dateStart,
-          $lte: dateEnd
-        },
-        tags: { $exists: true, $ne: [] } // Only include transactions with tags
-      }
+      $match: buildTransactionMatch(userId, dateStart, dateEnd, {
+        type,
+        account,
+        tagsRequired: true
+      })
     },
-    {
-      $unwind: '$tags' // Create one document per tag
-    },
+    { $unwind: '$tags' },
     {
       $group: {
         _id: '$tags',
@@ -419,7 +454,7 @@ const getTagBasedSpending = async (userId, type, dateStart, dateEnd) => {
     {
       $unwind: {
         path: '$tag',
-        preserveNullAndEmptyArrays: true // Handle missing tags gracefully
+        preserveNullAndEmptyArrays: true
       }
     },
     {
@@ -430,12 +465,49 @@ const getTagBasedSpending = async (userId, type, dateStart, dateEnd) => {
         amount: { $round: ['$amount', 2] }
       }
     },
-    {
-      $sort: { amount: -1 } // Sort descending by amount
-    }
+    { $sort: { amount: -1 } }
   ];
 
-  return await Transaction.aggregate(pipeline);
+  return Transaction.aggregate(pipeline);
+};
+
+/**
+ * Income vs expense per calendar month within the active filter range.
+ * Partial first/last months only include days inside rangeStart–rangeEnd.
+ */
+const getMonthlyComparison = async (userId, account, rangeStart, rangeEnd, maxMonths = 12) => {
+  const rows = [];
+  const monthStarts = [];
+
+  let cursor = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1);
+  const endMonthStart = new Date(rangeEnd.getFullYear(), rangeEnd.getMonth(), 1);
+
+  while (cursor <= endMonthStart) {
+    monthStarts.push(new Date(cursor));
+    cursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+  }
+
+  const capped =
+    monthStarts.length > maxMonths ? monthStarts.slice(monthStarts.length - maxMonths) : monthStarts;
+
+  for (const monthStart of capped) {
+    const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0, 23, 59, 59, 999);
+    const dateStart = monthStart < rangeStart ? rangeStart : monthStart;
+    const dateEnd = monthEnd > rangeEnd ? rangeEnd : monthEnd;
+
+    const totals = await aggregateTransactionTotals(userId, dateStart, dateEnd, account);
+    const monthKey = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, '0')}`;
+    const monthLabel = monthStart.toLocaleString('en-US', { month: 'short', year: '2-digit' });
+
+    rows.push({
+      month: monthKey,
+      monthLabel,
+      income: Math.round((totals.income || 0) * 100) / 100,
+      expense: Math.round((totals.expense || 0) * 100) / 100
+    });
+  }
+
+  return rows;
 };
 
 /**
@@ -444,32 +516,52 @@ const getTagBasedSpending = async (userId, type, dateStart, dateEnd) => {
  */
 const getChartData = async (req, res, next) => {
   try {
-    const { type, month, startDate, endDate, chartType, categoryId } = req.query;
-    const userId = req.user._id; // Keep as ObjectId for MongoDB queries
-    const userIdStr = userId.toString(); // String version for cache keys
+    const { type, month, startDate, endDate, chartType, categoryId, account, months } = req.query;
+    const userId = req.user._id;
+    const userIdStr = userId.toString();
+    const accountScope = normalizeAccount(account) || 'all';
 
-    // Validation: type is required
-    if (!type) {
-      return res.status(400).json({
-        success: false,
-        error: 'Type is required. Must be one of: expense, income, savings, investment'
-      });
+    const chart = chartType || 'monthlyTrend';
+
+    if (chart !== 'monthlyComparison') {
+      if (!type) {
+        return res.status(400).json({
+          success: false,
+          error: 'Type is required. Must be one of: expense, income, savings, investment'
+        });
+      }
+
+      if (!['expense', 'income', 'savings', 'investment'].includes(type)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Type must be one of: expense, income, savings, investment'
+        });
+      }
     }
 
-    // Validation: type must be valid enum
-    if (!['expense', 'income', 'savings', 'investment'].includes(type)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Type must be one of: expense, income, savings, investment'
-      });
-    }
+    const explicitMonth = month && String(month).trim() !== '';
+    const explicitRange =
+      startDate &&
+      endDate &&
+      String(startDate).trim() !== '' &&
+      String(endDate).trim() !== '';
+    const useTrailingMonths =
+      chart === 'monthlyComparison' && !explicitMonth && !explicitRange;
 
-    // Determine date range
-    let dateStart, dateEnd;
+    let dateStart;
+    let dateEnd;
     try {
-      const dateRange = getDateRange(month, startDate, endDate);
-      dateStart = dateRange.dateStart;
-      dateEnd = dateRange.dateEnd;
+      if (useTrailingMonths) {
+        const maxMonths = Math.min(Math.max(parseInt(months, 10) || 6, 1), 12);
+        const now = new Date();
+        dateEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        dateStart = new Date(now.getFullYear(), now.getMonth() - (maxMonths - 1), 1);
+        dateStart.setHours(0, 0, 0, 0);
+      } else {
+        const dateRange = getDateRange(month, startDate, endDate);
+        dateStart = dateRange.dateStart;
+        dateEnd = dateRange.dateEnd;
+      }
     } catch (error) {
       return res.status(400).json({
         success: false,
@@ -477,74 +569,79 @@ const getChartData = async (req, res, next) => {
       });
     }
 
-    // Generate cache key
-    const chart = chartType || 'monthlyTrend';
     const cacheKeyParts = [
       `analytics:${userIdStr}:charts`,
-      type,
+      type || 'multi',
       chart,
-      month || `${startDate}:${endDate}`,
-      categoryId || 'all'
+      useTrailingMonths ? `trailing:${months || 6}` : month || `${startDate}:${endDate}`,
+      categoryId || 'all',
+      accountScope,
+      months || '6'
     ];
     const cacheKey = cacheKeyParts.join(':');
 
-    // Try to get from cache first
     const cachedData = await cache.get(cacheKey);
     if (cachedData) {
       return res.json(cachedData);
     }
 
-    // Determine chart type (default to monthlyTrend if not specified)
     let data;
     let chartName;
 
     switch (chart) {
       case 'monthlyTrend':
         chartName = 'Monthly Trend';
-        data = await getMonthlyTrend(userId, type, dateStart, dateEnd);
+        data = await getMonthlyTrend(userId, type, dateStart, dateEnd, account);
         break;
 
       case 'categorySplit':
         chartName = 'Category Split';
-        data = await getCategorySplit(userId, type, dateStart, dateEnd);
+        data = await getCategorySplit(userId, type, dateStart, dateEnd, account);
         break;
 
       case 'subCategorySplit':
         chartName = 'Sub-Category Split';
-        data = await getSubCategorySplit(userId, type, dateStart, dateEnd, categoryId);
+        data = await getSubCategorySplit(userId, type, dateStart, dateEnd, categoryId, account);
         break;
 
       case 'tagBased':
         chartName = 'Tag-Based Spending';
-        data = await getTagBasedSpending(userId, type, dateStart, dateEnd);
+        data = await getTagBasedSpending(userId, type, dateStart, dateEnd, account);
         break;
 
       case 'paymentMethodSplit':
         chartName = 'Payment Method Split';
-        data = await getPaymentMethodSplit(userId, type, dateStart, dateEnd);
+        data = await getPaymentMethodSplit(userId, type, dateStart, dateEnd, account);
         break;
+
+      case 'monthlyComparison': {
+        chartName = 'Monthly Comparison';
+        const maxMonths = Math.min(Math.max(parseInt(months, 10) || 12, 1), 12);
+        data = await getMonthlyComparison(userId, account, dateStart, dateEnd, maxMonths);
+        break;
+      }
 
       default:
         return res.status(400).json({
           success: false,
-          error: `Invalid chartType. Must be one of: monthlyTrend, categorySplit, subCategorySplit, tagBased, paymentMethodSplit`
+          error:
+            'Invalid chartType. Must be one of: monthlyTrend, categorySplit, subCategorySplit, tagBased, paymentMethodSplit, monthlyComparison'
         });
     }
 
     const response = {
       success: true,
       chartType: chartName,
-      type: type,
+      type: type || null,
+      account: accountScope,
       range: {
         startDate: dateStart.toISOString(),
         endDate: dateEnd.toISOString()
       },
-      data: data
+      data
     };
 
-    // Cache the response for 10 minutes (600 seconds)
     await cache.set(cacheKey, response, 600);
-
     res.json(response);
   } catch (error) {
     next(error);

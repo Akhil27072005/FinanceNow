@@ -1,13 +1,44 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import DatePickerLib from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { Calendar } from 'lucide-react';
+import { useModalGlass } from '../../contexts/ModalGlassContext';
 
 /**
  * Custom DatePicker Component using react-datepicker
  * Replaces Bootstrap date inputs with modern fintech styling
  */
-const DatePicker = ({ selected, onChange, placeholder = 'Select date', showMonthYearPicker = false, ...props }) => {
+const DatePicker = ({
+  selected,
+  onChange,
+  placeholder = 'Select date',
+  showMonthYearPicker = false,
+  wrapperClassName = '',
+  calendarClassName: calendarClassNameProp = '',
+  popperClassName: popperClassNameProp = '',
+  glass = false,
+  ...props
+}) => {
+  const inModalGlass = useModalGlass();
+  const useGlass = glass || inModalGlass;
+  const modalGlassCalendarClasses =
+    'modal-glass-datepicker__calendar modal-glass-datepicker__calendar--compact';
+  const calendarClassName = [
+    'custom-calendar',
+    showMonthYearPicker && 'react-datepicker--month-only',
+    useGlass ? calendarClassNameProp || modalGlassCalendarClasses : calendarClassNameProp
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const popperClassName = [
+    popperClassNameProp,
+    useGlass && 'modal-glass-datepicker-popper transactions-filters-datepicker-popper'
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   // Handle date parsing - support both YYYY-MM-DD and YYYY-MM formats
   const parseDate = (dateString) => {
     if (!dateString) return null;
@@ -66,7 +97,10 @@ const DatePicker = ({ selected, onChange, placeholder = 'Select date', showMonth
   };
 
   return (
-    <div className="datepicker-wrapper" style={{ position: 'relative' }}>
+    <div
+      className={`datepicker-wrapper ${wrapperClassName}`.trim()}
+      style={{ position: 'relative' }}
+    >
       <DatePickerLib
         selected={parseDate(selected)}
         onChange={(date) => {
@@ -81,7 +115,12 @@ const DatePicker = ({ selected, onChange, placeholder = 'Select date', showMonth
         placeholderText={placeholder}
         className="form-control"
         wrapperClassName="datepicker-input-wrapper"
-        calendarClassName={showMonthYearPicker ? "custom-calendar react-datepicker--month-only" : "custom-calendar"}
+        calendarClassName={calendarClassName}
+        popperClassName={popperClassName || undefined}
+        popperPlacement={useGlass ? 'bottom-start' : undefined}
+        popperContainer={
+          useGlass ? ({ children }) => createPortal(children, document.body) : undefined
+        }
         {...props}
       />
       <Calendar

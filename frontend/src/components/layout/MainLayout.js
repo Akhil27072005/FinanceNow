@@ -1,12 +1,13 @@
 import React from 'react';
 import Sidebar from './Sidebar';
 import { SidebarProvider, useSidebar } from '../../contexts/SidebarContext';
+import '../../styles/content-glass.css';
 
 const MainLayoutContent = ({ children }) => {
   const { sidebarWidth } = useSidebar();
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+    <div className="app-shell" style={{ display: 'flex', minHeight: '100vh' }}>
       <Sidebar />
       <div
         style={{
@@ -18,8 +19,9 @@ const MainLayoutContent = ({ children }) => {
           transition: 'margin-left 0.25s ease'
         }}
       >
-        <main style={{ flex: 1, padding: '24px', overflow: 'auto', backgroundColor: '#f8f9fa' }}>
-          {children}
+        <main className="app-content">
+          <div className="app-content__backdrop" aria-hidden />
+          <div className="app-content__inner">{children}</div>
         </main>
       </div>
     </div>

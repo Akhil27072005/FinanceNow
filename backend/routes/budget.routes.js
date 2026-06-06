@@ -4,6 +4,8 @@ const authenticateUser = require('../middlewares/auth.middleware');
 const {
   createBudget,
   getBudgets,
+  getBudgetSummary,
+  autoCreateBudgets,
   updateBudget,
   deleteBudget
 } = require('../controllers/budget.controller');
@@ -19,6 +21,12 @@ router.post('/', authenticateUser, createBudget);
 
 // Get budgets (optionally filtered by month, categoryId, or subCategoryId)
 router.get('/', authenticateUser, getBudgets);
+
+// Get month summary (budgets + spent + totals)
+router.get('/summary', authenticateUser, getBudgetSummary);
+
+// Auto-create budgets from a previous month
+router.post('/auto-create', authenticateUser, autoCreateBudgets);
 
 // Update a budget
 router.put('/:id', authenticateUser, updateBudget);

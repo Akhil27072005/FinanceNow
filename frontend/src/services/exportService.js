@@ -12,6 +12,7 @@ export const exportService = {
     if (filters.type) params.append('type', filters.type);
     if (filters.startDate) params.append('startDate', filters.startDate);
     if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.account === 'self') params.append('account', 'self');
 
     const response = await api.get(`/export/transactions?${params.toString()}`, {
       responseType: 'blob'

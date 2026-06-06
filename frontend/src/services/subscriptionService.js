@@ -15,6 +15,17 @@ export const subscriptionService = {
     return response.data;
   },
 
+  getSummary: async (month = null) => {
+    const params = month ? `?month=${month}` : '';
+    const response = await api.get(`/subscriptions/summary${params}`);
+    return response.data;
+  },
+
+  getPayments: async (id) => {
+    const response = await api.get(`/subscriptions/${id}/payments`);
+    return response.data;
+  },
+
   createSubscription: async (subscriptionData) => {
     const response = await api.post('/subscriptions', subscriptionData);
     return response.data;
@@ -40,4 +51,3 @@ export const subscriptionService = {
     return response.data;
   }
 };
-

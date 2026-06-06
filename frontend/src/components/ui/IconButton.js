@@ -1,19 +1,40 @@
 import React from 'react';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Copy, Edit2, Trash2 } from 'lucide-react';
 
 /**
  * Icon Button Component for Edit and Delete actions
  */
-const IconButton = ({ 
-  type = 'edit', // 'edit' or 'delete'
+const IconButton = ({
+  type = 'edit', // 'edit' | 'delete' | 'duplicate'
   onClick,
   size = 18,
   className = '',
-  ...props 
+  glass = false,
+  ...props
 }) => {
-  const icon = type === 'edit' ? Edit2 : Trash2;
-  const Icon = icon;
-  
+  const [isHovered, setIsHovered] = React.useState(false);
+  const icons = { edit: Edit2, delete: Trash2, duplicate: Copy };
+  const Icon = icons[type] || Edit2;
+  const ariaLabels = {
+    edit: 'Edit',
+    delete: 'Delete',
+    duplicate: 'Duplicate'
+  };
+
+  if (glass) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`pm-glass-action pm-glass-action--${type} ${className}`.trim()}
+        aria-label={ariaLabels[type] || 'Action'}
+        {...props}
+      >
+        <Icon size={size} strokeWidth={2} />
+      </button>
+    );
+  }
+
   const baseStyles = {
     display: 'inline-flex',
     alignItems: 'center',
@@ -36,6 +57,10 @@ const IconButton = ({
     delete: {
       color: 'var(--danger)',
       backgroundColor: 'transparent'
+    },
+    duplicate: {
+      color: '#5b21b6',
+      backgroundColor: 'transparent'
     }
   };
 
@@ -47,10 +72,12 @@ const IconButton = ({
     delete: {
       backgroundColor: 'rgba(255, 82, 82, 0.1)',
       transform: 'scale(1.05)'
+    },
+    duplicate: {
+      backgroundColor: 'rgba(237, 233, 254, 0.65)',
+      transform: 'scale(1.05)'
     }
   };
-
-  const [isHovered, setIsHovered] = React.useState(false);
 
   const combinedStyles = {
     ...baseStyles,

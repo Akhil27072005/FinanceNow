@@ -1,30 +1,55 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Table, Form, Alert } from 'react-bootstrap';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Form, Alert } from 'react-bootstrap';
 import { subcategoryService } from '../services/subcategoryService';
 import { categoryService } from '../services/categoryService';
-import { cardStyle } from '../styles/cardStyles';
+import {
+  SUGGESTED_ICON_BY_TYPE,
+  FALLBACK_CATEGORY_ICON
+} from '../constants/categoryIcons';
 import Modal from '../components/ui/Modal';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
 import Button from '../components/ui/Button';
 import Select from '../components/ui/Select';
-import IconButton from '../components/ui/IconButton';
+import CategoryNav from '../components/subcategories/CategoryNav';
+import SubcategoryTileGrid from '../components/subcategories/SubcategoryTileGrid';
+import SubcategoryIconPicker from '../components/subcategories/SubcategoryIconPicker';
+import '../styles/subcategories.css';
+import '../styles/categories.css';
+
+const getCategoryId = (value) => {
+  if (!value) return '';
+  if (typeof value === 'object' && value._id) return value._id;
+  return String(value);
+};
+
+const defaultIconForCategory = (category) => {
+  if (!category) return FALLBACK_CATEGORY_ICON;
+  return category.icon || SUGGESTED_ICON_BY_TYPE[category.type] || FALLBACK_CATEGORY_ICON;
+};
+
+const emptyForm = (categoryId = '', categories = []) => {
+  const parent = categories.find((c) => c._id === categoryId);
+  return {
+    name: '',
+    categoryId,
+    icon: defaultIconForCategory(parent)
+  };
+};
 
 const Subcategories = () => {
   const [subcategories, setSubcategories] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [activeType, setActiveType] = useState('expense');
+  const [activeCategoryId, setActiveCategoryId] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [editingSubcategory, setEditingSubcategory] = useState(null);
-  const [formData, setFormData] = useState({ name: '', categoryId: '' });
+  const [formData, setFormData] = useState(() => emptyForm());
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [subcategoriesRes, categoriesRes] = await Promise.all([
@@ -33,23 +58,101 @@ const Subcategories = () => {
       ]);
       setSubcategories(subcategoriesRes.data || []);
       setCategories(categoriesRes.data || []);
-      setLoading(false);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to load data');
+    } finally {
       setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const countsByCategory = useMemo(() => {
+    const counts = {};
+    subcategories.forEach((s) => {
+      const id = getCategoryId(s.categoryId);
+      if (id) counts[id] = (counts[id] || 0) + 1;
+    });
+    return counts;
+  }, [subcategories]);
+
+  const activeCategory = useMemo(
+    () => categories.find((c) => c._id === activeCategoryId) || null,
+    [categories, activeCategoryId]
+  );
+
+  const modalPickerCategoryType = useMemo(() => {
+    const parent = categories.find((c) => c._id === formData.categoryId);
+    return parent?.type || activeType;
+  }, [categories, formData.categoryId, activeType]);
+
+  const filteredSubcategories = useMemo(() => {
+    if (!activeCategoryId) return [];
+    return subcategories
+      .filter((s) => getCategoryId(s.categoryId) === activeCategoryId)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [subcategories, activeCategoryId]);
+
+  const ensureSelection = useCallback(
+    (cats, type, currentCategoryId) => {
+      const inType = cats.filter((c) => c.type === type).sort((a, b) => a.name.localeCompare(b.name));
+      if (inType.length === 0) {
+        const firstTypeWithCats = ['expense', 'income', 'savings', 'investment'].find(
+          (t) => cats.some((c) => c.type === t)
+        );
+        if (firstTypeWithCats) {
+          const fallback = cats
+            .filter((c) => c.type === firstTypeWithCats)
+            .sort((a, b) => a.name.localeCompare(b.name))[0];
+          return { type: firstTypeWithCats, categoryId: fallback?._id || '' };
+        }
+        return { type, categoryId: '' };
+      }
+      const stillValid = inType.some((c) => c._id === currentCategoryId);
+      return {
+        type,
+        categoryId: stillValid ? currentCategoryId : inType[0]._id
+      };
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (loading || categories.length === 0) return;
+    const { type, categoryId } = ensureSelection(categories, activeType, activeCategoryId);
+    if (type !== activeType) setActiveType(type);
+    if (categoryId !== activeCategoryId) setActiveCategoryId(categoryId);
+  }, [loading, categories, activeType, activeCategoryId, ensureSelection]);
+
+  const handleTypeChange = (type) => {
+    setActiveType(type);
+    const inType = categories
+      .filter((c) => c.type === type)
+      .sort((a, b) => a.name.localeCompare(b.name));
+    if (inType.length > 0) {
+      setActiveCategoryId(inType[0]._id);
+    } else {
+      setActiveCategoryId('');
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        name: formData.name.trim(),
+        categoryId: formData.categoryId,
+        icon: formData.icon
+      };
       if (editingSubcategory) {
-        await subcategoryService.updateSubCategory(editingSubcategory._id, formData);
+        await subcategoryService.updateSubCategory(editingSubcategory._id, payload);
       } else {
-        await subcategoryService.createSubCategory(formData);
+        await subcategoryService.createSubCategory(payload);
       }
       setShowModal(false);
-      setFormData({ name: '', categoryId: '' });
+      setFormData(emptyForm(activeCategoryId, categories));
       setEditingSubcategory(null);
       loadData();
     } catch (err) {
@@ -73,134 +176,94 @@ const Subcategories = () => {
     }
   };
 
-  const handleEdit = (subcategory) => {
-    setEditingSubcategory(subcategory);
-    setFormData({ name: subcategory.name, categoryId: subcategory.categoryId?._id || subcategory.categoryId || '' });
+  const openCreate = () => {
+    setEditingSubcategory(null);
+    setFormData(emptyForm(activeCategoryId, categories));
     setShowModal(true);
   };
 
+  const handleEdit = (subcategory) => {
+    setEditingSubcategory(subcategory);
+    setFormData({
+      name: subcategory.name,
+      categoryId: getCategoryId(subcategory.categoryId),
+      icon: subcategory.icon || defaultIconForCategory(
+        categories.find((c) => c._id === getCategoryId(subcategory.categoryId))
+      )
+    });
+    setShowModal(true);
+  };
+
+  const handleCategoryChange = (categoryId) => {
+    const parent = categories.find((c) => c._id === categoryId);
+    setFormData((prev) => ({
+      ...prev,
+      categoryId,
+      icon: editingSubcategory ? prev.icon : defaultIconForCategory(parent)
+    }));
+  };
+
+  const categorySelectOptions = useMemo(
+    () =>
+      [...categories]
+        .sort((a, b) => {
+          if (a.type !== b.type) return a.type.localeCompare(b.type);
+          return a.name.localeCompare(b.name);
+        })
+        .map((cat) => ({
+          value: cat._id,
+          label: `${cat.name} (${cat.type})`
+        })),
+    [categories]
+  );
+
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4" style={{ marginBottom: '24px' }}>
-        <h2 style={{ 
-          fontWeight: 600, 
-          margin: 0,
-          fontSize: '24px',
-          color: '#111827',
-          letterSpacing: '-0.02em'
-        }}>
-          Subcategories
-        </h2>
-        <Button 
-          variant="primary"
-          onClick={() => { setFormData({ name: '', categoryId: '' }); setEditingSubcategory(null); setShowModal(true); }}
-        >
-          + Add Subcategory
-        </Button>
+    <div className="subcategories-page">
+      <div className="subcategories-page__header">
+        <h1 className="subcategories-page__title">Subcategories</h1>
       </div>
 
-      {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
+      {error && (
+        <Alert variant="danger" onClose={() => setError('')} dismissible className="mb-3">
+          {error}
+        </Alert>
+      )}
 
-      <Card style={cardStyle}>
-        <Card.Body style={{ padding: '24px' }}>
-          {loading ? (
-            <div className="text-center" style={{ padding: '40px' }}>Loading...</div>
-          ) : subcategories.length === 0 ? (
-            <div className="text-center text-muted" style={{ padding: '40px' }}>No subcategories found</div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ 
-                width: '100%', 
-                borderCollapse: 'collapse',
-                fontSize: '14px'
-              }}>
-                <thead>
-                  <tr style={{ 
-                    backgroundColor: '#F9FAFB',
-                    borderBottom: '1px solid #E5E7EB'
-                  }}>
-                    <th style={{ 
-                      padding: '12px 16px', 
-                      textAlign: 'left',
-                      fontWeight: 500,
-                      color: '#374151',
-                      fontSize: '12px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      Name
-                    </th>
-                    <th style={{ 
-                      padding: '12px 16px', 
-                      textAlign: 'left',
-                      fontWeight: 500,
-                      color: '#374151',
-                      fontSize: '12px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      Category
-                    </th>
-                    <th style={{ 
-                      padding: '12px 16px', 
-                      textAlign: 'left',
-                      fontWeight: 500,
-                      color: '#374151',
-                      fontSize: '12px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {subcategories.map((subcategory) => (
-                    <tr 
-                      key={subcategory._id}
-                      style={{ 
-                        borderBottom: '1px solid #E5E7EB',
-                        transition: 'background-color 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                    >
-                      <td style={{ padding: '16px', color: '#111827', fontSize: '14px' }}>
-                        {subcategory.name}
-                      </td>
-                      <td style={{ padding: '16px', color: '#6B7280', fontSize: '14px' }}>
-                        {subcategory.categoryId?.name || '-'}
-                      </td>
-                      <td style={{ padding: '16px' }}>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <IconButton type="edit" onClick={() => handleEdit(subcategory)} />
-                          <IconButton type="delete" onClick={() => handleDelete(subcategory._id)} />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card.Body>
-      </Card>
+      <div className="subcategories-page__layout">
+        <CategoryNav
+          categories={categories}
+          activeType={activeType}
+          onTypeChange={handleTypeChange}
+          activeCategoryId={activeCategoryId}
+          onCategoryChange={setActiveCategoryId}
+          countsByCategory={countsByCategory}
+        />
+        <SubcategoryTileGrid
+          subcategories={filteredSubcategories}
+          activeCategory={activeCategory}
+          loading={loading}
+          onAdd={openCreate}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      </div>
 
       <Modal
         isOpen={showModal}
-        onClose={() => { setShowModal(false); setEditingSubcategory(null); }}
-        title={editingSubcategory ? 'Edit Subcategory' : 'Add Subcategory'}
+        onClose={() => {
+          setShowModal(false);
+          setEditingSubcategory(null);
+        }}
+        title={editingSubcategory ? 'Edit subcategory' : 'Add subcategory'}
       >
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
             <Form.Label>Category *</Form.Label>
             <Select
               value={formData.categoryId}
-              onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-              options={[
-                { value: '', label: 'Select Category' },
-                ...categories.map(cat => ({ value: cat._id, label: cat.name }))
-              ]}
+              onChange={(e) => handleCategoryChange(e.target.value)}
+              options={categorySelectOptions}
+              placeholder="Select category"
               required
             />
           </Form.Group>
@@ -213,16 +276,35 @@ const Subcategories = () => {
               required
             />
           </Form.Group>
-          <div className="d-flex justify-content-end gap-2 mt-4" style={{ gap: '8px' }}>
-            <Button variant="secondary" onClick={() => { setShowModal(false); setEditingSubcategory(null); }}>Cancel</Button>
-            <Button variant="primary" type="submit">{editingSubcategory ? 'Update' : 'Create'}</Button>
+          <SubcategoryIconPicker
+            value={formData.icon}
+            onChange={(icon) => setFormData({ ...formData, icon })}
+            categoryType={modalPickerCategoryType}
+          />
+          <div className="modal-glass__actions">
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => {
+                setShowModal(false);
+                setEditingSubcategory(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button variant="primary" type="submit">
+              {editingSubcategory ? 'Update' : 'Create'}
+            </Button>
           </div>
         </Form>
       </Modal>
 
       <ConfirmationModal
         isOpen={showConfirmModal}
-        onClose={() => { setShowConfirmModal(false); setDeletingId(null); }}
+        onClose={() => {
+          setShowConfirmModal(false);
+          setDeletingId(null);
+        }}
         onConfirm={confirmDelete}
         title="Delete Subcategory"
         message="Are you sure you want to delete this subcategory? This action cannot be undone."
@@ -235,4 +317,3 @@ const Subcategories = () => {
 };
 
 export default Subcategories;
-

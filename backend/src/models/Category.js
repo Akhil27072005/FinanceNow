@@ -27,6 +27,11 @@ const categorySchema = new mongoose.Schema({
     enum: ['expense', 'income', 'savings', 'investment'],
     required: true
   },
+  icon: {
+    type: String,
+    trim: true,
+    default: 'lucide:tag'
+  },
   createdAt: {
     type: Date,
     default: Date.now

@@ -1,8 +1,23 @@
 const Budget = require('../src/models/Budget');
 const Category = require('../src/models/Category');
 const SubCategory = require('../src/models/SubCategory');
+const Transaction = require('../src/models/Transaction');
 const mongoose = require('mongoose');
 const cache = require('../utils/cache');
+
+const isValidMonthKey = (month) => /^\d{4}-\d{2}$/.test(month);
+
+const getMonthRange = (monthKey) => {
+  const [yStr, mStr] = String(monthKey).split('-');
+  const year = parseInt(yStr, 10);
+  const month = parseInt(mStr, 10);
+  if (!year || !month) return null;
+
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 0);
+  end.setHours(23, 59, 59, 999);
+  return { start, end };
+};
 
 /**
  * Create a new budget
@@ -132,6 +147,7 @@ const createBudget = async (req, res, next) => {
     const userId = req.user._id.toString();
     await cache.del(`budgets:${userId}:${budget.month}`);
     await cache.del(`budgets:${userId}`); // Also invalidate general cache
+    await cache.del(`budgetsSummary:${userId}:${budget.month}`);
 
     res.status(201).json({
       success: true,
@@ -246,6 +262,208 @@ const getBudgets = async (req, res, next) => {
     await cache.set(cacheKey, response, 1800);
 
     res.json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get budget summary for a month (budgets + spent + totals)
+ * GET /api/budgets/summary?month=YYYY-MM
+ */
+const getBudgetSummary = async (req, res, next) => {
+  try {
+    const { month } = req.query;
+    const userId = req.user._id.toString();
+
+    if (!month || !isValidMonthKey(month)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Month must be in YYYY-MM format (e.g., 2024-01)'
+      });
+    }
+
+    const cacheKey = `budgetsSummary:${userId}:${month}`;
+    const cached = await cache.get(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    const range = getMonthRange(month);
+    if (!range) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid month value'
+      });
+    }
+
+    const budgets = await Budget.find({ userId: req.user._id, month })
+      .populate('categoryId subCategoryId')
+      .sort({ createdAt: -1 });
+
+    // Aggregate expense transactions for the month, grouped by category + subcategory
+    const agg = await Transaction.aggregate([
+      {
+        $match: {
+          userId: req.user._id,
+          type: 'expense',
+          date: { $gte: range.start, $lte: range.end }
+        }
+      },
+      {
+        $group: {
+          _id: { categoryId: '$categoryId', subCategoryId: '$subCategoryId' },
+          amount: { $sum: '$amount' }
+        }
+      }
+    ]);
+
+    const spentByCategoryId = {};
+    const spentBySubCategoryId = {};
+    agg.forEach((row) => {
+      const amount = Number(row.amount) || 0;
+      const catId = row?._id?.categoryId ? String(row._id.categoryId) : null;
+      const subId = row?._id?.subCategoryId ? String(row._id.subCategoryId) : null;
+      if (catId) spentByCategoryId[catId] = (spentByCategoryId[catId] || 0) + amount;
+      if (subId) spentBySubCategoryId[subId] = (spentBySubCategoryId[subId] || 0) + amount;
+    });
+
+    const spentByBudgetId = {};
+    let totalBudgeted = 0;
+    let totalSpent = 0;
+    let exceededCount = 0;
+
+    budgets.forEach((b) => {
+      const budgetAmount = Number(b.amount) || 0;
+      totalBudgeted += budgetAmount;
+
+      let spent = 0;
+      if (b.categoryId?._id) {
+        spent = spentByCategoryId[String(b.categoryId._id)] || 0;
+      } else if (b.subCategoryId?._id) {
+        spent = spentBySubCategoryId[String(b.subCategoryId._id)] || 0;
+      }
+      spentByBudgetId[String(b._id)] = spent;
+      totalSpent += spent;
+      if (budgetAmount > 0 && spent >= budgetAmount) exceededCount += 1;
+    });
+
+    const response = {
+      success: true,
+      month,
+      budgets,
+      spentByBudgetId,
+      totals: {
+        totalBudgeted,
+        totalSpent,
+        totalRemaining: totalBudgeted - totalSpent,
+        exceededCount
+      }
+    };
+
+    await cache.set(cacheKey, response, 1800);
+    res.json(response);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Auto-create budgets from one month into another
+ * POST /api/budgets/auto-create
+ * body: { fromMonth: 'YYYY-MM', toMonth: 'YYYY-MM' }
+ */
+const autoCreateBudgets = async (req, res, next) => {
+  try {
+    const { fromMonth, toMonth } = req.body || {};
+    const userId = req.user._id.toString();
+
+    if (!fromMonth || !isValidMonthKey(fromMonth) || !toMonth || !isValidMonthKey(toMonth)) {
+      return res.status(400).json({
+        success: false,
+        error: 'fromMonth and toMonth are required and must be in YYYY-MM format (e.g., 2024-01)'
+      });
+    }
+
+    if (fromMonth === toMonth) {
+      return res.status(400).json({
+        success: false,
+        error: 'fromMonth and toMonth must be different'
+      });
+    }
+
+    const sourceBudgets = await Budget.find({ userId: req.user._id, month: fromMonth })
+      .select('categoryId subCategoryId amount')
+      .lean();
+
+    if (!sourceBudgets.length) {
+      return res.json({
+        success: true,
+        fromMonth,
+        toMonth,
+        createdCount: 0,
+        skippedCount: 0,
+        createdBudgets: []
+      });
+    }
+
+    // Precompute which budgets already exist in target month to compute skippedCount
+    const existing = await Budget.find({ userId: req.user._id, month: toMonth })
+      .select('categoryId subCategoryId')
+      .lean();
+    const existingKeySet = new Set(
+      existing.map((b) =>
+        b.categoryId
+          ? `cat:${String(b.categoryId)}`
+          : `sub:${String(b.subCategoryId)}`
+      )
+    );
+
+    const docs = sourceBudgets.map((b) => ({
+      userId: req.user._id,
+      month: toMonth,
+      amount: b.amount,
+      categoryId: b.categoryId || null,
+      subCategoryId: b.subCategoryId || null
+    }));
+
+    const skippedCount = docs.reduce((count, d) => {
+      const key = d.categoryId ? `cat:${String(d.categoryId)}` : `sub:${String(d.subCategoryId)}`;
+      return count + (existingKeySet.has(key) ? 1 : 0);
+    }, 0);
+
+    let inserted = [];
+    try {
+      inserted = await Budget.insertMany(docs, { ordered: false });
+    } catch (err) {
+      // insertMany ordered:false throws on dupes; still includes inserted docs on err.insertedDocs in newer mongoose
+      inserted = err?.insertedDocs || [];
+      // If it's not a duplicate-key situation, rethrow
+      if (!err || (err.code !== 11000 && !String(err.message || '').includes('E11000'))) {
+        throw err;
+      }
+    }
+
+    // Populate for response
+    const createdBudgets = await Budget.find({ _id: { $in: inserted.map((d) => d._id) } })
+      .populate('categoryId subCategoryId')
+      .sort({ createdAt: -1 });
+
+    // Invalidate caches for both months (budgets + summary)
+    await cache.del(`budgets:${userId}:${fromMonth}`);
+    await cache.del(`budgets:${userId}:${toMonth}`);
+    await cache.del(`budgets:${userId}`);
+    await cache.del(`budgetsSummary:${userId}:${fromMonth}`);
+    await cache.del(`budgetsSummary:${userId}:${toMonth}`);
+
+    res.json({
+      success: true,
+      fromMonth,
+      toMonth,
+      createdCount: createdBudgets.length,
+      skippedCount,
+      createdBudgets
+    });
   } catch (error) {
     next(error);
   }
@@ -426,6 +644,7 @@ const updateBudget = async (req, res, next) => {
     const userId = req.user._id.toString();
     await cache.del(`budgets:${userId}:${budget.month}`);
     await cache.del(`budgets:${userId}`); // Also invalidate general cache
+    await cache.del(`budgetsSummary:${userId}:${budget.month}`);
 
     res.json({
       success: true,
@@ -469,6 +688,7 @@ const deleteBudget = async (req, res, next) => {
     const userId = req.user._id.toString();
     await cache.del(`budgets:${userId}:${budget.month}`);
     await cache.del(`budgets:${userId}`); // Also invalidate general cache
+    await cache.del(`budgetsSummary:${userId}:${budget.month}`);
 
     res.json({
       success: true,
@@ -482,6 +702,8 @@ const deleteBudget = async (req, res, next) => {
 module.exports = {
   createBudget,
   getBudgets,
+  getBudgetSummary,
+  autoCreateBudgets,
   updateBudget,
   deleteBudget
 };

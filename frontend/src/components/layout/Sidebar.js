@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   ArrowLeftRight,
   LineChart,
+  TrendingUp,
   FileBarChart,
   Layers,
   Shapes,
@@ -21,7 +22,7 @@ import SidebarNavItem from './SidebarNavItem';
 import SidebarNavGroup from './SidebarNavGroup';
 
 const CATALOG_PATHS = ['/categories', '/subcategories', '/tags', '/payment-methods'];
-const INSIGHTS_PATHS = ['/reports', '/budgets'];
+const INSIGHTS_PATHS = ['/reports', '/budgets', '/investments'];
 
 const Sidebar = () => {
   const location = useLocation();
@@ -43,7 +44,8 @@ const Sidebar = () => {
   const insightsChildren = useMemo(
     () => [
       { path: '/reports', label: 'Reports', icon: FileBarChart },
-      { path: '/budgets', label: 'Budgets', icon: PiggyBank }
+      { path: '/budgets', label: 'Budgets', icon: PiggyBank },
+      { path: '/investments', label: 'Investments', icon: TrendingUp }
     ],
     []
   );

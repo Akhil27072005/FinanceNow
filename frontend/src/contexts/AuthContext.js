@@ -84,6 +84,11 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     await authService.logout();
+    try {
+      sessionStorage.removeItem('financeNow_quoteSession');
+    } catch {
+      /* ignore */
+    }
     setUser(null);
   };
 
@@ -110,12 +115,17 @@ export const AuthProvider = ({ children }) => {
     return !!localStorage.getItem('accessToken');
   };
 
+  const updateUser = (partial) => {
+    setUser((prev) => (prev ? { ...prev, ...partial } : prev));
+  };
+
   const value = {
     user,
     login,
     register,
     logout,
     fetchUser,
+    updateUser,
     isAuthenticated,
     loading
   };

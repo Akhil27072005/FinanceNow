@@ -88,6 +88,30 @@ export const authService = {
     return response.data;
   },
 
+  updatePreferences: async (preferences) => {
+    const response = await api.patch('/auth/me/preferences', preferences);
+    return response.data;
+  },
+
+  updateProfile: async (profile) => {
+    const response = await api.patch('/auth/me/profile', profile);
+    return response.data;
+  },
+
+  changePassword: async (currentPassword, newPassword) => {
+    const response = await api.post('/auth/change-password', {
+      currentPassword,
+      newPassword
+    });
+    return response.data;
+  },
+
+  logoutAllSessions: async () => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    const response = await api.post('/auth/logout-all', { refreshToken });
+    return response.data;
+  },
+
   /**
    * Request password reset
    */

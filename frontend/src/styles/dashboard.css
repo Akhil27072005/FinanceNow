@@ -1,0 +1,1178 @@
+/* Dashboard rework — scoped to .dashboard-page */
+
+/* Prevent shell column from growing past the viewport */
+.app-shell > div:has(> .app-content .dashboard-page--fit) {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Dashboard: lock to viewport — no page scroll */
+.app-content:has(.dashboard-page--fit) {
+  height: 100vh;
+  max-height: 100vh;
+  padding: 10px 14px 8px 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.app-content__inner:has(.dashboard-page--fit) {
+  flex: 1;
+  min-height: 0;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dashboard-page--fit {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dashboard-page__header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 6px;
+  min-height: 28px;
+  flex-shrink: 0;
+  padding-right: 0;
+}
+
+.dashboard-page__month {
+  width: 148px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.dashboard-page__month .datepicker-wrapper,
+.dashboard-page__month .datepicker-input-wrapper,
+.dashboard-page__month .react-datepicker-wrapper {
+  width: 100%;
+}
+
+/* Month picker — tokens aligned with app-content glass gradient */
+.dashboard-page {
+  max-width: 100%;
+}
+
+.dashboard-page,
+.dashboard-month-picker__calendar {
+  --picker-glass-bg: rgba(255, 255, 255, 0.52);
+  --picker-glass-border: rgba(255, 255, 255, 0.75);
+  --picker-glass-shadow: 0 8px 32px rgba(80, 12, 176, 0.06), 0 4px 16px rgba(18, 18, 18, 0.04);
+  --picker-hover-bg: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.78) 0%,
+    rgba(245, 240, 250, 0.62) 48%,
+    rgba(238, 242, 255, 0.55) 100%
+  );
+  --picker-hover-shadow: 0 4px 16px rgba(80, 12, 176, 0.07), 0 2px 10px rgba(249, 115, 22, 0.05);
+  --picker-violet-soft: rgba(80, 12, 176, 0.1);
+  --picker-violet-mid: rgba(80, 12, 176, 0.18);
+  --picker-violet-strong: rgba(80, 12, 176, 0.82);
+}
+
+/* Glass month selector input */
+.dashboard-page__month .form-control,
+.dashboard-page__month .datepicker-input-wrapper .react-datepicker__input-container input {
+  height: 36px;
+  padding: 6px 36px 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 12px;
+  background: var(--picker-glass-bg);
+  border: 1px solid var(--picker-glass-border);
+  color: #111827;
+  box-shadow: var(--picker-glass-shadow);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+  backdrop-filter: blur(20px) saturate(1.15);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.dashboard-page__month .form-control:hover,
+.dashboard-page__month .datepicker-input-wrapper .react-datepicker__input-container input:hover {
+  background: var(--picker-hover-bg);
+  border-color: rgba(255, 255, 255, 0.88);
+  box-shadow: var(--picker-hover-shadow);
+}
+
+.dashboard-page__month .form-control:focus,
+.dashboard-page__month .datepicker-input-wrapper .react-datepicker__input-container input:focus {
+  outline: none;
+  background: var(--picker-hover-bg);
+  border-color: rgba(255, 255, 255, 0.92);
+  box-shadow:
+    0 0 0 2px var(--picker-violet-soft),
+    var(--picker-hover-shadow);
+}
+
+/* Glass calendar popover (portal-safe via calendar class) */
+.react-datepicker-popper:has(.dashboard-month-picker__calendar) {
+  z-index: 10020 !important;
+}
+
+.dashboard-month-picker__calendar {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  background: rgba(255, 255, 255, 0.58) !important;
+  border: 1px solid rgba(255, 255, 255, 0.78) !important;
+  border-radius: 16px !important;
+  box-shadow: var(--picker-glass-shadow) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.15) !important;
+  backdrop-filter: blur(20px) saturate(1.15) !important;
+}
+
+.dashboard-month-picker__calendar.react-datepicker--month-only {
+  min-width: 260px !important;
+  max-width: 280px !important;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__triangle {
+  display: none !important;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__header {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5) !important;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__current-month {
+  font-weight: 600 !important;
+  color: #111827 !important;
+}
+
+/* Year/month header dropdown triggers — glass chips */
+.dashboard-month-picker__calendar .react-datepicker__year-read-view,
+.dashboard-month-picker__calendar .react-datepicker__month-read-view {
+  font-weight: 600 !important;
+  color: #111827 !important;
+  border-radius: 10px !important;
+  padding: 4px 10px !important;
+  background: rgba(255, 255, 255, 0.42) !important;
+  border: 1px solid rgba(255, 255, 255, 0.58) !important;
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  backdrop-filter: blur(10px) saturate(1.1);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__year-read-view:hover,
+.dashboard-month-picker__calendar .react-datepicker__month-read-view:hover {
+  background: var(--picker-hover-bg) !important;
+  border-color: rgba(255, 255, 255, 0.85) !important;
+  box-shadow: var(--picker-hover-shadow) !important;
+  color: #5b21b6 !important;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__month-read-view--down-arrow,
+.dashboard-month-picker__calendar .react-datepicker__year-read-view--down-arrow {
+  border-color: #9ca3af !important;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__year-read-view:hover .react-datepicker__year-read-view--down-arrow,
+.dashboard-month-picker__calendar .react-datepicker__month-read-view:hover .react-datepicker__month-read-view--down-arrow {
+  border-color: #7c3aed !important;
+}
+
+/* Scrollable year/month dropdown lists */
+.dashboard-month-picker__calendar .react-datepicker__year-dropdown,
+.dashboard-month-picker__calendar .react-datepicker__month-dropdown,
+.dashboard-month-picker__calendar .react-datepicker__year-dropdown-container,
+.dashboard-month-picker__calendar .react-datepicker__month-dropdown-container {
+  background: rgba(255, 255, 255, 0.62) !important;
+  border: 1px solid rgba(255, 255, 255, 0.78) !important;
+  border-radius: 14px !important;
+  padding: 6px !important;
+  box-shadow: 0 8px 28px rgba(80, 12, 176, 0.1), 0 4px 14px rgba(249, 115, 22, 0.06) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.15) !important;
+  backdrop-filter: blur(20px) saturate(1.15) !important;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__year-option,
+.dashboard-month-picker__calendar .react-datepicker__month-option {
+  border-radius: 8px !important;
+  margin: 2px 0 !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  background: transparent !important;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__year-option:hover,
+.dashboard-month-picker__calendar .react-datepicker__month-option:hover {
+  background: var(--picker-hover-bg) !important;
+  color: #5b21b6 !important;
+  box-shadow: 0 2px 8px rgba(80, 12, 176, 0.06) !important;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__year-option--selected,
+.dashboard-month-picker__calendar .react-datepicker__month-option--selected,
+.dashboard-month-picker__calendar .react-datepicker__year-option--selected:hover,
+.dashboard-month-picker__calendar .react-datepicker__month-option--selected:hover {
+  background: var(--picker-violet-strong) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 10px rgba(80, 12, 176, 0.2) !important;
+}
+
+/* Month grid tiles */
+.dashboard-month-picker__calendar .react-datepicker__month-text {
+  background: rgba(255, 255, 255, 0.38) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  border-radius: 10px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  transform: none !important;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__month-text:hover {
+  background: var(--picker-hover-bg) !important;
+  border-color: rgba(255, 255, 255, 0.82) !important;
+  color: #5b21b6 !important;
+  box-shadow: var(--picker-hover-shadow) !important;
+  transform: none !important;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__month-text--selected,
+.dashboard-month-picker__calendar .react-datepicker__month-text--keyboard-selected {
+  background: var(--picker-violet-strong) !important;
+  border-color: rgba(80, 12, 176, 0.45) !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 10px rgba(80, 12, 176, 0.22) !important;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__month-text--selected:hover,
+.dashboard-month-picker__calendar .react-datepicker__month-text--keyboard-selected:hover {
+  background: rgba(80, 12, 176, 0.9) !important;
+  border-color: rgba(80, 12, 176, 0.5) !important;
+  color: #fff !important;
+  transform: none !important;
+}
+
+/* Year grid (when picking year) */
+.dashboard-month-picker__calendar .react-datepicker__year-text {
+  background: rgba(255, 255, 255, 0.38) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  border-radius: 10px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  transform: none !important;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__year-text:hover {
+  background: var(--picker-hover-bg) !important;
+  border-color: rgba(255, 255, 255, 0.82) !important;
+  color: #5b21b6 !important;
+  box-shadow: var(--picker-hover-shadow) !important;
+  transform: none !important;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__year-text--selected,
+.dashboard-month-picker__calendar .react-datepicker__year-text--keyboard-selected {
+  background: var(--picker-violet-strong) !important;
+  border-color: rgba(80, 12, 176, 0.45) !important;
+  color: #fff !important;
+  box-shadow: 0 2px 10px rgba(80, 12, 176, 0.22) !important;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__year-text--selected:hover,
+.dashboard-month-picker__calendar .react-datepicker__year-text--keyboard-selected:hover {
+  background: rgba(80, 12, 176, 0.9) !important;
+  color: #fff !important;
+  transform: none !important;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__navigation {
+  background: rgba(255, 255, 255, 0.42) !important;
+  border: 1px solid rgba(255, 255, 255, 0.58) !important;
+  border-radius: 8px !important;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__navigation:hover {
+  background: var(--picker-hover-bg) !important;
+  border-color: rgba(255, 255, 255, 0.85) !important;
+  box-shadow: var(--picker-hover-shadow) !important;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__navigation-icon::before {
+  border-color: #6b7280 !important;
+}
+
+.dashboard-month-picker__calendar .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
+  border-color: #7c3aed !important;
+}
+
+.dashboard-page__grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  /* Row 1 grows (chart); rows 2–3 fit list cards — no dead space below text */
+  grid-template-rows: minmax(0, 1fr) max-content max-content;
+  gap: 8px;
+  align-content: start;
+}
+
+.dashboard-page__area {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-page__area-split > *,
+.dashboard-page__area-chart > * {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.dashboard-page__area-txn > * {
+  flex: 0 0 auto;
+  width: 100%;
+  height: auto;
+  align-self: start;
+}
+
+/* Bottom row: Investments + Recurring share equal height */
+.dashboard-page__area-inv,
+.dashboard-page__area-recur {
+  align-self: stretch;
+}
+
+.dashboard-page__area-inv > *,
+.dashboard-page__area-recur > * {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.dashboard-page__area-inv .dashboard-list-card,
+.dashboard-page__area-recur .dashboard-list-card {
+  height: 100%;
+  min-height: 0;
+}
+
+.dashboard-page__area-inv .dashboard-list-card__body,
+.dashboard-page__area-recur .dashboard-list-card__body {
+  flex: 1;
+  min-height: 0;
+}
+
+.dashboard-page__area-inv .dashboard-list-card__rows,
+.dashboard-page__area-recur .dashboard-list-card__rows {
+  flex: 1;
+  min-height: 0;
+  justify-content: flex-start;
+}
+
+.dashboard-page__area-split {
+  grid-row: 1 / 3;
+  grid-column: 1;
+}
+
+.dashboard-page__area-chart {
+  grid-row: 1;
+  grid-column: 2;
+}
+
+.dashboard-page__area-txn {
+  grid-row: 2;
+  grid-column: 2;
+  align-self: start;
+}
+
+.dashboard-page__area-inv {
+  grid-row: 3;
+  grid-column: 1;
+}
+
+.dashboard-page__area-recur {
+  grid-row: 3;
+  grid-column: 2;
+}
+
+/* Spending comparison chart card */
+.spending-chart-card {
+  padding: 16px 18px 12px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.spending-chart-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.spending-chart-card__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0 0 6px;
+}
+
+.spending-chart-card__total {
+  font-size: 32px;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.spending-chart-card__info-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.4);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  white-space: nowrap;
+  max-width: 200px;
+  text-align: right;
+  line-height: 1.3;
+}
+
+.spending-chart-card__legend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.spending-chart-card__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.spending-chart-card__legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.spending-chart-card__legend-dot--focus {
+  background: #f97316;
+}
+
+.spending-chart-card__legend-dot--benchmark {
+  background: #9ca3af;
+}
+
+.spending-chart-card__chart-wrap {
+  flex: 1 1 auto;
+  min-height: 120px;
+}
+
+.spending-chart-card__tooltip {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  box-shadow: 0 4px 16px rgba(18, 18, 18, 0.1);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+.spending-chart-card__tooltip p {
+  margin: 0 0 4px;
+  color: #374151;
+}
+
+.spending-chart-card__tooltip p:last-child {
+  margin-bottom: 0;
+}
+
+.spending-chart-card__empty {
+  padding: 48px 16px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+  flex: 1;
+}
+
+.spending-chart-card__skeleton {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: dashboard-shimmer 1.2s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.spending-chart-card__skeleton--title {
+  height: 14px;
+  width: 140px;
+  margin-bottom: 12px;
+}
+
+.spending-chart-card__skeleton--total {
+  height: 32px;
+  width: 160px;
+  margin-bottom: 24px;
+}
+
+.spending-chart-card__skeleton--chart {
+  flex: 1;
+  min-height: 120px;
+  width: 100%;
+}
+
+/* Total expenses split card */
+.expense-split-card {
+  padding: 16px 18px 14px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.expense-split-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  gap: 16px;
+}
+
+.expense-split-card__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #6b7280;
+  margin: 0 0 6px;
+}
+
+.expense-split-card__total {
+  font-size: 36px;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.expense-split-card__filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.4);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  cursor: default;
+}
+
+.expense-split-card__allocation-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 12px 0 6px;
+}
+
+.expense-split-card__bar {
+  display: flex;
+  width: 100%;
+  height: 12px;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  gap: 2px;
+}
+
+.expense-split-card__bar-segment {
+  min-width: 4px;
+  height: 100%;
+  border-radius: 4px;
+  transition: flex-grow 0.3s ease;
+}
+
+.expense-split-card__bar--empty .expense-split-card__bar-segment {
+  flex: 1;
+  background: #e5e7eb !important;
+}
+
+.expense-split-card__list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.expense-split-card__row {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 14px 20px;
+}
+
+.expense-split-card__row-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #374151;
+  flex-shrink: 0;
+}
+
+.expense-split-card__row-accent {
+  width: 3px;
+  height: 44px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.expense-split-card__row-main {
+  min-width: 0;
+}
+
+.expense-split-card__row-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px;
+}
+
+.expense-split-card__row-spent {
+  font-size: 13px;
+  font-weight: 500;
+  color: #e11d48;
+  margin: 0;
+}
+
+.expense-split-card__row-stats {
+  text-align: right;
+}
+
+.expense-split-card__row-amount {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px;
+}
+
+.expense-split-card__row-amount .expense-split-card__row-pct {
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.expense-split-card__row-category {
+  font-size: 12px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.expense-split-card__empty,
+.expense-split-card__loading {
+  padding: 48px 24px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.expense-split-card__skeleton {
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: dashboard-shimmer 1.2s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.expense-split-card__skeleton--title {
+  height: 14px;
+  width: 120px;
+  margin-bottom: 12px;
+}
+
+.expense-split-card__skeleton--total {
+  height: 36px;
+  width: 200px;
+  margin-bottom: 28px;
+}
+
+.expense-split-card__skeleton--bar {
+  height: 12px;
+  width: 100%;
+  border-radius: 9999px;
+}
+
+@keyframes dashboard-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Dashboard list cards (transactions, recurring, investments) */
+.dashboard-list-card {
+  padding: 14px 16px 10px;
+  height: auto;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dashboard-list-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.dashboard-list-card__title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.dashboard-list-card__see-all {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.dashboard-list-card__see-all:hover {
+  color: #111827;
+}
+
+.dashboard-list-card__body {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-list-card__rows {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+}
+
+.dashboard-list-card__row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  min-height: 0;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Compact list rows — Transactions, Recurring, Investments */
+.dashboard-page__area-txn .dashboard-list-card,
+.dashboard-page__area-recur .dashboard-list-card,
+.dashboard-page__area-inv .dashboard-list-card {
+  padding: 10px 14px 6px;
+}
+
+.dashboard-page__area-txn .dashboard-list-card__header,
+.dashboard-page__area-recur .dashboard-list-card__header,
+.dashboard-page__area-inv .dashboard-list-card__header {
+  margin-bottom: 4px;
+}
+
+.dashboard-page__area-txn .dashboard-list-card__title,
+.dashboard-page__area-recur .dashboard-list-card__title,
+.dashboard-page__area-inv .dashboard-list-card__title {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.dashboard-page__area-txn .dashboard-list-card__row,
+.dashboard-page__area-recur .dashboard-list-card__row,
+.dashboard-page__area-inv .dashboard-list-card__row {
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.dashboard-page__area-txn .dashboard-list-card__row-icon,
+.dashboard-page__area-recur .dashboard-list-card__row-icon,
+.dashboard-page__area-inv .dashboard-list-card__row-icon {
+  width: 34px;
+  height: 34px;
+  font-size: 14px;
+}
+
+.dashboard-page__area-txn .dashboard-list-card__row-name,
+.dashboard-page__area-recur .dashboard-list-card__row-name,
+.dashboard-page__area-inv .dashboard-list-card__row-name {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.dashboard-page__area-txn .dashboard-list-card__row-pill,
+.dashboard-page__area-recur .dashboard-list-card__row-pill,
+.dashboard-page__area-inv .dashboard-list-card__row-pill {
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.dashboard-page__area-txn .dashboard-list-card__row-amount,
+.dashboard-page__area-recur .dashboard-list-card__row-amount,
+.dashboard-page__area-inv .dashboard-list-card__row-amount {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.dashboard-page__area-txn .dashboard-list-card__row-date,
+.dashboard-page__area-recur .dashboard-list-card__row-date {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.dashboard-page__area-inv .dashboard-list-card__row-perf {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.dashboard-page__area-inv .dashboard-list-card__row-total {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.dashboard-page__area-txn .dashboard-list-card__row-date,
+.dashboard-page__area-recur .dashboard-list-card__row-date {
+  min-width: 40px;
+}
+
+.dashboard-page__area-txn .dashboard-list-card__row-chevron,
+.dashboard-page__area-recur .dashboard-list-card__row-chevron {
+  width: 16px;
+  height: 16px;
+}
+
+.dashboard-list-card__row:last-child {
+  border-bottom: none;
+}
+
+.dashboard-list-card__row--static {
+  cursor: default;
+}
+
+.dashboard-list-card__row-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  color: #374151;
+}
+
+.dashboard-list-card__row-icon--letter {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.dashboard-list-card__row-icon--logo {
+  overflow: hidden;
+  padding: 4px;
+}
+
+/* Transaction category / subcategory icons in list rows */
+.txn-category-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--txn-icon-accent-bg, rgba(255, 255, 255, 0.45));
+  border: 1px solid var(--txn-icon-accent-border, rgba(255, 255, 255, 0.55));
+  -webkit-backdrop-filter: blur(6px) saturate(1.08);
+  backdrop-filter: blur(6px) saturate(1.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.txn-category-icon.dashboard-list-card__row-icon {
+  background: rgba(255, 255, 255, 0.5);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.dashboard-list-card__row-main {
+  min-width: 0;
+}
+
+.dashboard-list-card__row-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-list-card__row-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #4b5563;
+  background: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  white-space: nowrap;
+}
+
+.dashboard-list-card__row-pill--overdue {
+  color: #be123c;
+  background: rgba(254, 226, 226, 0.65);
+  border-color: rgba(251, 113, 133, 0.35);
+}
+
+.dashboard-list-card__row-amount {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dashboard-list-card__row-amount--negative {
+  color: #e11d48;
+}
+
+.dashboard-list-card__row-amount--positive {
+  color: #059669;
+}
+
+.dashboard-list-card__row-date {
+  font-size: 13px;
+  font-weight: 400;
+  color: #9ca3af;
+  white-space: nowrap;
+  min-width: 44px;
+  text-align: right;
+}
+
+.dashboard-list-card__row-chevron {
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+.dashboard-list-card__empty,
+.dashboard-list-card__loading {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 12px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.dashboard-list-card__skeleton-row {
+  height: 56px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: dashboard-shimmer 1.2s ease-in-out infinite;
+}
+
+/* Investments row — extra columns */
+.dashboard-list-card__row--investment {
+  grid-template-columns: auto 1fr auto auto auto;
+  flex-shrink: 0;
+}
+
+.dashboard-list-card__row-perf {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 8px;
+  color: #6b7280;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+}
+
+.dashboard-list-card__row-total {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+  text-align: right;
+  min-width: 72px;
+}
+
+@media (max-width: 1023px) {
+  .app-shell > div:has(> .app-content .dashboard-page--fit) {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .app-content:has(.dashboard-page--fit) {
+    height: auto;
+    max-height: none;
+    padding: 16px;
+    overflow: auto;
+  }
+
+  .dashboard-page--fit {
+    height: auto;
+    overflow: visible;
+  }
+
+  .dashboard-page__grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    flex: none;
+  }
+
+  .dashboard-page__area-split,
+  .dashboard-page__area-chart,
+  .dashboard-page__area-txn,
+  .dashboard-page__area-inv,
+  .dashboard-page__area-recur {
+    grid-row: auto;
+    grid-column: 1;
+  }
+
+  .dashboard-page__area > * {
+    min-height: auto;
+  }
+
+  .expense-split-card {
+    max-height: 480px;
+  }
+
+  .spending-chart-card__chart-wrap {
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 640px) {
+  .expense-split-card {
+    padding: 20px;
+  }
+
+  .expense-split-card__total {
+    font-size: 28px;
+  }
+
+  .expense-split-card__row {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  .expense-split-card__row-accent {
+    display: none;
+  }
+
+  .expense-split-card__row-stats {
+    grid-column: 2;
+    text-align: left;
+  }
+
+  .dashboard-list-card__row {
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 8px 12px;
+  }
+
+  .dashboard-list-card__row-pill {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .dashboard-list-card__row-amount,
+  .dashboard-list-card__row-date {
+    grid-row: 1;
+  }
+
+  .dashboard-list-card__row-chevron {
+    display: none;
+  }
+}

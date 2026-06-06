@@ -1,29 +1,36 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Table, Form, Alert, Badge, Row, Col } from 'react-bootstrap';
-import { Icon } from '@iconify/react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Form } from 'react-bootstrap';
 import { budgetService } from '../services/budgetService';
 import { categoryService } from '../services/categoryService';
 import { subcategoryService } from '../services/subcategoryService';
-import { transactionService } from '../services/transactionService';
-import { cardStyle } from '../styles/cardStyles';
 import Modal from '../components/ui/Modal';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
 import DatePicker from '../components/ui/DatePicker';
 import Button from '../components/ui/Button';
 import Select from '../components/ui/Select';
-import IconButton from '../components/ui/IconButton';
+import { useUserFormatters } from '../hooks/useUserFormatters';
+import GlassAlert from '../components/ui/GlassAlert';
+import BudgetMonthHeader from '../components/budgets/BudgetMonthHeader';
+import BudgetKpiStrip from '../components/budgets/BudgetKpiStrip';
+import BudgetCardGrid from '../components/budgets/BudgetCardGrid';
+import '../styles/budgets.css';
 
 const Budgets = () => {
+  const { formatCurrency } = useUserFormatters();
+  const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [budgets, setBudgets] = useState([]);
+  const [spentByBudgetId, setSpentByBudgetId] = useState({});
+  const [totals, setTotals] = useState(null);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
-  const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
   const [editingBudget, setEditingBudget] = useState(null);
+  const [autoCreating, setAutoCreating] = useState(false);
   const [formData, setFormData] = useState({
     categoryId: '',
     subCategoryId: '',
@@ -32,91 +39,57 @@ const Budgets = () => {
   });
 
   useEffect(() => {
-    loadData();
+    (async () => {
+      try {
+        const [categoriesRes, subcategoriesRes] = await Promise.all([
+          categoryService.getCategories('expense'),
+          subcategoryService.getSubCategories()
+        ]);
+        setCategories(categoriesRes.data || []);
+        setSubcategories(subcategoriesRes.data || []);
+      } catch (err) {
+        setError(err.response?.data?.error || 'Failed to load categories');
+      }
+    })();
   }, []);
 
-  const loadData = async () => {
+  const loadSummary = useCallback(async () => {
     try {
       setLoading(true);
-      
-      // Fetch all transactions for budget calculation (paginate through all pages)
-      const fetchAllTransactions = async () => {
-        let allTransactions = [];
-        let page = 1;
-        let hasMore = true;
-        
-        while (hasMore) {
-          const response = await transactionService.getTransactions({
-            type: 'expense',
-            limit: 100, // Max allowed by backend
-            page: page
-          });
-          
-          const transactions = response?.data || [];
-          const total = response?.pagination?.total || 0;
-          
-          allTransactions = [...allTransactions, ...transactions];
-          
-          // Check if there are more pages
-          if (transactions.length < 100 || allTransactions.length >= total) {
-            hasMore = false;
-          } else {
-            page++;
-          }
-        }
-        
-        return allTransactions;
-      };
-
-      const [budgetsRes, categoriesRes, subcategoriesRes, allTransactions] = await Promise.all([
-        budgetService.getBudgets(),
-        categoryService.getCategories('expense'),
-        subcategoryService.getSubCategories(),
-        fetchAllTransactions()
-      ]);
-
-      // budgetsRes is already response.data from service, which is { success: true, data: [...] }
-      setBudgets(budgetsRes?.data || []);
-      setCategories(categoriesRes.data || []);
-      setSubcategories(subcategoriesRes.data || []);
-      setTransactions(allTransactions);
+      setError('');
+      const res = await budgetService.getBudgetSummary(month);
+      setBudgets(res?.budgets || []);
+      setSpentByBudgetId(res?.spentByBudgetId || {});
+      setTotals(res?.totals || null);
       setLoading(false);
     } catch (err) {
-      console.error('Error loading budgets:', err);
-      console.error('Error response:', err.response?.data);
       setError(err.response?.data?.error || 'Failed to load data');
       setLoading(false);
     }
-  };
+  }, [month]);
 
-  const calculateSpent = (budget) => {
-    const monthStart = new Date(budget.month + '-01');
-    const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
-    
-    const relevantTransactions = transactions.filter(t => {
-      const tDate = new Date(t.date);
-      if (tDate < monthStart || tDate > monthEnd) return false;
-      
-      if (budget.categoryId) {
-        return t.categoryId?._id === budget.categoryId?._id || t.categoryId === budget.categoryId?._id;
-      }
-      if (budget.subCategoryId) {
-        return t.subCategoryId?._id === budget.subCategoryId?._id || t.subCategoryId === budget.subCategoryId?._id;
-      }
-      return false;
-    });
+  useEffect(() => {
+    loadSummary();
+  }, [loadSummary]);
 
-    return relevantTransactions.reduce((sum, t) => sum + t.amount, 0);
-  };
+  const prevMonth = useMemo(() => {
+    const [y, m] = month.split('-').map(Number);
+    if (!y || !m) return month;
+    const d = new Date(y, m - 2, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  }, [month]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      setError('');
+      setSuccess('');
       const data = {
         ...formData,
         amount: parseFloat(formData.amount),
         categoryId: formData.categoryId || null,
-        subCategoryId: formData.subCategoryId || null
+        subCategoryId: formData.subCategoryId || null,
+        month: formData.month
       };
       if (editingBudget) {
         await budgetService.updateBudget(editingBudget._id, data);
@@ -125,21 +98,22 @@ const Budgets = () => {
       }
       setShowModal(false);
       resetForm();
-      loadData();
+      await loadSummary();
+      setSuccess(editingBudget ? 'Budget updated.' : 'Budget created.');
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to save budget');
     }
   };
 
-  const handleDelete = (id) => {
-    setDeletingId(id);
+  const handleDelete = (budget) => {
+    setDeletingId(budget?._id);
     setShowConfirmModal(true);
   };
 
   const confirmDelete = async () => {
     try {
       await budgetService.deleteBudget(deletingId);
-      loadData();
+      await loadSummary();
       setDeletingId(null);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to delete budget');
@@ -158,257 +132,75 @@ const Budgets = () => {
     setShowModal(true);
   };
 
+  const handleAutoCreate = async () => {
+    try {
+      setAutoCreating(true);
+      setError('');
+      setSuccess('');
+      const res = await budgetService.autoCreateBudgets({ fromMonth: prevMonth, toMonth: month });
+      await loadSummary();
+      setSuccess(`Auto-created ${res.createdCount || 0} budget(s). Skipped ${res.skippedCount || 0}.`);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to auto-create budgets');
+    } finally {
+      setAutoCreating(false);
+    }
+  };
+
   const resetForm = () => {
     setEditingBudget(null);
     setFormData({
       categoryId: '',
       subCategoryId: '',
       amount: '',
-      month: new Date().toISOString().slice(0, 7)
+      month
     });
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', { 
-      style: 'currency', 
-      currency: 'INR',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount);
-  };
-
-  const getBudgetStatus = (budget) => {
-    const spent = calculateSpent(budget);
-    const percentage = (spent / budget.amount) * 100;
-    if (percentage >= 100) return { color: 'danger', text: 'Exceeded' };
-    if (percentage >= 80) return { color: 'warning', text: 'Warning' };
-    return { color: 'success', text: 'On Track' };
-  };
-
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4" style={{ marginBottom: '24px' }}>
-        <h2 style={{ 
-          fontWeight: 600, 
-          margin: 0,
-          fontSize: '24px',
-          color: '#111827',
-          letterSpacing: '-0.02em'
-        }}>
-          Budgets
-        </h2>
-        <Button 
-          variant="primary"
-          onClick={() => { resetForm(); setShowModal(true); }}
-        >
-          + Add Budget
-        </Button>
-      </div>
+    <div className="budgets-page">
+      <BudgetMonthHeader
+        month={month}
+        onChangeMonth={(m) => {
+          setMonth(m);
+          setSuccess('');
+          setError('');
+        }}
+        onAddBudget={() => {
+          resetForm();
+          setShowModal(true);
+        }}
+        onAutoCreate={handleAutoCreate}
+        autoCreating={autoCreating}
+      />
 
-      {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
+      {error ? (
+        <GlassAlert variant="danger" onClose={() => setError('')} className="mb-0">
+          {error}
+        </GlassAlert>
+      ) : null}
 
-      <Card style={cardStyle}>
-        <Card.Body style={{ padding: '24px' }}>
-          {loading ? (
-            <div className="text-center" style={{ padding: '40px' }}>Loading...</div>
-          ) : budgets.length === 0 ? (
-            <div className="text-center text-muted" style={{ padding: '40px' }}>No budgets found</div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ 
-                width: '100%', 
-                borderCollapse: 'collapse',
-                fontSize: '14px'
-              }}>
-                <thead>
-                  <tr style={{ 
-                    backgroundColor: '#F9FAFB',
-                    borderBottom: '1px solid #E5E7EB'
-                  }}>
-                    <th style={{ 
-                      padding: '12px 16px', 
-                      textAlign: 'left',
-                      fontWeight: 500,
-                      color: '#374151',
-                      fontSize: '12px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      Month
-                    </th>
-                    <th style={{ 
-                      padding: '12px 16px', 
-                      textAlign: 'left',
-                      fontWeight: 500,
-                      color: '#374151',
-                      fontSize: '12px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      Category/SubCategory
-                    </th>
-                    <th style={{ 
-                      padding: '12px 16px', 
-                      textAlign: 'left',
-                      fontWeight: 500,
-                      color: '#374151',
-                      fontSize: '12px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      Budget
-                    </th>
-                    <th style={{ 
-                      padding: '12px 16px', 
-                      textAlign: 'left',
-                      fontWeight: 500,
-                      color: '#374151',
-                      fontSize: '12px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      Spent
-                    </th>
-                    <th style={{ 
-                      padding: '12px 16px', 
-                      textAlign: 'left',
-                      fontWeight: 500,
-                      color: '#374151',
-                      fontSize: '12px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      Remaining
-                    </th>
-                    <th style={{ 
-                      padding: '12px 16px', 
-                      textAlign: 'left',
-                      fontWeight: 500,
-                      color: '#374151',
-                      fontSize: '12px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      Status
-                    </th>
-                    <th style={{ 
-                      padding: '12px 16px', 
-                      textAlign: 'left',
-                      fontWeight: 500,
-                      color: '#374151',
-                      fontSize: '12px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {budgets.map((budget) => {
-                    const spent = calculateSpent(budget);
-                    const remaining = budget.amount - spent;
-                    const status = getBudgetStatus(budget);
-                    const getStatusStyle = (statusColor) => {
-                      const styles = {
-                        danger: { backgroundColor: '#FEE2E2', color: '#991B1B' },
-                        warning: { backgroundColor: '#FEF3C7', color: '#92400E' },
-                        success: { backgroundColor: '#D1FAE5', color: '#065F46' }
-                      };
-                      return styles[statusColor] || { backgroundColor: '#F3F4F6', color: '#374151' };
-                    };
-                    return (
-                      <tr 
-                        key={budget._id}
-                        style={{ 
-                          borderBottom: '1px solid #E5E7EB',
-                          transition: 'background-color 0.2s'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                      >
-                        <td style={{ padding: '16px', color: '#111827', fontSize: '14px' }}>
-                          {budget.month}
-                        </td>
-                        <td style={{ padding: '16px', color: '#6B7280', fontSize: '14px' }}>
-                          {budget.categoryId?.name || budget.subCategoryId?.name || '-'}
-                          {budget.subCategoryId && ` (${budget.subCategoryId.name})`}
-                        </td>
-                        <td style={{ padding: '16px', fontWeight: 500, color: '#111827', fontSize: '14px' }}>
-                          {formatCurrency(budget.amount)}
-                        </td>
-                        <td style={{ padding: '16px', color: '#6B7280', fontSize: '14px' }}>
-                          {formatCurrency(spent)}
-                        </td>
-                        <td style={{ 
-                          padding: '16px', 
-                          color: remaining < 0 ? '#DC2626' : '#059669', 
-                          fontWeight: 500,
-                          fontSize: '14px'
-                        }}>
-                          {formatCurrency(remaining)}
-                        </td>
-                        <td style={{ padding: '16px' }}>
-                          <span style={{ 
-                            fontSize: '12px',
-                            padding: '4px 10px',
-                            borderRadius: '6px',
-                            fontWeight: 500,
-                            display: 'inline-block',
-                            ...getStatusStyle(status.color)
-                          }}>
-                            {status.text}
-                          </span>
-                        </td>
-                        <td style={{ padding: '16px' }}>
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <button
-                              onClick={() => handleEdit(budget)}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                cursor: 'pointer',
-                                padding: '4px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRadius: '4px',
-                                transition: 'background-color 0.2s'
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
-                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                            >
-                              <Icon icon="mdi:pencil" style={{ fontSize: '18px', color: '#6B7280' }} />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(budget._id)}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                cursor: 'pointer',
-                                padding: '4px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRadius: '4px',
-                                transition: 'background-color 0.2s'
-                              }}
-                              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEE2E2'}
-                              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                            >
-                              <Icon icon="mdi:trash-can-outline" style={{ fontSize: '18px', color: '#EF4444' }} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card.Body>
-      </Card>
+      {success ? (
+        <GlassAlert variant="success" onClose={() => setSuccess('')} className="mb-0">
+          {success}
+        </GlassAlert>
+      ) : null}
+
+      <BudgetKpiStrip totals={totals} formatCurrency={formatCurrency} loading={loading} />
+
+      <BudgetCardGrid
+        budgets={budgets}
+        month={month}
+        spentByBudgetId={spentByBudgetId}
+        formatCurrency={formatCurrency}
+        loading={loading}
+        onAddBudget={() => {
+          resetForm();
+          setShowModal(true);
+        }}
+        onEditBudget={handleEdit}
+        onDeleteBudget={handleDelete}
+      />
 
       <Modal
         isOpen={showModal}
@@ -463,9 +255,13 @@ const Budgets = () => {
                 required
               />
             </Form.Group>
-          <div className="d-flex justify-content-end gap-2 mt-4" style={{ gap: '8px' }}>
-            <Button variant="secondary" onClick={() => { setShowModal(false); resetForm(); }}>Cancel</Button>
-            <Button variant="primary" type="submit">{editingBudget ? 'Update' : 'Create'}</Button>
+          <div className="modal-glass__actions modal-glass__actions--right">
+            <Button glass variant="secondary" type="button" onClick={() => { setShowModal(false); resetForm(); }}>
+              Cancel
+            </Button>
+            <Button glass variant="primary" type="submit">
+              {editingBudget ? 'Update' : 'Create'}
+            </Button>
           </div>
         </Form>
       </Modal>

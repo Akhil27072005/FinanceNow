@@ -1,0 +1,406 @@
+@import './content-glass.css';
+
+.payment-methods-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  gap: 16px;
+}
+
+.payment-methods-page__title {
+  font-weight: 800;
+  margin: 0;
+  font-size: 26px;
+  color: #111827;
+  letter-spacing: -0.03em;
+}
+
+.payment-methods-section {
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+
+.payment-methods-section__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.payment-methods-section__title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+
+.payment-methods-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.payment-methods-quick__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.28);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  backdrop-filter: blur(10px) saturate(1.1);
+  color: #5b21b6;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+}
+
+.payment-methods-quick__chip:hover {
+  background: rgba(255, 255, 255, 0.48);
+  border-color: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 2px 10px rgba(80, 12, 176, 0.1);
+  transform: translateY(-1px);
+}
+
+.payment-methods-table-wrap {
+  overflow-x: auto;
+}
+
+.payment-methods-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.payment-methods-table th {
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6b7280;
+  border-bottom: 1px solid rgba(124, 58, 237, 0.12);
+}
+
+.payment-methods-table td {
+  padding: 14px;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+  color: #111827;
+}
+
+.payment-methods-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.payment-methods-empty {
+  padding: 32px 16px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.payment-methods-group {
+  margin-bottom: 18px;
+}
+
+.payment-methods-group__label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #7c3aed;
+  margin: 0 0 8px 4px;
+}
+
+/* Mini card visual */
+.mini-card {
+  width: 88px;
+  height: 54px;
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(80, 12, 176, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
+}
+
+.mini-card__network-logo {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 36px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  background: transparent;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
+}
+
+.mini-card__bank-logo {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
+}
+
+.mini-card__bank-logo,
+.mini-card__network-logo {
+  background: transparent !important;
+}
+
+.mini-card__bank-logo img,
+.mini-card__network-logo img,
+.mini-card__bank-logo .pm-brandfetch-img,
+.mini-card__network-logo .pm-brandfetch-img {
+  background: transparent !important;
+}
+
+/* Brandfetch: knock out residual white tiles on light glass surfaces */
+.pm-brandfetch-img {
+  background: transparent !important;
+  object-fit: contain;
+}
+
+.pm-brandfetch-img--on-light {
+  mix-blend-mode: multiply;
+}
+
+.pm-brandfetch-img--on-dark {
+  mix-blend-mode: normal;
+}
+
+/* Iconify network marks on mini card — full-color, no tile */
+.mini-card__network-logo .iconify {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
+
+.pm-logo-plain .pm-brandfetch-img--on-light,
+.pm-bank-cell__logo .pm-brandfetch-img--on-light {
+  mix-blend-mode: multiply;
+}
+
+.mini-card__shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    125deg,
+    rgba(255, 255, 255, 0.35) 0%,
+    transparent 45%,
+    transparent 100%
+  );
+  pointer-events: none;
+}
+
+.card-row__main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.card-row__text {
+  min-width: 0;
+}
+
+.card-row__title {
+  font-weight: 600;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-row__sub {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.pm-pill {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  text-transform: capitalize;
+}
+
+.pm-pill--credit {
+  background: rgba(219, 234, 254, 0.9);
+  color: #1e40af;
+}
+
+.pm-pill--debit {
+  background: rgba(237, 233, 254, 0.95);
+  color: #5b21b6;
+}
+
+.pm-bank-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* Plain logo — no chip/circle (bank + provider marks) */
+.pm-logo-plain {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+.pm-logo-plain--sm {
+  width: 24px;
+  height: 24px;
+}
+
+.pm-logo-plain--md {
+  width: 28px;
+  height: 28px;
+}
+
+.pm-logo-plain--lg {
+  width: 36px;
+  height: 36px;
+}
+
+.pm-bank-cell__logo {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  overflow: visible;
+}
+
+.pm-type-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(237, 233, 254, 0.85);
+  color: #5b21b6;
+  white-space: nowrap;
+}
+
+.card-form-preview {
+  margin-top: 8px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(124, 58, 237, 0.12);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.card-form-preview__meta {
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.card-form-hint {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.card-form-detect {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #5b21b6;
+}
+
+.payment-methods-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Table row edit/delete — soft default, glass lift on hover */
+.pm-glass-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 1px 2px rgba(80, 12, 176, 0.04);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  backdrop-filter: blur(10px) saturate(1.1);
+  cursor: pointer;
+  color: #6b7280;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.pm-glass-action:hover {
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(243, 232, 255, 0.5) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.82);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 2px 8px rgba(80, 12, 176, 0.1);
+  color: #4b5563;
+}
+
+.pm-glass-action--edit:hover {
+  color: #5b21b6;
+}
+
+.pm-glass-action--delete:hover {
+  color: #be123c;
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.72) 0%,
+    rgba(254, 226, 226, 0.42) 100%
+  );
+  border-color: rgba(255, 255, 255, 0.82);
+}
+
+/* Section primary actions align with categories add button */
+.payment-methods-section__head .modal-glass__btn--primary {
+  padding: 8px 16px;
+  font-size: 13px;
+  border-radius: 10px;
+}

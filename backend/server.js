@@ -97,6 +97,8 @@ app.use('/api/subscriptions', require('./routes/subscription.routes'));
 app.use('/api/budgets', require('./routes/budget.routes'));
 app.use('/api/analytics', require('./routes/analytics.routes'));
 app.use('/api/export', require('./routes/export.routes'));
+app.use('/api/payment-logo', require('./routes/paymentLogo.routes'));
+app.use('/api/portfolio', require('./routes/portfolio.routes'));
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

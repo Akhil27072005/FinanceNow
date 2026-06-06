@@ -5,6 +5,19 @@ const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const crypto = require('crypto');
 const { sendPasswordResetEmail } = require('../utils/emailService');
+const {
+  serializePreferences,
+  parsePreferencesBody
+} = require('../utils/userPreferences');
+
+const formatUserForClient = (user) => ({
+  _id: user._id,
+  name: user.name,
+  email: user.email,
+  authProvider: user.authProvider,
+  createdAt: user.createdAt,
+  preferences: serializePreferences(user.preferences)
+});
 
 /**
  * Register a new user with email and password
@@ -57,19 +70,11 @@ const register = async (req, res, next) => {
     await user.save();
 
     // Return response (exclude password and refreshTokens array from response)
-    const userResponse = {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      authProvider: user.authProvider,
-      createdAt: user.createdAt
-    };
-
     res.status(201).json({
       success: true,
       accessToken,
       refreshToken,
-      user: userResponse
+      user: formatUserForClient(user)
     });
   } catch (error) {
     // Handle duplicate key error (email uniqueness)
@@ -133,20 +138,11 @@ const login = async (req, res, next) => {
     user.addRefreshToken(refreshToken);
     await user.save();
 
-    // Return response
-    const userResponse = {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      authProvider: user.authProvider,
-      createdAt: user.createdAt
-    };
-
     res.json({
       success: true,
       accessToken,
       refreshToken,
-      user: userResponse
+      user: formatUserForClient(user)
     });
   } catch (error) {
     next(error);
@@ -437,21 +433,176 @@ const logout = async (req, res, next) => {
  */
 const getMe = async (req, res, next) => {
   try {
-    // User is already attached to req by authenticateUser middleware
-    const user = req.user;
-    
-    // Return user data (password and refreshTokens already excluded by middleware)
-    const userResponse = {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      authProvider: user.authProvider,
-      createdAt: user.createdAt
-    };
+    res.json({
+      success: true,
+      user: formatUserForClient(req.user)
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update regional & display preferences
+ * PATCH /api/auth/me/preferences
+ */
+const updatePreferences = async (req, res, next) => {
+  try {
+    const parsed = parsePreferencesBody(req.body);
+    if (parsed.error) {
+      return res.status(400).json({ success: false, error: parsed.error });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    Object.assign(user.preferences, parsed.updates);
+    await user.save();
 
     res.json({
       success: true,
-      user: userResponse
+      preferences: serializePreferences(user.preferences),
+      user: formatUserForClient(user)
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Update profile (display name)
+ * PATCH /api/auth/me/profile
+ */
+const updateProfile = async (req, res, next) => {
+  try {
+    const { name } = req.body;
+
+    if (name === undefined || name === null) {
+      return res.status(400).json({
+        success: false,
+        error: 'Name is required'
+      });
+    }
+
+    const trimmed = String(name).trim();
+    if (trimmed.length < 1) {
+      return res.status(400).json({
+        success: false,
+        error: 'Name cannot be empty'
+      });
+    }
+
+    if (trimmed.length > 120) {
+      return res.status(400).json({
+        success: false,
+        error: 'Name must be 120 characters or fewer'
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    user.name = trimmed;
+    await user.save();
+
+    res.json({
+      success: true,
+      user: formatUserForClient(user)
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Change password (local accounts only)
+ * POST /api/auth/change-password
+ */
+const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'Current password and new password are required'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        error: 'New password must be at least 6 characters long'
+      });
+    }
+
+    if (currentPassword === newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'New password must be different from the current password'
+      });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    if (user.authProvider !== 'local') {
+      return res.status(400).json({
+        success: false,
+        error: 'Password cannot be changed for Google sign-in accounts'
+      });
+    }
+
+    const isValid = await user.comparePassword(currentPassword);
+    if (!isValid) {
+      return res.status(401).json({
+        success: false,
+        error: 'Current password is incorrect'
+      });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Password updated successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Sign out on all devices — revoke all refresh tokens except the current session
+ * POST /api/auth/logout-all
+ */
+const logoutAllSessions = async (req, res, next) => {
+  try {
+    const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    if (refreshToken && user.refreshTokens.includes(refreshToken)) {
+      user.refreshTokens = [refreshToken];
+    } else {
+      user.refreshTokens = [];
+    }
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Signed out on all other devices'
     });
   } catch (error) {
     next(error);
@@ -589,6 +740,10 @@ module.exports = {
   refreshToken,
   logout,
   getMe,
+  updatePreferences,
+  updateProfile,
+  changePassword,
+  logoutAllSessions,
   forgotPassword,
   resetPassword
 };

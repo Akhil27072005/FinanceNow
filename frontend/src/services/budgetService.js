@@ -14,6 +14,18 @@ export const budgetService = {
     return response.data;
   },
 
+  getBudgetSummary: async (month) => {
+    const params = new URLSearchParams();
+    if (month) params.append('month', month);
+    const response = await api.get(`/budgets/summary?${params.toString()}`);
+    return response.data;
+  },
+
+  autoCreateBudgets: async ({ fromMonth, toMonth }) => {
+    const response = await api.post('/budgets/auto-create', { fromMonth, toMonth });
+    return response.data;
+  },
+
   getBudget: async (id) => {
     const response = await api.get(`/budgets/${id}`);
     return response.data;

@@ -161,6 +161,52 @@ const getSubscriptionSpendInRange = async (userId, dateStart, dateEnd) => {
   };
 };
 
+/**
+ * Sum amounts for active subs with nextPaymentDate in [dateStart, dateEnd].
+ */
+const getProjectedSubscriptionSpendForMonth = async (userId, dateStart, dateEnd) => {
+  const start = normalizeDateAtMidnight(dateStart);
+  const end = new Date(dateEnd);
+  end.setHours(23, 59, 59, 999);
+
+  const subs = await Subscription.find({
+    userId,
+    isActive: true,
+    nextPaymentDate: { $gte: start, $lte: end }
+  }).select('amount');
+
+  let total = 0;
+  subs.forEach((sub) => {
+    total += sub.amount;
+  });
+
+  return {
+    total: Math.round(total * 100) / 100,
+    projectedCount: subs.length
+  };
+};
+
+/**
+ * Payment history for one subscription (newest first).
+ */
+const getSubscriptionPaymentHistory = async (userId, subscriptionId, limit = 50) => {
+  const payments = await SubscriptionPayment.find({
+    userId,
+    subscriptionId
+  })
+    .sort({ billingDueDate: -1 })
+    .limit(limit)
+    .lean();
+
+  return payments.map((p) => ({
+    id: p._id.toString(),
+    amount: Math.round(p.amount * 100) / 100,
+    billingDueDate: p.billingDueDate,
+    source: p.source,
+    createdAt: p.createdAt
+  }));
+};
+
 module.exports = {
   normalizeDateAtMidnight,
   addBillingCycle,
@@ -169,5 +215,7 @@ module.exports = {
   processAutoRenewSubscription,
   advanceAutoRenewSubscriptions,
   recordManualSubscriptionPayment,
-  getSubscriptionSpendInRange
+  getSubscriptionSpendInRange,
+  getProjectedSubscriptionSpendForMonth,
+  getSubscriptionPaymentHistory
 };

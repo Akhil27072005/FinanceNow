@@ -39,6 +39,10 @@ const paymentMethodSchema = new mongoose.Schema({
     trim: true,
     default: null
   },
+  metadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now

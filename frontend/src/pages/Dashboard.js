@@ -1,924 +1,313 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Alert, Badge } from 'react-bootstrap';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Alert } from 'react-bootstrap';
 import { analyticsService } from '../services/analyticsService';
-import { formatDateDDMMYYYY } from '../utils/dateUtils';
-import { subscriptionService } from '../services/subscriptionService';
-import { budgetService } from '../services/budgetService';
 import { transactionService } from '../services/transactionService';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { cardStyle } from '../styles/cardStyles';
-import { BarChart3, CreditCard, AlertTriangle, Bell } from 'lucide-react';
+import { subscriptionService } from '../services/subscriptionService';
+import {
+  resolveSpendingComparison,
+  mergeDailyTrends,
+  chartHasSpendingData
+} from '../utils/spendingChartUtils';
+import { getMonthDateRange } from '../utils/dateUtils';
+import { portfolioService } from '../services/portfolioService';
 import DatePicker from '../components/ui/DatePicker';
-import Button from '../components/ui/Button';
+import TotalExpensesSplitCard from '../components/dashboard/TotalExpensesSplitCard';
+import SpendingComparisonCard from '../components/dashboard/SpendingComparisonCard';
+import RecentTransactionsCard from '../components/dashboard/RecentTransactionsCard';
+import RecurringCard from '../components/dashboard/RecurringCard';
+import InvestmentsCard from '../components/dashboard/InvestmentsCard';
+import '../styles/dashboard.css';
+
+const toDateOnly = (value) => {
+  const d = new Date(value);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+const buildRecurringItems = (subscriptions = []) => {
+  const today = toDateOnly(new Date());
+
+  const mapped = subscriptions.map((sub) => {
+    const due = toDateOnly(sub.nextPaymentDate);
+    return {
+      id: sub._id?.toString?.() ?? sub._id ?? sub.id,
+      name: sub.name,
+      amount: sub.amount,
+      billingCycle: sub.billingCycle,
+      nextPaymentDate: sub.nextPaymentDate,
+      logoUrl: sub.metadata?.logoUrl || null,
+      isOverdue: due < today
+    };
+  });
+
+  const overdue = mapped
+    .filter((item) => item.isOverdue)
+    .sort((a, b) => toDateOnly(a.nextPaymentDate) - toDateOnly(b.nextPaymentDate));
+  const upcoming = mapped
+    .filter((item) => !item.isOverdue)
+    .sort((a, b) => toDateOnly(a.nextPaymentDate) - toDateOnly(b.nextPaymentDate));
+
+  return [...overdue, ...upcoming].slice(0, 3);
+};
 
 /**
- * Dashboard Page
- * Displays KPIs, charts, and subscription reminders
+ * Dashboard Page — expenses split, spending chart, transactions, recurring, investments
  */
 const Dashboard = () => {
-  const [dashboardData, setDashboardData] = useState(null);
-  const [chartData, setChartData] = useState({});
-  const [subscriptionAlerts, setSubscriptionAlerts] = useState(null);
-  const [budgets, setBudgets] = useState([]);
-  const [budgetTransactions, setBudgetTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [chartsLoading, setChartsLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [markingAsPaid, setMarkingAsPaid] = useState(null); // Track which subscription is being marked as paid
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
+  const [totalExpenses, setTotalExpenses] = useState(0);
+  const [splitData, setSplitData] = useState([]);
+  const [splitLoading, setSplitLoading] = useState(true);
+  const [chartData, setChartData] = useState([]);
+  const [chartsLoading, setChartsLoading] = useState(true);
+  const [recentTransactions, setRecentTransactions] = useState([]);
+  const [txnLoading, setTxnLoading] = useState(true);
+  const [recurringItems, setRecurringItems] = useState([]);
+  const [recurringLoading, setRecurringLoading] = useState(true);
+  const [investmentItems, setInvestmentItems] = useState([]);
+  const [investmentsLoading, setInvestmentsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const comparison = useMemo(
+    () => resolveSpendingComparison(selectedMonth),
+    [selectedMonth]
+  );
+
+  const chartHasData = useMemo(() => chartHasSpendingData(chartData), [chartData]);
 
   useEffect(() => {
-    loadDashboardData();
+    let cancelled = false;
+
+    const loadSplit = async () => {
+      try {
+        setSplitLoading(true);
+        setError('');
+
+        const [dashboardResponse, splitResponse] = await Promise.all([
+          analyticsService.getDashboard({ month: selectedMonth }),
+          analyticsService.getExpenseSubCategorySplit(selectedMonth)
+        ]);
+
+        if (cancelled) return;
+
+        setTotalExpenses(dashboardResponse?.kpis?.totalExpenses ?? 0);
+        setSplitData(splitResponse?.data ?? []);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.response?.data?.error || 'Failed to load dashboard data');
+          setTotalExpenses(0);
+          setSplitData([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setSplitLoading(false);
+        }
+      }
+    };
+
+    loadSplit();
+    return () => {
+      cancelled = true;
+    };
   }, [selectedMonth]);
 
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true);
-      setChartsLoading(true);
-      setError('');
+  useEffect(() => {
+    let cancelled = false;
+    const { focusMonth, benchmarkMonth } = resolveSpendingComparison(selectedMonth);
 
-      // Calculate month date range for transactions
-      const monthStart = `${selectedMonth}-01`;
-      const monthEndDate = new Date(new Date(monthStart).getFullYear(), new Date(monthStart).getMonth() + 1, 0);
-      const monthEnd = monthEndDate.toISOString().split('T')[0];
+    const loadChart = async () => {
+      try {
+        setChartsLoading(true);
 
-      // Load dashboard KPIs first (most important, show immediately)
-      const dashboardResponse = await analyticsService.getDashboard({ month: selectedMonth });
-      setDashboardData(dashboardResponse);
-      setLoading(false); // Show dashboard as soon as KPIs are ready
-
-      // Lazy load everything else in parallel (budgets, transactions, alerts, charts)
-      // Fetch all transactions for budget calculation (paginate through all pages)
-      const fetchAllTransactions = async () => {
-        let allTransactions = [];
-        let page = 1;
-        let hasMore = true;
-        
-        while (hasMore) {
-          const response = await transactionService.getTransactions({
-            type: 'expense',
-            startDate: monthStart,
-            endDate: monthEnd,
-            limit: 100, // Max allowed by backend
-            page: page
-          });
-          
-          const transactions = response?.data || [];
-          const total = response?.pagination?.total || 0;
-          
-          allTransactions = [...allTransactions, ...transactions];
-          
-          // Check if there are more pages
-          if (transactions.length < 100 || allTransactions.length >= total) {
-            hasMore = false;
-          } else {
-            page++;
-          }
-        }
-        
-        return allTransactions;
-      };
-
-      Promise.all([
-        budgetService.getBudgets({ month: selectedMonth }),
-        fetchAllTransactions(),
-        subscriptionService.getAlerts(7)
-      ]).then(([budgetsRes, allTransactions, alertsResponse]) => {
-        // budgetsRes is already response.data from service, which is { success: true, data: [...] }
-        setBudgets(budgetsRes?.data || []);
-        setBudgetTransactions(allTransactions);
-        setSubscriptionAlerts(alertsResponse);
-      }).catch(err => {
-        console.error('Error loading secondary data:', err);
-        console.error('Error details:', err.response?.data);
-        // Set empty arrays on error to prevent UI issues
-        setBudgets([]);
-        setBudgetTransactions([]);
-      });
-
-      // Load charts separately after dashboard is visible
-      requestAnimationFrame(() => {
-        loadChartsLazy();
-      });
-    } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load dashboard data');
-      setLoading(false);
-      setChartsLoading(false);
-    }
-  };
-
-  // Lazy load charts separately after main dashboard loads
-  const loadChartsLazy = async () => {
-    try {
-      setChartsLoading(true);
-      
-      const [incomeTrend, expenseTrend, categorySplit] = await Promise.all([
-        analyticsService.getCharts('income', 'monthlyTrend', { month: selectedMonth }),
-        analyticsService.getCharts('expense', 'monthlyTrend', { month: selectedMonth }),
-        analyticsService.getCharts('expense', 'categorySplit', { month: selectedMonth })
-      ]);
-
-      setChartData({
-        incomeTrend: incomeTrend.data,
-        expenseTrend: expenseTrend.data,
-        categorySplit: categorySplit.data
-      });
-      
-      setChartsLoading(false);
-    } catch (err) {
-      console.error('Failed to load charts:', err);
-      setChartsLoading(false);
-      // Don't show error for charts, just log it
-    }
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount);
-  };
-
-  const formatPercentage = (value) => {
-    if (value === null || value === undefined) return 'N/A';
-    return `${value.toFixed(1)}%`;
-  };
-
-  // Combine income and expense trends for comparison chart
-  const combinedTrendData = React.useMemo(() => {
-    if (!chartData.incomeTrend || !chartData.expenseTrend) return [];
-    
-    const incomeMap = new Map(chartData.incomeTrend.map(item => [item.date, item.amount]));
-    const expenseMap = new Map(chartData.expenseTrend.map(item => [item.date, item.amount]));
-    
-    const allDates = new Set([...incomeMap.keys(), ...expenseMap.keys()]);
-    return Array.from(allDates).sort().map(date => ({
-      date,
-      income: incomeMap.get(date) || 0,
-      expense: expenseMap.get(date) || 0
-    }));
-  }, [chartData.incomeTrend, chartData.expenseTrend]);
-
-  // Calculate days until payment
-  const getDaysUntil = (dateString) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const paymentDate = new Date(dateString);
-    paymentDate.setHours(0, 0, 0, 0);
-    const diffTime = paymentDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  // Handle marking subscription as paid
-  const handleMarkAsPaid = async (subscriptionId) => {
-    try {
-      setMarkingAsPaid(subscriptionId);
-      setError('');
-      const response = await subscriptionService.markAsPaid(subscriptionId);
-      
-      if (response && response.success) {
-        const [alertsResponse, dashboardResponse] = await Promise.all([
-          subscriptionService.getAlerts(7),
-          analyticsService.getDashboard({ month: selectedMonth })
+        const [focusRes, benchmarkRes] = await Promise.all([
+          analyticsService.getExpenseMonthlyTrend(focusMonth),
+          analyticsService.getExpenseMonthlyTrend(benchmarkMonth)
         ]);
-        setSubscriptionAlerts(alertsResponse);
-        setDashboardData(dashboardResponse);
-      } else {
-        setError(response?.error || 'Failed to mark subscription as paid');
+
+        if (cancelled) return;
+
+        const merged = mergeDailyTrends(
+          focusRes?.data ?? [],
+          benchmarkRes?.data ?? [],
+          focusMonth,
+          benchmarkMonth
+        );
+        setChartData(merged);
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Failed to load spending chart:', err);
+          setChartData([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setChartsLoading(false);
+        }
       }
-    } catch (err) {
-      console.error('Error marking subscription as paid:', err);
-      const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to mark subscription as paid';
-      setError(errorMessage);
-    } finally {
-      setMarkingAsPaid(null);
-    }
-  };
+    };
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+    loadChart();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedMonth]);
 
-  if (loading) {
-    return (
-      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '400px' }}>
-        <div className="spinner-border" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    let cancelled = false;
 
-  if (error) {
-    return <Alert variant="danger">{error}</Alert>;
-  }
+    const loadRecentTransactions = async () => {
+      try {
+        setTxnLoading(true);
+        const response = await transactionService.getTransactions({ limit: 3, page: 1 });
+        if (cancelled) return;
+        setRecentTransactions((response?.data ?? []).slice(0, 3));
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Failed to load recent transactions:', err);
+          setRecentTransactions([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setTxnLoading(false);
+        }
+      }
+    };
+
+    loadRecentTransactions();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadRecurring = async () => {
+      try {
+        setRecurringLoading(true);
+        const response = await subscriptionService.getSubscriptions(true);
+        if (cancelled) return;
+        setRecurringItems(buildRecurringItems(response?.data ?? []));
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Failed to load recurring subscriptions:', err);
+          setRecurringItems([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setRecurringLoading(false);
+        }
+      }
+    };
+
+    loadRecurring();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadInvestments = async () => {
+      try {
+        setInvestmentsLoading(true);
+        const response = await portfolioService.getSummary();
+        if (cancelled) return;
+        setInvestmentItems(response?.data?.topHoldings ?? []);
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Failed to load investments:', err);
+          setInvestmentItems([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setInvestmentsLoading(false);
+        }
+      }
+    };
+
+    loadInvestments();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
-    <div style={{ maxWidth: '100%' }}>
-      {/* Header with Month Selector */}
-      <div className="d-flex justify-content-between align-items-center" style={{ marginBottom: '20px' }}>
-        <h2 style={{ 
-          fontWeight: 600, 
-          margin: 0,
-          fontSize: '26px',
-          color: '#111827',
-          letterSpacing: '-0.03em'
-        }}>
-          Dashboard
-        </h2>
-        <div style={{ width: '160px' }}>
+    <div className="dashboard-page dashboard-page--fit">
+      <div className="dashboard-page__header">
+        <div className="dashboard-page__month">
           <DatePicker
             selected={selectedMonth}
             onChange={(date) => setSelectedMonth(date)}
             placeholder="Select month"
             showMonthYearPicker
+            calendarClassName="dashboard-month-picker__calendar"
+            popperPlacement="bottom-end"
+            popperProps={{
+              strategy: 'fixed',
+              modifiers: [
+                { name: 'offset', options: { offset: [0, 8] } },
+                {
+                  name: 'preventOverflow',
+                  options: {
+                    rootBoundary: 'viewport',
+                    padding: 14,
+                    altAxis: true
+                  }
+                },
+                {
+                  name: 'flip',
+                  options: {
+                    fallbackPlacements: ['bottom-end', 'top-end', 'bottom-start']
+                  }
+                }
+              ]
+            }}
           />
         </div>
       </div>
 
-      {/* KPI Cards - Row 1: Core Financial Health */}
-      {dashboardData && dashboardData.kpis && (
-        <>
-          <Row style={{ marginBottom: '12px', gap: '12px 0' }}>
-            <Col md={3} style={{ padding: '0 6px' }}>
-              <Card style={cardStyle}>
-                <Card.Body style={{ padding: '20px' }}>
-                  <div style={{ 
-                    color: '#6b7280', 
-                    fontSize: '12px', 
-                    marginBottom: '8px',
-                    fontWeight: 500,
-                    letterSpacing: '0.3px'
-                  }}>
-                    Total Income
-                  </div>
-                  <div style={{ 
-                    fontSize: '24px', 
-                    fontWeight: 700, 
-                    color: '#10b981',
-                    letterSpacing: '-0.02em',
-                    lineHeight: '1.1'
-                  }}>
-                    {formatCurrency(dashboardData.kpis.totalIncome)}
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={3} style={{ padding: '0 6px' }}>
-              <Card style={cardStyle}>
-                <Card.Body style={{ padding: '20px' }}>
-                  <div style={{ 
-                    color: '#6b7280', 
-                    fontSize: '12px', 
-                    marginBottom: '8px',
-                    fontWeight: 500,
-                    letterSpacing: '0.3px'
-                  }}>
-                    Total Expenses
-                  </div>
-                  <div style={{ 
-                    fontSize: '24px', 
-                    fontWeight: 700, 
-                    color: '#ef4444',
-                    letterSpacing: '-0.02em',
-                    lineHeight: '1.1'
-                  }}>
-                    {formatCurrency(dashboardData.kpis.totalExpenses)}
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={3} style={{ padding: '0 6px' }}>
-              <Card style={cardStyle}>
-                <Card.Body style={{ padding: '20px' }}>
-                  <div style={{ 
-                    color: '#6b7280', 
-                    fontSize: '12px', 
-                    marginBottom: '8px',
-                    fontWeight: 500,
-                    letterSpacing: '0.3px'
-                  }}>
-                    Net Savings
-                  </div>
-                  <div style={{ 
-                    fontSize: '24px', 
-                    fontWeight: 700, 
-                    color: dashboardData.kpis.netSavings >= 0 ? '#10b981' : '#ef4444',
-                    letterSpacing: '-0.02em',
-                    lineHeight: '1.1'
-                  }}>
-                    {formatCurrency(dashboardData.kpis.netSavings)}
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={3} style={{ padding: '0 6px' }}>
-              <Card style={cardStyle}>
-                <Card.Body style={{ padding: '20px' }}>
-                  <div style={{ 
-                    color: '#6b7280', 
-                    fontSize: '12px', 
-                    marginBottom: '8px',
-                    fontWeight: 500,
-                    letterSpacing: '0.3px'
-                  }}>
-                    Expense Rate
-                  </div>
-                  <div style={{ 
-                    fontSize: '24px', 
-                    fontWeight: 700, 
-                    color: '#2563eb',
-                    letterSpacing: '-0.02em',
-                    lineHeight: '1.1'
-                  }}>
-                    {dashboardData.kpis.totalIncome > 0 
-                      ? formatPercentage((dashboardData.kpis.totalExpenses / dashboardData.kpis.totalIncome) * 100)
-                      : 'N/A'}
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-
-          {/* KPI Cards - Row 2: Additional Metrics */}
-          <Row style={{ marginBottom: '20px', gap: '12px 0' }}>
-            <Col md={3} style={{ padding: '0 6px' }}>
-              <Card style={cardStyle}>
-                <Card.Body style={{ padding: '20px' }}>
-                  <div style={{ 
-                    color: '#6b7280', 
-                    fontSize: '12px', 
-                    marginBottom: '8px',
-                    fontWeight: 500,
-                    letterSpacing: '0.3px'
-                  }}>
-                    Total Savings
-                  </div>
-                  <div style={{ 
-                    fontSize: '24px', 
-                    fontWeight: 700, 
-                    color: '#10b981',
-                    letterSpacing: '-0.02em',
-                    lineHeight: '1.1'
-                  }}>
-                    {formatCurrency(dashboardData.kpis.totalSavings || 0)}
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={3} style={{ padding: '0 6px' }}>
-              <Card style={cardStyle}>
-                <Card.Body style={{ padding: '20px' }}>
-                  <div style={{ 
-                    color: '#6b7280', 
-                    fontSize: '12px', 
-                    marginBottom: '8px',
-                    fontWeight: 500,
-                    letterSpacing: '0.3px'
-                  }}>
-                    Total Investments
-                  </div>
-                  <div style={{ 
-                    fontSize: '24px', 
-                    fontWeight: 700, 
-                    color: '#2563eb',
-                    letterSpacing: '-0.02em',
-                    lineHeight: '1.1'
-                  }}>
-                    {formatCurrency(dashboardData.kpis.totalInvestments || 0)}
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={3} style={{ padding: '0 6px' }}>
-              <Card style={cardStyle}>
-                <Card.Body style={{ padding: '20px' }}>
-                  <div style={{ 
-                    color: '#6b7280', 
-                    fontSize: '12px', 
-                    marginBottom: '8px',
-                    fontWeight: 500,
-                    letterSpacing: '0.3px'
-                  }}>
-                    Avg Daily Expense
-                  </div>
-                  <div style={{ 
-                    fontSize: '24px', 
-                    fontWeight: 700, 
-                    color: '#6b7280',
-                    letterSpacing: '-0.02em',
-                    lineHeight: '1.1'
-                  }}>
-                    {formatCurrency(dashboardData.kpis.avgDailyExpense || 0)}
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col md={3} style={{ padding: '0 6px' }}>
-              <Card style={cardStyle}>
-                <Card.Body style={{ padding: '20px' }}>
-                  <div style={{ 
-                    color: '#6b7280', 
-                    fontSize: '12px', 
-                    marginBottom: '8px',
-                    fontWeight: 500,
-                    letterSpacing: '0.3px'
-                  }}>
-                    Subscription Spend (This Month)
-                  </div>
-                  <div style={{ 
-                    fontSize: '24px', 
-                    fontWeight: 700, 
-                    color: '#f59e0b',
-                    letterSpacing: '-0.02em',
-                    lineHeight: '1.1'
-                  }}>
-                    {formatCurrency(dashboardData.kpis.monthlySubscriptionSpend || 0)}
-                  </div>
-                  <div style={{ 
-                    fontSize: '11px', 
-                    color: '#9ca3af',
-                    marginTop: '4px'
-                  }}>
-                    {dashboardData.kpis.activeSubscriptions || 0} active
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-          </Row>
-        </>
+      {error && !splitLoading && (
+        <Alert variant="danger" className="mb-2 py-2" style={{ flexShrink: 0 }}>
+          {error}
+        </Alert>
       )}
 
-      {/* Charts Row - Bento Style - Charts Dominate */}
-      <Row style={{ marginBottom: '20px', gap: '12px 0' }}>
-        <Col md={8} style={{ padding: '0 6px' }}>
-          <Card style={cardStyle}>
-            <Card.Body style={{ padding: '20px' }}>
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                marginBottom: '16px'
-              }}>
-                <h5 style={{ 
-                  margin: 0, 
-                  fontWeight: 600,
-                  fontSize: '15px',
-                  color: '#111827',
-                  letterSpacing: '-0.01em'
-                }}>
-                  Income vs Expenses Trend
-                </h5>
-              </div>
-              {chartsLoading ? (
-                <div style={{ 
-                  padding: '80px 20px', 
-                  textAlign: 'center',
-                  color: '#9ca3af',
-                  fontSize: '13px'
-                }}>
-                  <div className="spinner-border spinner-border-sm text-primary" role="status" style={{ marginBottom: '8px' }}>
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                  <p style={{ margin: '8px 0 0 0' }}>Loading chart data...</p>
-                </div>
-              ) : combinedTrendData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={380}>
-                  <LineChart data={combinedTrendData} margin={{ top: 10, right: 20, left: 0, bottom: 10 }}>
-                    <defs>
-                      <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                        <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="2,2"/>
-                      </pattern>
-                    </defs>
-                    <CartesianGrid strokeDasharray="2 2" stroke="#e5e7eb" fill="url(#grid)" opacity={0.3} />
-                    <XAxis 
-                      dataKey="date" 
-                      stroke="#9ca3af"
-                      tick={{ fontSize: '11px', fill: '#6b7280' }}
-                      tickLine={{ stroke: '#d1d5db' }}
-                    />
-                    <YAxis 
-                      stroke="#9ca3af"
-                      tick={{ fontSize: '11px', fill: '#6b7280' }}
-                      tickLine={{ stroke: '#d1d5db' }}
-                    />
-                    <Tooltip 
-                      formatter={(value) => formatCurrency(value)}
-                      contentStyle={{
-                        backgroundColor: '#ffffff',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                        fontSize: '12px',
-                        padding: '8px 12px'
-                      }}
-                    />
-                    <Legend 
-                      wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
-                      iconType="line"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="income" 
-                      stroke="#10b981" 
-                      strokeWidth={3} 
-                      name="Income"
-                      dot={false}
-                      activeDot={{ r: 5, fill: '#10b981' }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="expense" 
-                      stroke="#ef4444" 
-                      strokeWidth={3} 
-                      name="Expenses"
-                      dot={false}
-                      activeDot={{ r: 5, fill: '#ef4444' }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                  <div style={{ 
-                    padding: '80px 20px', 
-                    textAlign: 'center',
-                    color: '#9ca3af',
-                    fontSize: '13px'
-                  }}>
-                    <BarChart3 size={32} style={{ marginBottom: '8px', opacity: 0.5, margin: '0 auto' }} />
-                    <p style={{ margin: 0 }}>No expense data for this month yet</p>
-                  </div>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={4} style={{ padding: '0 6px' }}>
-          <Card style={cardStyle}>
-            <Card.Body style={{ padding: '20px' }}>
-              <h5 style={{ 
-                margin: 0,
-                marginBottom: '16px',
-                fontWeight: 600,
-                fontSize: '15px',
-                color: '#111827',
-                letterSpacing: '-0.01em'
-              }}>
-                Expense by Category
-              </h5>
-              {chartsLoading ? (
-                <div style={{ 
-                  padding: '80px 20px', 
-                  textAlign: 'center',
-                  color: '#9ca3af',
-                  fontSize: '13px'
-                }}>
-                  <div className="spinner-border spinner-border-sm text-primary" role="status" style={{ marginBottom: '8px' }}>
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                  <p style={{ margin: '8px 0 0 0' }}>Loading chart data...</p>
-                </div>
-              ) : (() => {
-                // Process category split data - ensure correct field names and calculate total
-                const processedData = chartData.categorySplit && chartData.categorySplit.length > 0
-                  ? chartData.categorySplit.map(item => ({
-                      name: item.category || item.name || 'Uncategorized',
-                      amount: item.amount || 0
-                    }))
-                  : [];
-                
-                const totalExpenses = processedData.reduce((sum, item) => sum + item.amount, 0);
-                
-                return processedData.length > 0 && totalExpenses > 0 ? (
-                  <ResponsiveContainer width="100%" height={380}>
-                    <PieChart>
-                      <Pie
-                        data={processedData}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, amount }) => {
-                          const percent = totalExpenses > 0 ? ((amount / totalExpenses) * 100).toFixed(0) : 0;
-                          return `${name} ${percent}%`;
-                        }}
-                        outerRadius={110}
-                        fill="#8884d8"
-                        dataKey="amount"
-                      >
-                        {processedData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value, name, props) => {
-                          const percent = totalExpenses > 0 ? ((value / totalExpenses) * 100).toFixed(1) : 0;
-                          return [`${formatCurrency(value)} (${percent}%)`, props.payload.name];
-                        }}
-                        contentStyle={{
-                          backgroundColor: '#ffffff',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                          fontSize: '12px',
-                          padding: '8px 12px'
-                        }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div style={{ 
-                    padding: '80px 20px', 
-                    textAlign: 'center',
-                    color: '#9ca3af',
-                    fontSize: '13px'
-                  }}>
-                    <BarChart3 size={32} style={{ marginBottom: '8px', opacity: 0.5, margin: '0 auto' }} />
-                    <p style={{ margin: 0 }}>No data for this month yet</p>
-                  </div>
-                );
-              })()}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Budget Status Overview */}
-      {budgets.length > 0 && (
-        <Row style={{ gap: '12px 0', marginBottom: '20px' }}>
-          {budgets.map((budget) => {
-            const calculateSpent = (budget) => {
-              const monthStart = new Date(selectedMonth + '-01');
-              const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
-              
-              return budgetTransactions
-                .filter(t => {
-                  const tDate = new Date(t.date);
-                  if (tDate < monthStart || tDate > monthEnd) return false;
-                  
-                  if (budget.categoryId) {
-                    const budgetCatId = budget.categoryId?._id || budget.categoryId;
-                    const tCatId = t.categoryId?._id || t.categoryId;
-                    return tCatId && budgetCatId && tCatId.toString() === budgetCatId.toString();
-                  }
-                  if (budget.subCategoryId) {
-                    const budgetSubCatId = budget.subCategoryId?._id || budget.subCategoryId;
-                    const tSubCatId = t.subCategoryId?._id || t.subCategoryId;
-                    return tSubCatId && budgetSubCatId && tSubCatId.toString() === budgetSubCatId.toString();
-                  }
-                  return false;
-                })
-                .reduce((sum, t) => sum + t.amount, 0);
-            };
-
-            const spent = calculateSpent(budget);
-            const percentage = budget.amount > 0 ? Math.min((spent / budget.amount) * 100, 100) : 0;
-            const isOverBudget = spent > budget.amount;
-            const budgetName = budget.categoryId?.name || budget.subCategoryId?.name || 'Budget';
-
-            return (
-              <Col md={4} key={budget._id} style={{ padding: '0 6px' }}>
-                <Card style={cardStyle}>
-                  <Card.Body style={{ padding: '20px' }}>
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'flex-start',
-                      marginBottom: '12px'
-                    }}>
-                      <div>
-                        <div style={{ 
-                          fontWeight: 600, 
-                          fontSize: '14px', 
-                          color: '#111827',
-                          marginBottom: '4px'
-                        }}>
-                          {budgetName}
-                        </div>
-                        <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                          {formatCurrency(spent)} / {formatCurrency(budget.amount)}
-                        </div>
-                      </div>
-                      <Badge 
-                        bg={isOverBudget ? 'danger' : percentage >= 80 ? 'warning' : 'success'}
-                        style={{
-                          padding: '4px 10px',
-                          borderRadius: '6px',
-                          fontSize: '11px',
-                          fontWeight: 500
-                        }}
-                      >
-                        {isOverBudget ? 'Over Budget' : percentage >= 80 ? 'Warning' : 'On Track'}
-                      </Badge>
-                    </div>
-                    <div style={{
-                      width: '100%',
-                      height: '8px',
-                      backgroundColor: '#e5e7eb',
-                      borderRadius: '4px',
-                      overflow: 'hidden',
-                      marginTop: '8px'
-                    }}>
-                      <div style={{
-                        width: `${Math.min(percentage, 100)}%`,
-                        height: '100%',
-                        backgroundColor: isOverBudget ? '#ef4444' : percentage >= 80 ? '#f59e0b' : '#10b981',
-                        transition: 'width 0.3s ease'
-                      }} />
-                    </div>
-                    <div style={{ 
-                      fontSize: '11px', 
-                      color: '#9ca3af', 
-                      marginTop: '6px',
-                      textAlign: 'right'
-                    }}>
-                      {percentage.toFixed(1)}% used
-                    </div>
-                  </Card.Body>
-                </Card>
-              </Col>
-            );
-          })}
-        </Row>
-      )}
-
-      {/* Subscription Reminders Section */}
-      <Row style={{ gap: '12px 0', marginBottom: '20px' }}>
-          <Col md={6} style={{ padding: '0 6px' }}>
-            <Card style={cardStyle}>
-              <Card.Header style={{ 
-                backgroundColor: '#ffffff', 
-                borderBottom: '1px solid #e5e7eb', 
-                fontWeight: 600,
-                padding: '16px 20px',
-                fontSize: '14px',
-                color: '#111827'
-              }}>
-                Upcoming Subscriptions
-              </Card.Header>
-              <Card.Body style={{ padding: '16px 20px' }}>
-                {subscriptionAlerts && subscriptionAlerts.upcoming && subscriptionAlerts.upcoming.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {subscriptionAlerts.upcoming.map((sub) => {
-                      const daysUntil = getDaysUntil(sub.nextPaymentDate);
-                      return (
-                        <div
-                          key={sub.id}
-                          style={{
-                            padding: '12px',
-                            backgroundColor: '#f9fafb',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            border: '1px solid #e5e7eb'
-                          }}
-                        >
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: '14px', color: '#111827', marginBottom: '2px' }}>
-                              {sub.name}
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                              {formatCurrency(sub.amount)} • {sub.billingCycle}
-                            </div>
-                          </div>
-                          <div style={{ textAlign: 'right' }}>
-                            <Badge 
-                              bg={daysUntil <= 3 ? 'danger' : daysUntil <= 7 ? 'warning' : 'info'}
-                              style={{
-                                padding: '4px 10px',
-                                borderRadius: '6px',
-                                fontSize: '11px',
-                                fontWeight: 500
-                              }}
-                            >
-                              {daysUntil === 0 ? 'Today' : daysUntil === 1 ? 'Tomorrow' : `${daysUntil} days`}
-                            </Badge>
-                            <div style={{ fontSize: '10px', color: '#9ca3af', marginTop: '4px' }}>
-                              {formatDateDDMMYYYY(sub.nextPaymentDate)}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div style={{ 
-                    padding: '40px 20px', 
-                    textAlign: 'center',
-                    color: '#9ca3af',
-                    fontSize: '13px'
-                  }}>
-                    <Bell size={24} style={{ marginBottom: '6px', opacity: 0.5, margin: '0 auto' }} />
-                    <p style={{ margin: 0 }}>No upcoming subscriptions</p>
-                  </div>
-                )}
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col md={6} style={{ padding: '0 6px' }}>
-            <Card style={cardStyle}>
-              <Card.Header style={{ 
-                backgroundColor: '#ffffff', 
-                borderBottom: '1px solid #e5e7eb', 
-                fontWeight: 600,
-                padding: '16px 20px',
-                fontSize: '14px',
-                color: '#111827'
-              }}>
-                Overdue Subscriptions
-              </Card.Header>
-              <Card.Body style={{ padding: '16px 20px' }}>
-                {subscriptionAlerts && subscriptionAlerts.overdue && subscriptionAlerts.overdue.length > 0 ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {subscriptionAlerts.overdue.map((sub) => {
-                      const daysOverdue = Math.abs(getDaysUntil(sub.nextPaymentDate));
-                      return (
-                        <div
-                          key={sub.id}
-                          style={{
-                            padding: '12px',
-                            backgroundColor: '#fef3c7',
-                            borderRadius: '8px',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            border: '1px solid #fde68a',
-                            gap: '12px'
-                          }}
-                        >
-                          <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 600, fontSize: '14px', color: '#111827', marginBottom: '2px' }}>
-                              {sub.name}
-                            </div>
-                            <div style={{ fontSize: '12px', color: '#6b7280' }}>
-                              {formatCurrency(sub.amount)} • {sub.billingCycle}
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <Badge 
-                                bg="danger"
-                                style={{
-                                  padding: '4px 10px',
-                                  borderRadius: '6px',
-                                  fontSize: '11px',
-                                  fontWeight: 500
-                                }}
-                              >
-                                {daysOverdue === 1 ? '1 day overdue' : `${daysOverdue} days overdue`}
-                              </Badge>
-                              <Button
-                                variant="primary"
-                                size="sm"
-                                onClick={() => handleMarkAsPaid(sub.id)}
-                                loading={markingAsPaid === sub.id}
-                                disabled={markingAsPaid !== null}
-                                style={{
-                                  padding: '4px 10px',
-                                  borderRadius: '6px',
-                                  fontSize: '11px',
-                                  fontWeight: 500,
-                                  height: 'auto',
-                                  lineHeight: '1.2',
-                                  minWidth: 'auto',
-                                  whiteSpace: 'nowrap',
-                                  backgroundColor: '#10b981',
-                                  color: '#ffffff',
-                                  border: 'none',
-                                  boxShadow: 'none'
-                                }}
-                              >
-                                {markingAsPaid === sub.id ? 'Processing...' : 'Mark as Paid'}
-                              </Button>
-                            </div>
-                            <div style={{ fontSize: '10px', color: '#9ca3af' }}>
-                              {formatDateDDMMYYYY(sub.nextPaymentDate)}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div style={{ 
-                    padding: '40px 20px', 
-                    textAlign: 'center',
-                    color: '#9ca3af',
-                    fontSize: '13px'
-                  }}>
-                    <AlertTriangle size={24} style={{ marginBottom: '6px', opacity: 0.5, margin: '0 auto' }} />
-                    <p style={{ margin: 0 }}>No overdue subscriptions</p>
-                  </div>
-                )}
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+      <div className="dashboard-page__grid">
+        <div className="dashboard-page__area dashboard-page__area-split">
+          <TotalExpensesSplitCard
+            totalExpenses={totalExpenses}
+            splitData={splitData}
+            loading={splitLoading}
+          />
+        </div>
+        <div className="dashboard-page__area dashboard-page__area-chart">
+          <SpendingComparisonCard
+            title={comparison.title}
+            comparisonLabel={comparison.comparisonLabel}
+            focusLabel={comparison.focusLabel}
+            benchmarkLabel={comparison.benchmarkLabel}
+            totalExpenses={totalExpenses}
+            chartData={chartData}
+            loading={chartsLoading}
+            hasData={chartHasData}
+          />
+        </div>
+        <div className="dashboard-page__area dashboard-page__area-txn">
+          <RecentTransactionsCard transactions={recentTransactions} loading={txnLoading} />
+        </div>
+        <div className="dashboard-page__area dashboard-page__area-inv">
+          <InvestmentsCard items={investmentItems} loading={investmentsLoading} />
+        </div>
+        <div className="dashboard-page__area dashboard-page__area-recur">
+          <RecurringCard items={recurringItems} loading={recurringLoading} />
+        </div>
+      </div>
     </div>
   );
 };
 
 export default Dashboard;
-

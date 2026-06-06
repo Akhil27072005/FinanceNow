@@ -1,46 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Table, Form, Alert, Badge } from 'react-bootstrap';
-import { Icon } from '@iconify/react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Alert } from 'react-bootstrap';
 import { paymentMethodService } from '../services/paymentMethodService';
-import { cardStyle } from '../styles/cardStyles';
 import Modal from '../components/ui/Modal';
 import ConfirmationModal from '../components/ui/ConfirmationModal';
 import Button from '../components/ui/Button';
-import Select from '../components/ui/Select';
-import IconButton from '../components/ui/IconButton';
+import CardPaymentMethodRow from '../components/payment-methods/CardPaymentMethodRow';
+import CardPaymentMethodForm from '../components/payment-methods/CardPaymentMethodForm';
+import OtherPaymentMethodRow from '../components/payment-methods/OtherPaymentMethodRow';
+import OtherPaymentMethodForm from '../components/payment-methods/OtherPaymentMethodForm';
+import '../styles/payment-methods.css';
+import '../styles/modal-glass.css';
+
+const OTHER_QUICK_ADD = [
+  { label: 'Add GPay', preset: { name: 'Google Pay', type: 'digital_wallet', icon: 'logos:google-pay' } },
+  { label: 'Add UPI', preset: { name: 'UPI', type: 'digital_wallet', icon: 'mdi:bank-transfer' } },
+  { label: 'Add PhonePe', preset: { name: 'PhonePe', type: 'digital_wallet', icon: 'mdi:cellphone' } },
+  { label: 'Add cash', preset: { name: 'Cash', type: 'cash', icon: 'mdi:cash' } },
+  { label: 'Add bank transfer', preset: { name: 'Bank transfer', type: 'bank', icon: 'mdi:bank-transfer' } }
+];
+
+const OTHER_GROUP_ORDER = [
+  { key: 'digital_wallet', label: 'Digital wallets' },
+  { key: 'bank', label: 'Bank & transfers' },
+  { key: 'cash', label: 'Cash' },
+  { key: 'other', label: 'Other' }
+];
 
 const PaymentMethods = () => {
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showModal, setShowModal] = useState(false);
+  const [showCardModal, setShowCardModal] = useState(false);
+  const [showOtherModal, setShowOtherModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [deletingId, setDeletingId] = useState(null);
-  const [editingPaymentMethod, setEditingPaymentMethod] = useState(null);
-  const [formData, setFormData] = useState({ 
-    name: '', 
-    icon: '', 
-    type: 'other',
-    detailLabel: '' 
-  });
-
-  // Common payment method presets
-  const commonPaymentMethods = [
-    { name: 'Cash', icon: 'mdi:cash', type: 'cash', detailLabel: '' },
-    { name: 'Credit Card', icon: 'mdi:credit-card', type: 'card', detailLabel: 'Last 4 digits' },
-    { name: 'Debit Card', icon: 'mdi:credit-card-outline', type: 'card', detailLabel: 'Last 4 digits' },
-    { name: 'VISA', icon: 'logos:visa', type: 'card', detailLabel: 'Last 4 digits' },
-    { name: 'Mastercard', icon: 'logos:mastercard', type: 'card', detailLabel: 'Last 4 digits' },
-    { name: 'American Express', icon: 'logos:american-express', type: 'card', detailLabel: 'Last 4 digits' },
-    { name: 'GPay', icon: 'logos:google-pay', type: 'digital_wallet', detailLabel: 'GPay ID' },
-    { name: 'PayPal', icon: 'logos:paypal', type: 'digital_wallet', detailLabel: 'PayPal Email' },
-    { name: 'UPI', icon: 'mdi:bank-transfer', type: 'digital_wallet', detailLabel: 'UPI ID' },
-    { name: 'PhonePe', icon: 'mdi:cellphone', type: 'digital_wallet', detailLabel: 'PhonePe Number' },
-    { name: 'Paytm', icon: 'mdi:wallet', type: 'digital_wallet', detailLabel: 'Paytm Number' },
-    { name: 'Bank Transfer', icon: 'mdi:bank-transfer', type: 'bank', detailLabel: 'Account Number' },
-    { name: 'Net Banking', icon: 'mdi:bank', type: 'bank', detailLabel: 'Bank Name' },
-    { name: 'Cheque', icon: 'mdi:file-document-outline', type: 'other', detailLabel: 'Cheque Number' }
-  ];
+  const [editingCard, setEditingCard] = useState(null);
+  const [editingOther, setEditingOther] = useState(null);
+  const [otherPreset, setOtherPreset] = useState(null);
 
   useEffect(() => {
     loadPaymentMethods();
@@ -51,27 +47,64 @@ const PaymentMethods = () => {
       setLoading(true);
       const response = await paymentMethodService.getPaymentMethods();
       setPaymentMethods(response.data || []);
-      setLoading(false);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to load payment methods');
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const cards = useMemo(
+    () => paymentMethods.filter((m) => m.type === 'card'),
+    [paymentMethods]
+  );
+
+  const otherMethods = useMemo(
+    () => paymentMethods.filter((m) => m.type !== 'card'),
+    [paymentMethods]
+  );
+
+  const otherByGroup = useMemo(() => {
+    const map = { digital_wallet: [], bank: [], cash: [], other: [] };
+    otherMethods.forEach((m) => {
+      const key = map[m.type] ? m.type : 'other';
+      map[key].push(m);
+    });
+    return map;
+  }, [otherMethods]);
+
+  const saveMethod = async (payload, editing) => {
     try {
-      if (editingPaymentMethod) {
-        await paymentMethodService.updatePaymentMethod(editingPaymentMethod._id, formData);
+      if (editing) {
+        await paymentMethodService.updatePaymentMethod(editing._id, payload);
       } else {
-        await paymentMethodService.createPaymentMethod(formData);
+        await paymentMethodService.createPaymentMethod(payload);
       }
-      setShowModal(false);
-      setFormData({ name: '', icon: '', type: 'other', detailLabel: '' });
-      setEditingPaymentMethod(null);
-      loadPaymentMethods();
+      await loadPaymentMethods();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to save payment method');
+      throw err;
+    }
+  };
+
+  const handleCardSubmit = async (payload) => {
+    try {
+      await saveMethod(payload, editingCard);
+      setShowCardModal(false);
+      setEditingCard(null);
+    } catch {
+      /* error set */
+    }
+  };
+
+  const handleOtherSubmit = async (payload) => {
+    try {
+      await saveMethod(payload, editingOther);
+      setShowOtherModal(false);
+      setEditingOther(null);
+      setOtherPreset(null);
+    } catch {
+      /* error set */
     }
   };
 
@@ -83,327 +116,206 @@ const PaymentMethods = () => {
   const confirmDelete = async () => {
     try {
       await paymentMethodService.deletePaymentMethod(deletingId);
-      loadPaymentMethods();
-      setDeletingId(null);
+      await loadPaymentMethods();
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to delete payment method');
+    } finally {
       setDeletingId(null);
     }
   };
 
-  const handleEdit = (paymentMethod) => {
-    setEditingPaymentMethod(paymentMethod);
-    setFormData({ 
-      name: paymentMethod.name, 
-      icon: paymentMethod.icon,
-      type: paymentMethod.type || 'other',
-      detailLabel: paymentMethod.detailLabel || ''
-    });
-    setShowModal(true);
+  const openAddCard = () => {
+    setEditingCard(null);
+    setShowCardModal(true);
   };
 
-  const handleQuickAdd = (preset) => {
-    setFormData({
-      name: preset.name,
-      icon: preset.icon,
-      type: preset.type,
-      detailLabel: preset.detailLabel
-    });
-    setEditingPaymentMethod(null);
-    setShowModal(true);
+  const openEditCard = (method) => {
+    setEditingCard(method);
+    setShowCardModal(true);
   };
 
-  const getTypeColor = (type) => {
-    const colors = {
-      card: 'primary',
-      digital_wallet: 'info',
-      cash: 'success',
-      bank: 'warning',
-      other: 'secondary'
-    };
-    return colors[type] || 'secondary';
+  const openAddOther = (preset = null) => {
+    setEditingOther(null);
+    setOtherPreset(preset);
+    setShowOtherModal(true);
   };
+
+  const openEditOther = (method) => {
+    setEditingOther(method);
+    setOtherPreset(null);
+    setShowOtherModal(true);
+  };
+
+  const renderOtherTable = (methods) => (
+    <div className="payment-methods-table-wrap">
+      <table className="payment-methods-table">
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Identifier</th>
+            <th>Linked bank</th>
+            <th>Type</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {methods.map((method) => (
+            <OtherPaymentMethodRow
+              key={method._id}
+              method={method}
+              onEdit={openEditOther}
+              onDelete={handleDelete}
+            />
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
 
   return (
-    <div>
-      <div className="d-flex justify-content-between align-items-center mb-4" style={{ marginBottom: '24px' }}>
-        <h2 style={{ 
-          fontWeight: 600, 
-          margin: 0,
-          fontSize: '24px',
-          color: '#111827',
-          letterSpacing: '-0.02em'
-        }}>
-          Payment Methods
-        </h2>
-        <Button 
-          variant="primary"
-          onClick={() => { 
-            setFormData({ name: '', icon: '', type: 'other', detailLabel: '' }); 
-            setEditingPaymentMethod(null); 
-            setShowModal(true); 
-          }}
-        >
-          + Add Payment Method
-        </Button>
+    <div className="payment-methods-page">
+      <div className="payment-methods-page__header">
+        <h1 className="payment-methods-page__title">Payment methods</h1>
       </div>
 
-      {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
+      {error && (
+        <Alert variant="danger" onClose={() => setError('')} dismissible className="mb-3">
+          {error}
+        </Alert>
+      )}
 
-      {/* Quick Add Common Payment Methods */}
-      <Card className="mb-4" style={{ ...cardStyle, marginBottom: '24px' }}>
-        <Card.Body style={{ padding: '20px' }}>
-          <h5 style={{ marginBottom: '16px', fontSize: '16px', fontWeight: 600 }}>Quick Add Common Payment Methods</h5>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {commonPaymentMethods.map((preset, index) => (
-              <button
-                key={index}
-                onClick={() => handleQuickAdd(preset)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '8px 12px',
-                  border: '1px solid #E5E7EB',
-                  borderRadius: '6px',
-                  backgroundColor: '#FFFFFF',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  fontSize: '14px'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#F9FAFB';
-                  e.currentTarget.style.borderColor = '#3B82F6';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#FFFFFF';
-                  e.currentTarget.style.borderColor = '#E5E7EB';
-                }}
-              >
-                <Icon icon={preset.icon} style={{ fontSize: '18px' }} />
-                <span>{preset.name}</span>
-              </button>
-            ))}
+      <section className="glass-panel payment-methods-section">
+        <div className="payment-methods-section__head">
+          <h2 className="payment-methods-section__title">Cards</h2>
+          <Button variant="primary" glass onClick={openAddCard}>
+            + Add card
+          </Button>
+        </div>
+
+        {loading ? (
+          <div className="payment-methods-empty">Loading…</div>
+        ) : cards.length === 0 ? (
+          <div className="payment-methods-empty">
+            No cards yet. Add a card to see network and bank logos.
           </div>
-        </Card.Body>
-      </Card>
+        ) : (
+          <div className="payment-methods-table-wrap">
+            <table className="payment-methods-table">
+              <thead>
+                <tr>
+                  <th>Card</th>
+                  <th>Type</th>
+                  <th>Bank</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cards.map((method) => (
+                  <CardPaymentMethodRow
+                    key={method._id}
+                    method={method}
+                    onEdit={openEditCard}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
-      <Card style={cardStyle}>
-        <Card.Body style={{ padding: '24px' }}>
-          {loading ? (
-            <div className="text-center" style={{ padding: '40px' }}>Loading...</div>
-          ) : paymentMethods.length === 0 ? (
-            <div className="text-center text-muted" style={{ padding: '40px' }}>No payment methods found</div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ 
-                width: '100%', 
-                borderCollapse: 'collapse',
-                fontSize: '14px'
-              }}>
-                <thead>
-                  <tr style={{ 
-                    backgroundColor: '#F9FAFB',
-                    borderBottom: '1px solid #E5E7EB'
-                  }}>
-                    <th style={{ 
-                      padding: '12px 16px', 
-                      textAlign: 'left',
-                      fontWeight: 500,
-                      color: '#374151',
-                      fontSize: '12px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      Icon
-                    </th>
-                    <th style={{ 
-                      padding: '12px 16px', 
-                      textAlign: 'left',
-                      fontWeight: 500,
-                      color: '#374151',
-                      fontSize: '12px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      Name
-                    </th>
-                    <th style={{ 
-                      padding: '12px 16px', 
-                      textAlign: 'left',
-                      fontWeight: 500,
-                      color: '#374151',
-                      fontSize: '12px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      Type
-                    </th>
-                    <th style={{ 
-                      padding: '12px 16px', 
-                      textAlign: 'left',
-                      fontWeight: 500,
-                      color: '#374151',
-                      fontSize: '12px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      Detail Label
-                    </th>
-                    <th style={{ 
-                      padding: '12px 16px', 
-                      textAlign: 'left',
-                      fontWeight: 500,
-                      color: '#374151',
-                      fontSize: '12px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}>
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paymentMethods.map((paymentMethod) => (
-                    <tr 
-                      key={paymentMethod._id}
-                      style={{ 
-                        borderBottom: '1px solid #E5E7EB',
-                        transition: 'background-color 0.2s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
-                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                    >
-                      <td style={{ padding: '16px' }}>
-                        <div style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          justifyContent: 'center',
-                          width: '36px',
-                          height: '36px',
-                          borderRadius: '8px',
-                          backgroundColor: '#FFFFFF',
-                          border: '1px solid #E5E7EB'
-                        }}>
-                          <Icon 
-                            icon={paymentMethod.icon} 
-                            style={{ fontSize: '20px' }} 
-                          />
-                        </div>
-                      </td>
-                      <td style={{ padding: '16px', color: '#111827', fontSize: '14px' }}>
-                        {paymentMethod.name}
-                      </td>
-                      <td style={{ padding: '16px' }}>
-                        <span style={{ 
-                          fontSize: '12px',
-                          padding: '4px 10px',
-                          borderRadius: '6px',
-                          fontWeight: 500,
-                          display: 'inline-block',
-                          backgroundColor: getTypeColor(paymentMethod.type) === 'primary' ? '#DBEAFE' :
-                                         getTypeColor(paymentMethod.type) === 'info' ? '#DBEAFE' :
-                                         getTypeColor(paymentMethod.type) === 'success' ? '#D1FAE5' :
-                                         getTypeColor(paymentMethod.type) === 'warning' ? '#FEF3C7' :
-                                         '#F3F4F6',
-                          color: getTypeColor(paymentMethod.type) === 'primary' ? '#1E40AF' :
-                                getTypeColor(paymentMethod.type) === 'info' ? '#1E40AF' :
-                                getTypeColor(paymentMethod.type) === 'success' ? '#065F46' :
-                                getTypeColor(paymentMethod.type) === 'warning' ? '#92400E' :
-                                '#374151'
-                        }}>
-                          {paymentMethod.type.replace('_', ' ')}
-                        </span>
-                      </td>
-                      <td style={{ padding: '16px', color: '#6B7280', fontSize: '14px' }}>
-                        {paymentMethod.detailLabel || '-'}
-                      </td>
-                      <td style={{ padding: '16px' }}>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <IconButton type="edit" onClick={() => handleEdit(paymentMethod)} />
-                          <IconButton type="delete" onClick={() => handleDelete(paymentMethod._id)} />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card.Body>
-      </Card>
+      <section className="glass-panel payment-methods-section">
+        <div className="payment-methods-section__head">
+          <h2 className="payment-methods-section__title">Other methods</h2>
+          <Button variant="primary" glass onClick={() => openAddOther(null)}>
+            + Add method
+          </Button>
+        </div>
+
+        <div className="payment-methods-quick">
+          {OTHER_QUICK_ADD.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              className="payment-methods-quick__chip"
+              onClick={() => openAddOther(item.preset)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        {loading ? (
+          <div className="payment-methods-empty">Loading…</div>
+        ) : otherMethods.length === 0 ? (
+          <div className="payment-methods-empty">
+            No wallets, bank transfers, or cash methods yet.
+          </div>
+        ) : (
+          OTHER_GROUP_ORDER.map(({ key, label }) => {
+            const group = otherByGroup[key];
+            if (!group?.length) return null;
+            return (
+              <div key={key} className="payment-methods-group">
+                <p className="payment-methods-group__label">{label}</p>
+                {renderOtherTable(group)}
+              </div>
+            );
+          })
+        )}
+      </section>
 
       <Modal
-        isOpen={showModal}
-        onClose={() => { setShowModal(false); setEditingPaymentMethod(null); }}
-        title={editingPaymentMethod ? 'Edit Payment Method' : 'Add Payment Method'}
+        isOpen={showCardModal}
+        onClose={() => {
+          setShowCardModal(false);
+          setEditingCard(null);
+        }}
+        title={editingCard ? 'Edit card' : 'Add card'}
         size="md"
       >
-        <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
-            <Form.Label>Name *</Form.Label>
-            <Form.Control
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="e.g., VISA, GPay, Cash"
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Icon (Iconify Icon Name) *</Form.Label>
-            <Form.Control
-              type="text"
-              value={formData.icon}
-              onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-              placeholder="e.g., logos:visa, mdi:cash, logos:google-pay"
-              required
-            />
-            <Form.Text className="text-muted">
-              Use iconify icon names. Preview: {formData.icon && (
-                <Icon icon={formData.icon} style={{ fontSize: '20px', marginLeft: '8px' }} />
-              )}
-            </Form.Text>
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Type *</Form.Label>
-            <Select
-              value={formData.type}
-              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-              options={[
-                { value: 'card', label: 'Card' },
-                { value: 'digital_wallet', label: 'Digital Wallet' },
-                { value: 'cash', label: 'Cash' },
-                { value: 'bank', label: 'Bank' },
-                { value: 'other', label: 'Other' }
-              ]}
-              required
-            />
-          </Form.Group>
-          <Form.Group className="mb-3">
-            <Form.Label>Detail Label</Form.Label>
-            <Form.Control
-              type="text"
-              value={formData.detailLabel}
-              onChange={(e) => setFormData({ ...formData, detailLabel: e.target.value })}
-              placeholder="e.g., Last 4 digits, GPay ID, Account Number"
-            />
-            <Form.Text className="text-muted">
-              This label will appear when users enter details for this payment method in transactions
-            </Form.Text>
-          </Form.Group>
-          <div className="d-flex justify-content-end gap-2 mt-4" style={{ gap: '8px' }}>
-            <Button variant="secondary" onClick={() => { setShowModal(false); setEditingPaymentMethod(null); }}>Cancel</Button>
-            <Button variant="primary" type="submit">{editingPaymentMethod ? 'Update' : 'Create'}</Button>
-          </div>
-        </Form>
+        <CardPaymentMethodForm
+          editing={Boolean(editingCard)}
+          initial={editingCard}
+          onSubmit={handleCardSubmit}
+          onCancel={() => {
+            setShowCardModal(false);
+            setEditingCard(null);
+          }}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={showOtherModal}
+        onClose={() => {
+          setShowOtherModal(false);
+          setEditingOther(null);
+          setOtherPreset(null);
+        }}
+        title={editingOther ? 'Edit payment method' : 'Add payment method'}
+        size="md"
+      >
+        <OtherPaymentMethodForm
+          editing={Boolean(editingOther)}
+          initial={editingOther}
+          preset={otherPreset}
+          onSubmit={handleOtherSubmit}
+          onCancel={() => {
+            setShowOtherModal(false);
+            setEditingOther(null);
+            setOtherPreset(null);
+          }}
+        />
       </Modal>
 
       <ConfirmationModal
         isOpen={showConfirmModal}
-        onClose={() => { setShowConfirmModal(false); setDeletingId(null); }}
+        onClose={() => {
+          setShowConfirmModal(false);
+          setDeletingId(null);
+        }}
         onConfirm={confirmDelete}
-        title="Delete Payment Method"
+        title="Delete payment method"
         message="Are you sure you want to delete this payment method? This action cannot be undone."
         confirmText="Delete"
         cancelText="Cancel"
@@ -414,4 +326,3 @@ const PaymentMethods = () => {
 };
 
 export default PaymentMethods;
-

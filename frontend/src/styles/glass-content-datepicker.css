@@ -1,0 +1,54 @@
+/**
+ * Shared purple glass datepicker (investments panel, transaction modal, etc.)
+ */
+
+.glass-content-datepicker .datepicker-input-wrapper,
+.glass-content-datepicker .react-datepicker-wrapper,
+.investments-panel__datepicker .datepicker-input-wrapper,
+.investments-panel__datepicker .react-datepicker-wrapper {
+  width: 100%;
+}
+
+.glass-content-datepicker .react-datepicker__input-container input,
+.investments-panel__datepicker .react-datepicker__input-container input {
+  width: 100%;
+  padding: 10px 36px 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(214, 205, 235, 0.9);
+  background: rgba(255, 255, 255, 0.88);
+  font-size: 14px;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  color: #111827;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.glass-content-datepicker .react-datepicker__input-container input:hover,
+.investments-panel__datepicker .react-datepicker__input-container input:hover {
+  border-color: rgba(124, 58, 237, 0.35);
+}
+
+.glass-content-datepicker .react-datepicker__input-container input:focus,
+.investments-panel__datepicker .react-datepicker__input-container input:focus {
+  outline: none;
+  border-color: rgba(124, 58, 237, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 0 0 2px rgba(124, 58, 237, 0.15);
+}
+
+.glass-content-datepicker .datepicker-wrapper svg,
+.investments-panel__datepicker .datepicker-wrapper svg {
+  color: #7c3aed;
+  opacity: 0.65;
+}
+
+.glass-content-datepicker-popper,
+.investments-datepicker-popper {
+  z-index: 10850 !important;
+}
+
+/* Transaction modal: above modal overlay */
+.modal-glass .glass-content-datepicker-popper {
+  z-index: 11050 !important;
+}

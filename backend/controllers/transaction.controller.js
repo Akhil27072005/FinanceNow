@@ -209,6 +209,7 @@ const getTransactions = async (req, res, next) => {
       startDate,
       endDate,
       categoryId,
+      subCategoryId,
       tag,
       limit = 20,
       page = 1
@@ -268,6 +269,17 @@ const getTransactions = async (req, res, next) => {
       filter.categoryId = categoryId;
     }
 
+    // Filter by subcategory
+    if (subCategoryId) {
+      if (!mongoose.Types.ObjectId.isValid(subCategoryId)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid subCategoryId format'
+        });
+      }
+      filter.subCategoryId = subCategoryId;
+    }
+
     // Filter by tag
     if (tag) {
       if (!mongoose.Types.ObjectId.isValid(tag)) {
@@ -310,6 +322,7 @@ const getTransactions = async (req, res, next) => {
       if (startDate) cacheKeyParts.push(`start:${startDate}`);
       if (endDate) cacheKeyParts.push(`end:${endDate}`);
       if (categoryId) cacheKeyParts.push(`cat:${categoryId}`);
+      if (subCategoryId) cacheKeyParts.push(`subcat:${subCategoryId}`);
       if (tag) cacheKeyParts.push(`tag:${tag}`);
       const baseCacheKey = cacheKeyParts.join(':');
       const cacheKey = await cache.getVersionedKey(baseCacheKey, userIdStr, 'transactions');
@@ -325,10 +338,10 @@ const getTransactions = async (req, res, next) => {
       // Only populate needed fields to reduce overhead
       const [transactions, total] = await Promise.all([
         Transaction.find(filter)
-          .populate('categoryId', 'name type') // Only get name and type
-          .populate('subCategoryId', 'name') // Only get name
+          .populate('categoryId', 'name type icon')
+          .populate('subCategoryId', 'name icon')
           .populate('tags', 'name color') // Only get name and color
-          .populate('paymentMethodId', 'name icon type') // Only get needed fields
+          .populate('paymentMethodId', 'name icon type detailLabel metadata')
           .sort({ date: -1 }) // Sort by date descending
           .skip(skip)
           .limit(limitNum)
@@ -356,10 +369,10 @@ const getTransactions = async (req, res, next) => {
     // Execute query (for non-cached pages) - optimized with lean() and selective populate
     const [transactions, total] = await Promise.all([
       Transaction.find(filter)
-        .populate('categoryId', 'name type')
-        .populate('subCategoryId', 'name')
+        .populate('categoryId', 'name type icon')
+        .populate('subCategoryId', 'name icon')
         .populate('tags', 'name color')
-        .populate('paymentMethodId', 'name icon type')
+        .populate('paymentMethodId', 'name icon type detailLabel metadata')
         .sort({ date: -1 }) // Sort by date descending
         .skip(skip)
         .limit(limitNum)

@@ -7,6 +7,8 @@ const {
   getSubscription,
   updateSubscription,
   deleteSubscription,
+  getSubscriptionSummary,
+  getSubscriptionPayments,
   getSubscriptionAlerts,
   markSubscriptionAsPaid
 } = require('../controllers/subscription.controller');
@@ -22,6 +24,12 @@ router.post('/', authenticateUser, createSubscription);
 
 // Get subscription alerts (upcoming and overdue)
 router.get('/alerts', authenticateUser, getSubscriptionAlerts);
+
+// Monthly paid vs scheduled summary
+router.get('/summary', authenticateUser, getSubscriptionSummary);
+
+// Payment history — before generic /:id
+router.get('/:id/payments', authenticateUser, getSubscriptionPayments);
 
 // Mark subscription as paid (updates nextPaymentDate) - MUST come before /:id routes
 router.post('/:id/mark-paid', authenticateUser, markSubscriptionAsPaid);

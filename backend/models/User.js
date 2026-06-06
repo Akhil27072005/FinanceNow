@@ -50,6 +50,37 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  preferences: {
+    currency: {
+      type: String,
+      enum: ['INR', 'USD', 'EUR', 'GBP'],
+      default: 'INR'
+    },
+    dateFormat: {
+      type: String,
+      enum: ['DD/MM/YYYY', 'MM/DD/YYYY'],
+      default: 'DD/MM/YYYY'
+    },
+    timezone: {
+      type: String,
+      default: 'Asia/Kolkata',
+      trim: true
+    },
+    subscriptionReminderDays: {
+      type: Number,
+      default: 7,
+      min: 1,
+      max: 30
+    },
+    emailReminders: {
+      type: Boolean,
+      default: false
+    },
+    overdueAlerts: {
+      type: Boolean,
+      default: true
+    }
+  },
   createdAt: {
     type: Date,
     default: Date.now

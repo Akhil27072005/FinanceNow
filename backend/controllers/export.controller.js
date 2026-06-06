@@ -12,13 +12,17 @@ const mongoose = require('mongoose');
  */
 const exportTransactions = async (req, res, next) => {
   try {
-    const { type, startDate, endDate } = req.query;
+    const { type, startDate, endDate, account } = req.query;
     const userId = req.user._id;
 
     // Build filter (always include userId for security)
     const filter = {
       userId: userId
     };
+
+    if (account === 'self') {
+      filter.account = 'self';
+    }
 
     // Filter by type if provided
     if (type) {

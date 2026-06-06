@@ -9,6 +9,10 @@ const {
   refreshToken,
   logout,
   getMe,
+  updatePreferences,
+  updateProfile,
+  changePassword,
+  logoutAllSessions,
   forgotPassword,
   resetPassword
 } = require('../controllers/auth.controller');
@@ -80,6 +84,16 @@ router.post('/logout', logout);
 
 // Get current user profile (requires authentication)
 router.get('/me', authenticateUser, getMe);
+
+// Preferences (regional & notifications)
+router.patch('/me/preferences', authenticateUser, updatePreferences);
+
+// Profile
+router.patch('/me/profile', authenticateUser, updateProfile);
+
+// Security
+router.post('/change-password', authenticateUser, changePassword);
+router.post('/logout-all', authenticateUser, logoutAllSessions);
 
 // Forgot password - Send reset link
 router.post('/forgot-password', forgotPassword);

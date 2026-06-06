@@ -29,6 +29,11 @@ const subCategorySchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  icon: {
+    type: String,
+    trim: true,
+    default: 'lucide:tag'
+  },
   createdAt: {
     type: Date,
     default: Date.now
