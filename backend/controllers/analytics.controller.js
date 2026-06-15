@@ -4,6 +4,9 @@ const { getSubscriptionSpendInRange } = require('../utils/subscriptionPayments')
 const mongoose = require('mongoose');
 const cache = require('../utils/cache');
 
+const resolveAnalyticsCacheKey = async (userId, baseKey) =>
+  cache.getVersionedKey(baseKey, userId.toString(), 'analytics');
+
 /**
  * Utility function to determine date range from query parameters
  * Returns { dateStart, dateEnd } or throws error
@@ -190,7 +193,8 @@ const getDashboardAnalytics = async (req, res, next) => {
       ? `analytics:${userIdStr}:dashboard:${month}:${accountScope}:${includeComparison === 'true' ? 'cmp' : 'base'}`
       : `analytics:${userIdStr}:dashboard:${startDate}:${endDate}:${accountScope}:${includeComparison === 'true' ? 'cmp' : 'base'}`;
 
-    const cachedData = await cache.get(cacheKey);
+    const versionedCacheKey = await resolveAnalyticsCacheKey(userId, cacheKey);
+    const cachedData = await cache.get(versionedCacheKey);
     if (cachedData) {
       return res.json(cachedData);
     }
@@ -243,7 +247,7 @@ const getDashboardAnalytics = async (req, res, next) => {
       };
     }
 
-    await cache.set(cacheKey, response, 600);
+    await cache.set(versionedCacheKey, response, 600);
     res.json(response);
   } catch (error) {
     next(error);
@@ -580,7 +584,8 @@ const getChartData = async (req, res, next) => {
     ];
     const cacheKey = cacheKeyParts.join(':');
 
-    const cachedData = await cache.get(cacheKey);
+    const versionedCacheKey = await resolveAnalyticsCacheKey(userId, cacheKey);
+    const cachedData = await cache.get(versionedCacheKey);
     if (cachedData) {
       return res.json(cachedData);
     }
@@ -641,7 +646,7 @@ const getChartData = async (req, res, next) => {
       data
     };
 
-    await cache.set(cacheKey, response, 600);
+    await cache.set(versionedCacheKey, response, 600);
     res.json(response);
   } catch (error) {
     next(error);

@@ -1,4 +1,5 @@
 import { FALLBACK_CATEGORY_ICON } from '../constants/categoryIcons';
+import { formatDateForInput } from './dateUtils';
 import {
   getTransactionPaymentDrawerInfo,
   getTransactionPaymentIdentifier,
@@ -95,10 +96,10 @@ export const formatPaymentMethodDetail = (transaction) =>
 
 /** Map API transaction to create/edit form shape */
 export const mapTransactionToFormData = (transaction, { useTodayDate = false } = {}) => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = formatDateForInput(new Date());
   let date = today;
   if (!useTodayDate && transaction?.date) {
-    date = new Date(transaction.date).toISOString().split('T')[0];
+    date = formatDateForInput(new Date(transaction.date));
   }
   return {
     type: transaction?.type || 'expense',

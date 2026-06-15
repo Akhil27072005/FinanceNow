@@ -160,47 +160,12 @@ const invalidateAnalyticsCache = async (userId) => {
   }
 
   try {
-    const redis = getRedis();
-    let deletedCount = 0;
-
-    // Strategy 1: Update a version timestamp for version-based invalidation
-    const versionKey = `cache:version:${userId}:analytics`;
-    const newVersion = Date.now();
-    await redis.set(versionKey, newVersion.toString());
-
-    // Strategy 2: Try to delete common cache keys for recent months
-    // This handles the most common case - current month and previous month
-    const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const prevMonthStr = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, '0')}`;
-
-    // Common analytics cache keys to try deleting
-    const keysToDelete = [
-      `analytics:${userId}:dashboard:${currentMonth}`,
-      `analytics:${userId}:dashboard:${prevMonthStr}`,
-      // Chart keys for common types and current/previous month
-      ...['expense', 'income', 'savings', 'investment'].flatMap(type =>
-        ['monthlyTrend', 'categorySplit', 'subCategorySplit', 'tagBased', 'paymentMethodSplit'].flatMap(chartType => [
-          `analytics:${userId}:charts:${type}:${chartType}:${currentMonth}:all`,
-          `analytics:${userId}:charts:${type}:${chartType}:${prevMonthStr}:all`
-        ])
-      )
-    ];
-
-    // Try to delete each key (ignore errors for non-existent keys)
-    for (const key of keysToDelete) {
-      try {
-        const result = await redis.del(key);
-        if (result === 1) deletedCount++;
-      } catch (error) {
-        // Ignore errors for keys that don't exist
-      }
+    const newVersion = await bumpVersion(userId, 'analytics');
+    if (newVersion) {
+      console.log(`Invalidated analytics cache for user ${userId} (version: ${newVersion})`);
+      return 1;
     }
-
-    console.log(`Invalidated analytics cache for user ${userId} (deleted ${deletedCount} keys, version: ${newVersion})`);
-    
-    return deletedCount;
+    return 0;
   } catch (error) {
     console.error(`Cache invalidation error for user "${userId}":`, error.message);
     return 0;
