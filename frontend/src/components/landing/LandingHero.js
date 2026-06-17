@@ -25,11 +25,13 @@ const LandingHero = () => {
     <div className="landing-hero-grid">
       <div className="landing-hero__content">
         <h1 className="landing-hero__title">
-          Take Control of Your Money with AI
+          All your finances, 
+          <br />
+          In one place
         </h1>
 
         <p className="landing-hero__subtitle">
-          Track spending, save smarter, and get personalized financial insights—powered by AI.
+          Track transactions, manage budgets and subscriptions, and see where your money goes — month by month.
         </p>
 
         <MarketingAuthLink to="/register" className="landing-hero__cta landing-hero__cta--primary">

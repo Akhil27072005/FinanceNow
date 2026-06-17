@@ -50,45 +50,69 @@ export const rgbaFromHex = (hex, alpha) => {
 
 /**
  * Build accent-related CSS custom properties for global theming.
+ * @param {string} accent
+ * @param {string} [accentSoft]
+ * @param {'light'|'dark'} [mode]
  */
-export const accentToCssVars = (accent, accentSoft) => {
+export const accentToCssVars = (accent, accentSoft, mode = 'light') => {
+  const isDark = mode === 'dark';
   const { r, g, b } = hexToRgb(accent);
   const rgb = `${r}, ${g}, ${b}`;
-  const soft = accentSoft || rgbaFromHex(accent, 0.14);
+  const soft = accentSoft || rgbaFromHex(accent, isDark ? 0.18 : 0.14);
+
+  const accentText = isDark ? lightenHex(accent, 0.2) : darkenHex(accent, 0.08);
+  const pickerHoverBg = isDark
+    ? `linear-gradient(145deg, rgba(255, 255, 255, 0.06) 0%, ${rgbaFromHex(accent, 0.12)} 48%, ${rgbaFromHex(accent, 0.08)} 100%)`
+    : `linear-gradient(145deg, rgba(255, 255, 255, 0.78) 0%, ${rgbaFromHex(accent, 0.1)} 48%, ${rgbaFromHex(accent, 0.07)} 100%)`;
+  const filterPopoverBg = isDark
+    ? `linear-gradient(165deg, rgba(15, 23, 42, 0.92) 0%, rgba(17, 24, 39, 0.9) 48%, ${rgbaFromHex(accent, 0.08)} 100%)`
+    : `linear-gradient(165deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 255, 255, 0.94) 48%, ${rgbaFromHex(accent, 0.07)} 100%)`;
+  const filterBtnBg = isDark
+    ? `linear-gradient(145deg, ${rgbaFromHex(accent, 0.16)} 0%, rgba(255, 255, 255, 0.04) 100%)`
+    : `linear-gradient(145deg, ${rgbaFromHex(accent, 0.1)} 0%, rgba(255, 255, 255, 0.35) 100%)`;
+  const filterBtnBgActive = isDark
+    ? `linear-gradient(145deg, ${rgbaFromHex(accent, 0.22)} 0%, rgba(255, 255, 255, 0.06) 100%)`
+    : `linear-gradient(145deg, ${rgbaFromHex(accent, 0.14)} 0%, rgba(255, 255, 255, 0.35) 100%)`;
+  const pickerGlassShadow = isDark
+    ? `0 8px 32px rgba(0, 0, 0, 0.35), 0 4px 16px ${rgbaFromHex(accent, 0.08)}`
+    : `0 8px 32px ${rgbaFromHex(accent, 0.06)}, 0 4px 16px rgba(18, 18, 18, 0.04)`;
+  const pickerHoverShadow = isDark
+    ? `0 4px 16px rgba(0, 0, 0, 0.3), 0 2px 10px ${rgbaFromHex(accent, 0.1)}`
+    : `0 4px 16px ${rgbaFromHex(accent, 0.07)}, 0 2px 10px rgba(249, 115, 22, 0.05)`;
 
   return {
     '--accent-rgb': rgb,
-    '--accent-text': darkenHex(accent, 0.08),
+    '--accent-text': accentText,
     '--accent-bright': lightenHex(accent, 0.16),
     '--info': accent,
-    '--info-hover': darkenHex(accent, 0.1),
-    '--info-focus-ring': rgbaFromHex(accent, 0.15),
-    '--info-shadow': rgbaFromHex(accent, 0.2),
-    '--info-shadow-hover': rgbaFromHex(accent, 0.3),
+    '--info-hover': isDark ? lightenHex(accent, 0.08) : darkenHex(accent, 0.1),
+    '--info-focus-ring': rgbaFromHex(accent, isDark ? 0.25 : 0.15),
+    '--info-shadow': rgbaFromHex(accent, isDark ? 0.3 : 0.2),
+    '--info-shadow-hover': rgbaFromHex(accent, isDark ? 0.4 : 0.3),
     '--app-accent': accent,
     '--app-accent-soft': soft,
-    '--app-accent-ring': rgbaFromHex(accent, 0.12),
-    '--app-accent-border': rgbaFromHex(accent, 0.45),
-    '--app-accent-shadow': rgbaFromHex(accent, 0.08),
-    '--app-accent-shadow-md': rgbaFromHex(accent, 0.18),
-    '--accent-glass-border': rgbaFromHex(accent, 0.45),
+    '--app-accent-ring': rgbaFromHex(accent, isDark ? 0.2 : 0.12),
+    '--app-accent-border': rgbaFromHex(accent, isDark ? 0.55 : 0.45),
+    '--app-accent-shadow': rgbaFromHex(accent, isDark ? 0.15 : 0.08),
+    '--app-accent-shadow-md': rgbaFromHex(accent, isDark ? 0.28 : 0.18),
+    '--accent-glass-border': rgbaFromHex(accent, isDark ? 0.55 : 0.45),
     '--accent-glass-bg': rgbaFromHex(accent, 0.88),
     '--accent-glass-bg-hover': rgbaFromHex(accent, 0.95),
-    '--accent-glass-shadow': rgbaFromHex(accent, 0.25),
-    '--accent-glass-shadow-hover': rgbaFromHex(accent, 0.3),
-    '--picker-accent-soft': rgbaFromHex(accent, 0.1),
-    '--picker-accent-mid': rgbaFromHex(accent, 0.18),
+    '--accent-glass-shadow': rgbaFromHex(accent, isDark ? 0.35 : 0.25),
+    '--accent-glass-shadow-hover': rgbaFromHex(accent, isDark ? 0.4 : 0.3),
+    '--picker-accent-soft': rgbaFromHex(accent, isDark ? 0.14 : 0.1),
+    '--picker-accent-mid': rgbaFromHex(accent, isDark ? 0.24 : 0.18),
     '--picker-accent-strong': rgbaFromHex(accent, 0.82),
-    '--picker-glass-shadow': `0 8px 32px ${rgbaFromHex(accent, 0.06)}, 0 4px 16px rgba(18, 18, 18, 0.04)`,
-    '--picker-hover-shadow': `0 4px 16px ${rgbaFromHex(accent, 0.07)}, 0 2px 10px rgba(249, 115, 22, 0.05)`,
-    '--picker-hover-bg': `linear-gradient(145deg, rgba(255, 255, 255, 0.78) 0%, ${rgbaFromHex(accent, 0.1)} 48%, ${rgbaFromHex(accent, 0.07)} 100%)`,
-    '--picker-today-bg': rgbaFromHex(accent, 0.12),
-    '--filter-popover-bg': `linear-gradient(165deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 255, 255, 0.94) 48%, ${rgbaFromHex(accent, 0.07)} 100%)`,
-    '--filter-btn-bg': `linear-gradient(145deg, ${rgbaFromHex(accent, 0.1)} 0%, rgba(255, 255, 255, 0.35) 100%)`,
-    '--filter-btn-bg-active': `linear-gradient(145deg, ${rgbaFromHex(accent, 0.14)} 0%, rgba(255, 255, 255, 0.35) 100%)`,
-    '--filter-control-border': rgbaFromHex(accent, 0.28),
-    '--filter-footer-border': rgbaFromHex(accent, 0.22),
-    '--glass-accent-ring': rgbaFromHex(accent, 0.12)
+    '--picker-glass-shadow': pickerGlassShadow,
+    '--picker-hover-shadow': pickerHoverShadow,
+    '--picker-hover-bg': pickerHoverBg,
+    '--picker-today-bg': rgbaFromHex(accent, isDark ? 0.18 : 0.12),
+    '--filter-popover-bg': filterPopoverBg,
+    '--filter-btn-bg': filterBtnBg,
+    '--filter-btn-bg-active': filterBtnBgActive,
+    '--filter-control-border': rgbaFromHex(accent, isDark ? 0.38 : 0.28),
+    '--filter-footer-border': rgbaFromHex(accent, isDark ? 0.3 : 0.22),
+    '--glass-accent-ring': rgbaFromHex(accent, isDark ? 0.2 : 0.12)
   };
 };
 

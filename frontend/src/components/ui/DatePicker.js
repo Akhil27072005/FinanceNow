@@ -18,10 +18,18 @@ const DatePicker = ({
   calendarClassName: calendarClassNameProp = '',
   popperClassName: popperClassNameProp = '',
   glass = false,
-  ...props
+  popperPlacement: popperPlacementProp,
+  popperContainer: popperContainerProp,
+  ...restProps
 }) => {
   const inModalGlass = useModalGlass();
   const useGlass = glass || inModalGlass;
+  const portalPopper = ({ children }) => createPortal(children, document.body);
+  const popperPlacement =
+    popperPlacementProp ??
+    (showMonthYearPicker ? 'bottom-end' : useGlass ? 'bottom-start' : undefined);
+  const popperContainer =
+    popperContainerProp ?? (showMonthYearPicker || useGlass ? portalPopper : undefined);
   const modalGlassCalendarClasses =
     'modal-glass-datepicker__calendar modal-glass-datepicker__calendar--compact';
   const calendarClassName = [
@@ -118,11 +126,9 @@ const DatePicker = ({
         wrapperClassName="datepicker-input-wrapper"
         calendarClassName={calendarClassName}
         popperClassName={popperClassName || undefined}
-        popperPlacement={useGlass ? 'bottom-start' : undefined}
-        popperContainer={
-          useGlass ? ({ children }) => createPortal(children, document.body) : undefined
-        }
-        {...props}
+        popperPlacement={popperPlacement}
+        popperContainer={popperContainer}
+        {...restProps}
       />
       <Calendar
         size={16}

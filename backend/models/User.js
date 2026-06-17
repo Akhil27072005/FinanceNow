@@ -82,7 +82,7 @@ const userSchema = new mongoose.Schema({
     },
     themePresetId: {
       type: String,
-      default: 'violetDawn',
+      default: 'slateProfessional',
       trim: true
     },
     glassIntensity: {

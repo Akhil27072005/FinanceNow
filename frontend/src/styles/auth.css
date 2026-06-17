@@ -18,6 +18,17 @@
   background: transparent;
 }
 
+.auth-page__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
 .auth-page__center {
   position: relative;
   z-index: 1;
@@ -49,6 +60,23 @@
 
 .auth-page__card--switch {
   animation: auth-card-switch 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.auth-page--exit {
+  pointer-events: none;
+}
+
+.auth-page__card--exit {
+  animation: auth-card-exit 0.26s ease forwards;
+  pointer-events: none;
+}
+
+@keyframes auth-card-exit {
+  to {
+    opacity: 0;
+    transform: translateY(28px) scale(0.9);
+    filter: blur(10px);
+  }
 }
 
 @keyframes auth-card-enter {
@@ -347,7 +375,8 @@
 
   .auth-page__card--enter,
   .auth-page__card--from-marketing,
-  .auth-page__card--switch {
+  .auth-page__card--switch,
+  .auth-page__card--exit {
     animation: none;
   }
 }

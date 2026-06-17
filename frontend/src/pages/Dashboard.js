@@ -238,6 +238,9 @@ const Dashboard = () => {
   return (
     <div className="dashboard-page dashboard-page--fit">
       <div className="dashboard-page__header">
+        <div className="dashboard-page__intro">
+          <h1 className="dashboard-page__title">Welcome back — here&apos;s your month at a glance</h1>
+        </div>
         <div className="dashboard-page__month">
           <DatePicker
             selected={selectedMonth}
@@ -245,27 +248,6 @@ const Dashboard = () => {
             placeholder="Select month"
             showMonthYearPicker
             calendarClassName="dashboard-month-picker__calendar"
-            popperPlacement="bottom-end"
-            popperProps={{
-              strategy: 'fixed',
-              modifiers: [
-                { name: 'offset', options: { offset: [0, 8] } },
-                {
-                  name: 'preventOverflow',
-                  options: {
-                    rootBoundary: 'viewport',
-                    padding: 14,
-                    altAxis: true
-                  }
-                },
-                {
-                  name: 'flip',
-                  options: {
-                    fallbackPlacements: ['bottom-end', 'top-end', 'bottom-start']
-                  }
-                }
-              ]
-            }}
           />
         </div>
       </div>

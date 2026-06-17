@@ -1,11 +1,5 @@
 /* Tags page — insight hub (Layout A) + glass */
 
-.tags-page,
-.tags-month-picker__calendar {
-  --picker-glass-bg: rgba(255, 255, 255, 0.52);
-  --picker-glass-border: rgba(255, 255, 255, 0.75);
-}
-
 .tags-page__header {
   display: flex;
   flex-wrap: wrap;
@@ -19,7 +13,7 @@
   font-weight: 800;
   margin: 0;
   font-size: 26px;
-  color: #111827;
+  color: var(--app-text-heading);
   letter-spacing: -0.03em;
 }
 
@@ -47,7 +41,7 @@
   border-radius: 12px;
   background: var(--picker-glass-bg);
   border: 1px solid var(--picker-glass-border);
-  color: #111827;
+  color: var(--app-text-heading);
   box-shadow: var(--picker-glass-shadow);
   -webkit-backdrop-filter: blur(20px) saturate(1.15);
   backdrop-filter: blur(20px) saturate(1.15);
@@ -60,7 +54,7 @@
 .tags-page__month .form-control:hover,
 .tags-page__month .datepicker-input-wrapper .react-datepicker__input-container input:hover {
   background: var(--picker-hover-bg);
-  border-color: rgba(255, 255, 255, 0.88);
+  border-color: rgba(var(--accent-rgb), 0.35);
   box-shadow: var(--picker-hover-shadow);
 }
 
@@ -68,7 +62,7 @@
 .tags-page__month .datepicker-input-wrapper .react-datepicker__input-container input:focus {
   outline: none;
   background: var(--picker-hover-bg);
-  border-color: rgba(255, 255, 255, 0.92);
+  border-color: rgba(var(--accent-rgb), 0.45);
   box-shadow:
     0 0 0 2px var(--picker-violet-soft),
     var(--picker-hover-shadow);
@@ -77,7 +71,7 @@
 .tags-page__month-label {
   font-size: 12px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   margin: 0;
 }
 
@@ -107,13 +101,13 @@
   font-size: 13px;
   font-weight: 500;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  background-color: rgba(255, 255, 255, 0.22);
+  border: 1px solid var(--glass-control-border);
+  background-color: var(--glass-control-bg);
   padding: 8px 12px;
-  color: #111827;
-  -webkit-backdrop-filter: blur(10px) saturate(1.1);
-  backdrop-filter: blur(10px) saturate(1.1);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  color: var(--app-text-heading);
+  -webkit-backdrop-filter: blur(var(--glass-blur, 10px)) saturate(var(--glass-saturate, 1.1));
+  backdrop-filter: blur(var(--glass-blur, 10px)) saturate(var(--glass-saturate, 1.1));
+  box-shadow: none;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -121,22 +115,20 @@
 }
 
 .tag-nav__search::placeholder {
-  color: #9ca3af;
+  color: var(--app-text-subtle);
   font-weight: 400;
 }
 
 .tag-nav__search:hover {
-  border-color: rgba(255, 255, 255, 0.65);
-  background-color: rgba(255, 255, 255, 0.28);
+  border-color: rgba(var(--accent-rgb), 0.28);
+  background-color: var(--glass-control-bg-hover);
 }
 
 .tag-nav__search:focus {
   outline: none;
-  border-color: rgba(255, 255, 255, 0.75);
-  background-color: rgba(255, 255, 255, 0.3);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 0 0 2px var(--glass-accent-ring);
+  border-color: rgba(var(--accent-rgb), 0.4);
+  background-color: var(--glass-control-bg-hover);
+  box-shadow: 0 0 0 2px var(--glass-accent-ring);
 }
 
 /* Glass select (matches modal / categories) */
@@ -158,17 +150,18 @@
   width: 100%;
   padding: 10px 14px;
   border-radius: 10px;
-  border: 1px dashed rgba(255, 255, 255, 0.65);
-  background: rgba(255, 255, 255, 0.2);
+  border: 1px dashed var(--glass-control-border);
+  background: var(--glass-control-bg);
   font-size: 13px;
   font-weight: 600;
   color: var(--accent-text);
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease;
 }
 
 .tag-nav__add:hover {
-  background: rgba(255, 255, 255, 0.4);
+  background: var(--glass-control-bg-hover);
+  border-color: rgba(var(--accent-rgb), 0.3);
 }
 
 .tag-nav__list {
@@ -205,22 +198,14 @@
 }
 
 .tag-nav__item:hover {
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.55) 0%,
-    rgba(243, 232, 255, 0.48) 100%
-  );
-  border-color: rgba(255, 255, 255, 0.65);
+  background: var(--glass-row-bg-hover);
+  border-color: var(--glass-row-border-hover);
 }
 
 .tag-nav__item--active {
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.72) 0%,
-    rgba(243, 232, 255, 0.58) 100%
-  );
-  border-color: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.07);
+  background: var(--glass-row-bg-selected);
+  border-color: rgba(var(--accent-rgb), 0.28);
+  box-shadow: var(--glass-row-shadow-selected);
 }
 
 .tag-nav__swatch {
@@ -240,7 +225,7 @@
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: #111827;
+  color: var(--app-text-heading);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -252,7 +237,7 @@
   gap: 8px;
   font-size: 11px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   margin-top: 2px;
 }
 
@@ -275,23 +260,19 @@
   width: 28px;
   height: 28px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--glass-control-border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.35);
-  color: #6b7280;
+  background: var(--glass-chip-bg);
+  color: var(--app-text-subtle);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
 .tag-nav__action:hover {
   color: var(--accent-text);
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.78) 0%,
-    rgba(243, 232, 255, 0.55) 100%
-  );
-  border-color: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 2px 8px rgba(var(--accent-rgb), 0.08);
+  background: var(--glass-control-bg-hover);
+  border-color: rgba(var(--accent-rgb), 0.28);
+  box-shadow: none;
 }
 
 .tag-nav__action--delete:hover {
@@ -301,7 +282,7 @@
 .tag-nav__loading,
 .tag-nav__empty {
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--app-text-subtle);
   text-align: center;
   padding: 24px 8px;
   margin: 0;
@@ -317,7 +298,7 @@
 .tag-detail__loading {
   padding: 48px 24px;
   text-align: center;
-  color: #9ca3af;
+  color: var(--app-text-subtle);
   font-size: 14px;
   font-weight: 500;
 }
@@ -350,7 +331,7 @@
   margin: 8px 0 0;
   font-size: 13px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--app-text-subtle);
 }
 
 .tag-detail__stats {
@@ -363,8 +344,8 @@
 .tag-detail__stat {
   padding: 14px 16px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.22);
+  border: 1px solid var(--glass-control-border);
+  background: var(--glass-control-bg);
   opacity: 0;
   transform: translateY(var(--content-reveal-slide, 10px));
   transition:
@@ -384,24 +365,24 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   margin-bottom: 6px;
 }
 
 .tag-detail__stat-value {
   font-size: 18px;
   font-weight: 800;
-  color: #111827;
+  color: var(--app-text-heading);
   letter-spacing: -0.02em;
 }
 
 .tag-detail__bar-wrap {
   height: 8px;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--glass-chip-bg);
   overflow: hidden;
   margin-bottom: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--glass-chip-border);
 }
 
 .tag-detail__bar {
@@ -444,7 +425,7 @@
   font-size: 15px;
   font-weight: 700;
   margin: 0;
-  color: #111827;
+  color: var(--app-text-heading);
 }
 
 .tag-detail__link {
@@ -463,7 +444,7 @@
 
 .tag-detail__list-empty {
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--app-text-subtle);
   margin: 0;
   padding: 16px 0;
 }
@@ -483,8 +464,9 @@
   gap: 12px;
   padding: 12px 14px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid var(--glass-row-border);
+  background: var(--glass-row-bg);
+  box-shadow: var(--glass-row-shadow, none);
   opacity: 0;
   transform: translateY(var(--content-reveal-slide, 10px));
   transition:
@@ -518,9 +500,9 @@
 }
 
 .tag-detail__skeleton {
-  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background: var(--app-shimmer-gradient);
   background-size: 200% 100%;
-  animation: tag-detail-shimmer 1.2s ease-in-out infinite;
+  animation: app-shimmer 1.2s ease-in-out infinite;
   border-radius: 8px;
 }
 
@@ -574,15 +556,6 @@
   max-width: 68%;
 }
 
-@keyframes tag-detail-shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-  100% {
-    background-position: -200% 0;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .tag-detail__header,
   .tag-detail--ready .tag-detail__header,
@@ -613,7 +586,7 @@
 
 .tag-detail__txn-icon {
   flex-shrink: 0;
-  color: #9ca3af;
+  color: var(--app-text-subtle);
 }
 
 .tag-detail__txn-body {
@@ -625,7 +598,7 @@
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: #111827;
+  color: var(--app-text-heading);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -633,7 +606,7 @@
 
 .tag-detail__txn-meta {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   margin-top: 2px;
 }
 
@@ -641,7 +614,7 @@
   flex-shrink: 0;
   font-size: 14px;
   font-weight: 700;
-  color: #111827;
+  color: var(--app-text-heading);
 }
 
 /* Color presets in modal */
@@ -667,7 +640,7 @@
 }
 
 .tag-color-presets__btn--selected {
-  border-color: #111827;
+  border-color: var(--app-text-heading);
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
 }
 
@@ -696,12 +669,12 @@
 
 .tags-month-picker__calendar {
   font-family: Inter, system-ui, -apple-system, sans-serif;
-  border: 1px solid var(--picker-glass-border) !important;
+  border: 1px solid var(--picker-popover-border) !important;
   border-radius: 16px !important;
-  background: var(--picker-glass-bg) !important;
-  box-shadow: var(--picker-glass-shadow) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(1.15);
-  backdrop-filter: blur(20px) saturate(1.15);
+  background: var(--picker-popover-bg) !important;
+  box-shadow: var(--glass-shadow, var(--picker-glass-shadow)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur, 20px)) saturate(var(--glass-saturate, 1.15));
+  backdrop-filter: blur(var(--glass-blur, 20px)) saturate(var(--glass-saturate, 1.15));
 }
 
 .tags-month-picker__calendar.react-datepicker--month-only {
@@ -714,19 +687,44 @@
 
 .tags-month-picker__calendar .react-datepicker__header {
   background: transparent !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.4) !important;
+  border-bottom: 1px solid var(--picker-divider) !important;
 }
 
 .tags-month-picker__calendar .react-datepicker__current-month,
 .tags-month-picker__calendar .react-datepicker__year-read-view,
 .tags-month-picker__calendar .react-datepicker__month-read-view {
-  color: #111827 !important;
+  color: var(--app-text-heading) !important;
   font-weight: 600 !important;
+}
+
+.tags-month-picker__calendar .react-datepicker__year-read-view,
+.tags-month-picker__calendar .react-datepicker__month-read-view {
+  border-radius: 10px !important;
+  padding: 4px 10px !important;
+  background: var(--picker-chip-bg) !important;
+  border: 1px solid var(--picker-chip-border) !important;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.tags-month-picker__calendar .react-datepicker__month-text {
+  background: var(--picker-chip-bg) !important;
+  border: 1px solid var(--picker-chip-border) !important;
+  border-radius: 10px !important;
+  font-weight: 500 !important;
+  color: var(--app-text) !important;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .tags-month-picker__calendar .react-datepicker__year-read-view:hover,
 .tags-month-picker__calendar .react-datepicker__month-read-view:hover {
   background: var(--picker-hover-bg) !important;
+  border-color: rgba(var(--accent-rgb), 0.35) !important;
   color: var(--accent-text) !important;
 }
 

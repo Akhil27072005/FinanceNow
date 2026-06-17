@@ -39,7 +39,7 @@
   font-weight: 800;
   margin: 0;
   font-size: 26px;
-  color: #111827;
+  color: var(--app-text-heading);
   letter-spacing: -0.03em;
 }
 
@@ -56,7 +56,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+  border-bottom: 1px solid var(--glass-divider);
   padding-bottom: 6px;
   min-height: 32px;
 }
@@ -99,7 +99,7 @@
   background: transparent;
   font-size: 13px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
@@ -130,12 +130,12 @@
 
 .transactions-filters__clear {
   padding: 5px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--glass-control-border);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--glass-control-bg);
   font-size: 12px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
   -webkit-backdrop-filter: blur(8px);
@@ -157,7 +157,7 @@
   align-items: center;
   gap: 5px;
   padding: 5px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  border: 1px solid var(--glass-control-border);
   border-radius: 10px;
   background: linear-gradient(
     145deg,
@@ -204,19 +204,11 @@
   min-width: min(360px, calc(100vw - 2rem));
   padding: 14px 14px 12px;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  background: linear-gradient(
-    165deg,
-    rgba(255, 255, 255, 0.62) 0%,
-    rgba(255, 255, 255, 0.5) 48%,
-    rgba(245, 240, 252, 0.55) 100%
-  );
-  box-shadow:
-    0 16px 48px rgba(var(--accent-rgb), 0.12),
-    0 4px 16px rgba(18, 18, 18, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
-  -webkit-backdrop-filter: blur(20px) saturate(1.18);
-  backdrop-filter: blur(20px) saturate(1.18);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  box-shadow: var(--glass-shadow, 0 16px 48px rgba(0, 0, 0, 0.12));
+  -webkit-backdrop-filter: blur(var(--glass-blur, 20px)) saturate(var(--glass-saturate, 1.18));
+  backdrop-filter: blur(var(--glass-blur, 20px)) saturate(var(--glass-saturate, 1.18));
 }
 
 .transactions-filters__popover-title {
@@ -225,7 +217,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #6b7280;
+  color: var(--app-text-subtle);
 }
 
 .transactions-filters__popover-grid {
@@ -249,14 +241,14 @@
 .transactions-filters__label {
   font-size: 11px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   letter-spacing: 0.02em;
 }
 
 .transactions-filters__popover-foot {
   margin-top: 12px;
   padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.45);
+  border-top: 1px solid var(--glass-divider);
   display: flex;
   justify-content: flex-end;
 }
@@ -283,31 +275,27 @@
   width: 100%;
   padding: 9px 36px 9px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.65);
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.5) 0%,
-    rgba(255, 255, 255, 0.28) 100%
-  );
+  border: 1px solid var(--glass-control-border);
+  background: var(--glass-control-bg);
   font-size: 13px;
   font-family: Inter, system-ui, -apple-system, sans-serif;
-  color: #111827;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  color: var(--app-text-heading);
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(var(--glass-blur, 8px));
+  backdrop-filter: blur(var(--glass-blur, 8px));
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
 .transactions-filters__datepicker .react-datepicker__input-container input:hover {
-  border-color: rgba(var(--accent-rgb), 0.35);
+  border-color: rgba(var(--accent-rgb), 0.3);
+  background: var(--glass-control-bg-hover);
 }
 
 .transactions-filters__datepicker .react-datepicker__input-container input:focus {
   outline: none;
-  border-color: rgba(var(--accent-rgb), 0.55);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 0 0 2px rgba(var(--accent-rgb), 0.15);
+  border-color: rgba(var(--accent-rgb), 0.45);
+  background: var(--glass-control-bg-hover);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.12);
 }
 
 .transactions-filters__datepicker svg {
@@ -338,7 +326,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #9ca3af;
+  color: var(--app-text-subtle);
 }
 
 .transactions-list__grid {
@@ -351,14 +339,14 @@
 .transactions-empty {
   padding: 40px 20px;
   text-align: center;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   font-size: 14px;
 }
 
 .transactions-loading {
   padding: 40px;
   text-align: center;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   font-size: 14px;
 }
 
@@ -370,20 +358,11 @@
   align-items: center;
   padding: 12px 16px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.62);
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.48) 0%,
-    rgba(255, 255, 255, 0.26) 45%,
-    rgba(245, 240, 252, 0.32) 100%
-  );
+  border: 1px solid var(--glass-row-border);
+  background: var(--glass-row-bg);
   -webkit-backdrop-filter: blur(14px) saturate(1.22);
   backdrop-filter: blur(14px) saturate(1.22);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.65),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.12),
-    0 4px 18px rgba(var(--accent-rgb), 0.05),
-    0 2px 8px rgba(18, 18, 18, 0.03);
+  box-shadow: var(--glass-row-shadow);
   cursor: pointer;
   transition:
     background 0.2s ease,
@@ -409,31 +388,15 @@
 }
 
 .txn-row:hover {
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.58) 0%,
-    rgba(255, 255, 255, 0.34) 45%,
-    rgba(var(--accent-rgb), 0.1) 100%
-  );
-  border-color: rgba(255, 255, 255, 0.78);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.75),
-    0 6px 22px rgba(var(--accent-rgb), 0.08),
-    0 2px 10px rgba(18, 18, 18, 0.04);
+  background: var(--glass-row-bg-hover);
+  border-color: var(--glass-row-border-hover);
+  box-shadow: var(--glass-row-shadow-hover);
 }
 
 .txn-row--selected {
   border-color: rgba(var(--accent-rgb), 0.5);
-  background: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.55) 0%,
-    rgba(var(--accent-rgb), 0.1) 55%,
-    rgba(var(--accent-rgb), 0.16) 100%
-  );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    0 0 0 1px rgba(var(--accent-rgb), 0.22),
-    0 6px 24px rgba(var(--accent-rgb), 0.1);
+  background: var(--glass-row-bg-selected);
+  box-shadow: var(--glass-row-shadow-selected);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -462,7 +425,7 @@
   margin: 0;
   font-size: 14px;
   font-weight: 700;
-  color: #111827;
+  color: var(--app-text-heading);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -478,7 +441,7 @@
 .txn-row__tags-empty {
   margin: 4px 0 0;
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--app-text-subtle);
 }
 
 .txn-row__tag {
@@ -491,8 +454,8 @@
 }
 
 .txn-row__tag--more {
-  color: #6b7280;
-  background: rgba(255, 255, 255, 0.35);
+  color: var(--app-text-subtle);
+  background: var(--glass-chip-bg);
   border-color: rgba(255, 255, 255, 0.5);
 }
 
@@ -510,7 +473,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #9ca3af;
+  color: var(--app-text-subtle);
   padding: 0 4px;
 }
 
@@ -518,14 +481,14 @@
   text-align: center;
   font-size: 11px;
   font-weight: 700;
-  color: #9ca3af;
+  color: var(--app-text-subtle);
 }
 
 .txn-row__meta--header .txn-row__date,
 .txn-row__meta--header .txn-row__payment-name {
   font-size: 11px;
   font-weight: 700;
-  color: #9ca3af;
+  color: var(--app-text-subtle);
 }
 
 .txn-row__meta--header .txn-row__payment {
@@ -535,7 +498,7 @@
 .txn-row__date {
   font-size: 13px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   white-space: nowrap;
   flex: 1;
   min-width: 0;
@@ -555,7 +518,7 @@
 }
 
 .txn-row__amount--expense {
-  color: #111827;
+  color: var(--app-text-heading);
 }
 
 .txn-row__payment {
@@ -575,21 +538,21 @@
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: var(--glass-chip-bg);
+  border: 1px solid var(--glass-control-border);
 }
 
 .txn-row__payment-name {
   font-size: 13px;
   font-weight: 500;
-  color: #374151;
+  color: var(--app-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .txn-row__payment-name--empty {
-  color: #9ca3af;
+  color: var(--app-text-subtle);
 }
 
 .txn-row__actions {
@@ -617,12 +580,12 @@
 }
 
 .transactions-pagination__btn {
-  background: rgba(255, 255, 255, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-control-border);
   border-radius: 8px;
   padding: 6px 12px;
   cursor: pointer;
-  color: #374151;
+  color: var(--app-text);
   display: inline-flex;
   align-items: center;
   font-size: 14px;
@@ -630,7 +593,7 @@
 }
 
 .transactions-pagination__btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.45);
+  background: var(--glass-chip-bg);
 }
 
 .transactions-pagination__btn:disabled {
@@ -647,7 +610,7 @@
 
 .transactions-pagination__ellipsis {
   padding: 0 4px;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   font-size: 14px;
 }
 
@@ -794,7 +757,7 @@
   margin: 0;
   font-size: 16px;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -811,13 +774,13 @@
 }
 
 .txn-detail-drawer__amount.txn-row__amount--expense {
-  color: #111827;
+  color: var(--app-text-heading);
 }
 
 .txn-detail-drawer__date {
   margin: 4px 0 0;
   font-size: 14px;
-  color: #6b7280;
+  color: var(--app-text-subtle);
 }
 
 .txn-detail-drawer__type {
@@ -860,7 +823,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: var(--app-text-subtle);
 }
 
 .txn-detail-drawer__body {
@@ -897,7 +860,7 @@
 .txn-detail-drawer__segment {
   padding: 12px 14px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--glass-control-bg);
   border: 1px solid rgba(255, 255, 255, 0.45);
 }
 
@@ -907,7 +870,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #6b7280;
+  color: var(--app-text-subtle);
 }
 
 .txn-detail-drawer__class-row {
@@ -920,7 +883,7 @@
   margin: 0;
   font-size: 15px;
   font-weight: 700;
-  color: #111827;
+  color: var(--app-text-heading);
 }
 
 .txn-detail-drawer__link {
@@ -950,22 +913,22 @@
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: var(--glass-chip-bg);
+  border: 1px solid var(--glass-control-border);
 }
 
 .txn-detail-drawer__payment-name {
   margin: 0;
   font-size: 15px;
   font-weight: 700;
-  color: #111827;
+  color: var(--app-text-heading);
 }
 
 .txn-detail-drawer__payment-identifier {
   margin: 6px 0 0;
   font-size: 15px;
   font-weight: 600;
-  color: #374151;
+  color: var(--app-text);
   letter-spacing: 0.02em;
   word-break: break-word;
 }
@@ -977,11 +940,11 @@
   margin-top: 8px;
   padding: 6px 10px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: var(--glass-chip-bg);
+  border: 1px solid var(--glass-control-border);
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: var(--app-text);
 }
 
 .txn-detail-drawer__bank-chip .payment-method-logo,
@@ -1019,7 +982,7 @@
   margin: 0;
   font-size: 12px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   flex-shrink: 0;
 }
 
@@ -1027,7 +990,7 @@
   margin: 0;
   font-size: 13px;
   font-weight: 600;
-  color: #111827;
+  color: var(--app-text-heading);
   text-align: right;
   word-break: break-word;
 }
@@ -1058,14 +1021,14 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: #9ca3af;
+  color: var(--app-text-subtle);
   margin-bottom: 2px;
 }
 
 .txn-detail-drawer__dl dd {
   margin: 0;
   font-size: 14px;
-  color: #374151;
+  color: var(--app-text);
 }
 
 .txn-detail-drawer__notes {
@@ -1076,7 +1039,7 @@
 .txn-detail-drawer__muted {
   margin: 0;
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--app-text-subtle);
 }
 
 .txn-detail-drawer__budget-head {
@@ -1111,13 +1074,13 @@
 .txn-detail-drawer__budget-pct {
   font-size: 14px;
   font-weight: 700;
-  color: #111827;
+  color: var(--app-text-heading);
 }
 
 .txn-detail-drawer__bar-wrap {
   height: 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--glass-chip-bg);
   border: 1px solid rgba(255, 255, 255, 0.4);
   overflow: hidden;
   margin-bottom: 12px;
@@ -1161,7 +1124,7 @@
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  color: #9ca3af;
+  color: var(--app-text-subtle);
 }
 
 .txn-detail-drawer__metric-value {
@@ -1169,7 +1132,7 @@
   margin-top: 2px;
   font-size: 13px;
   font-weight: 700;
-  color: #111827;
+  color: var(--app-text-heading);
 }
 
 .txn-detail-drawer__metric-value--bad {
@@ -1186,7 +1149,7 @@
   gap: 8px;
   margin-bottom: 10px;
   padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.35);
+  border-top: 1px solid var(--glass-divider);
 }
 
 .txn-detail-drawer__burn-note {
@@ -1199,7 +1162,7 @@
   flex-wrap: wrap;
   gap: 8px;
   padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.35);
+  border-top: 1px solid var(--glass-divider);
 }
 
 .txn-detail-drawer__foot .btn {

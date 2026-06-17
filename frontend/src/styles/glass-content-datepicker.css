@@ -14,27 +14,26 @@
   width: 100%;
   padding: 10px 36px 10px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(214, 205, 235, 0.9);
-  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--picker-glass-border, rgba(214, 205, 235, 0.9));
+  background: var(--picker-glass-bg, rgba(255, 255, 255, 0.88));
   font-size: 14px;
   font-family: Inter, system-ui, -apple-system, sans-serif;
-  color: #111827;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  color: var(--app-text-heading);
+  box-shadow: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 
 .glass-content-datepicker .react-datepicker__input-container input:hover,
 .investments-panel__datepicker .react-datepicker__input-container input:hover {
   border-color: rgba(var(--accent-rgb), 0.35);
+  background: var(--picker-hover-bg, rgba(255, 255, 255, 0.92));
 }
 
 .glass-content-datepicker .react-datepicker__input-container input:focus,
 .investments-panel__datepicker .react-datepicker__input-container input:focus {
   outline: none;
   border-color: rgba(var(--accent-rgb), 0.55);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 0 0 2px rgba(var(--accent-rgb), 0.15);
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.15);
 }
 
 .glass-content-datepicker .datepicker-wrapper svg,

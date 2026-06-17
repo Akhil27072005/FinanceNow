@@ -17,6 +17,7 @@ import {
   PanelLeftClose,
   PanelLeft
 } from 'lucide-react';
+import FinanceNowLogo from '../brand/FinanceNowLogo';
 import { useSidebar } from '../../contexts/SidebarContext';
 import SidebarNavItem from './SidebarNavItem';
 import SidebarNavGroup from './SidebarNavGroup';
@@ -58,11 +59,7 @@ const Sidebar = () => {
       <div className="sidebar__shell">
         <div className="sidebar__logo">
           <Link to="/dashboard" className="sidebar__logo-link">
-            <img
-              src={`${process.env.PUBLIC_URL}/FinanceNow_logo1.svg`}
-              alt="FinanceNow"
-              className="sidebar__logo-img"
-            />
+            <FinanceNowLogo className="sidebar__logo-mark" />
           </Link>
         </div>
 

@@ -40,7 +40,7 @@ const Login = () => {
   return (
     <AuthLayout
       title="Welcome back"
-      subtitle="Your gateway to smarter financial management"
+      subtitle="Sign in to see expenses, budgets, and what's due this month."
       footerText="Don't have an account?"
       footerLinkText="Sign up"
       footerLinkTo="/register"

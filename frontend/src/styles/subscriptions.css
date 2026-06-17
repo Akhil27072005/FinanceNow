@@ -13,7 +13,7 @@
   font-weight: 800;
   margin: 0;
   font-size: 26px;
-  color: #111827;
+  color: var(--app-text-heading);
   letter-spacing: -0.03em;
 }
 
@@ -37,7 +37,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   margin: 0 0 6px;
 }
 
@@ -58,12 +58,12 @@
 }
 
 .subscriptions-kpi__value--count {
-  color: #111827;
+  color: var(--app-text-heading);
 }
 
 .subscriptions-kpi__hint {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--app-text-subtle);
   margin: 4px 0 0;
 }
 
@@ -157,13 +157,13 @@
   margin: 0;
   font-size: 17px;
   font-weight: 700;
-  color: #111827;
+  color: var(--app-text-heading);
 }
 
 .subscriptions-section__count {
   font-size: 13px;
   font-weight: 500;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   margin-left: 8px;
 }
 
@@ -200,7 +200,7 @@
 .subscriptions-empty {
   padding: 32px 16px;
   text-align: center;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   font-size: 14px;
 }
 
@@ -212,16 +212,18 @@
   align-items: center;
   padding: 14px 16px;
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.45);
-  background: rgba(255, 255, 255, 0.2);
-  -webkit-backdrop-filter: blur(8px) saturate(1.08);
-  backdrop-filter: blur(8px) saturate(1.08);
-  transition: background 0.2s ease, border-color 0.2s ease;
+  border: 1px solid var(--glass-row-border, rgba(255, 255, 255, 0.45));
+  background: var(--glass-row-bg, rgba(255, 255, 255, 0.2));
+  box-shadow: var(--glass-row-shadow, none);
+  -webkit-backdrop-filter: blur(var(--glass-blur, 8px)) saturate(var(--glass-saturate, 1.08));
+  backdrop-filter: blur(var(--glass-blur, 8px)) saturate(var(--glass-saturate, 1.08));
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .subscription-row:hover {
-  background: rgba(255, 255, 255, 0.32);
-  border-color: rgba(255, 255, 255, 0.6);
+  background: var(--glass-row-bg-hover, rgba(255, 255, 255, 0.32));
+  border-color: var(--glass-row-border-hover, rgba(255, 255, 255, 0.6));
+  box-shadow: var(--glass-row-shadow-hover, none);
 }
 
 .subscription-row--inactive {
@@ -243,7 +245,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--glass-chip-bg);
   overflow: hidden;
 }
 
@@ -260,7 +262,7 @@
 .subscription-row__name {
   font-weight: 600;
   font-size: 14px;
-  color: #111827;
+  color: var(--app-text-heading);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -269,7 +271,7 @@
 
 .subscription-row__category {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   margin: 2px 0 0;
   min-height: 1.25em;
   line-height: 1.25;
@@ -278,7 +280,7 @@
 .subscription-row__amount {
   font-weight: 700;
   font-size: 15px;
-  color: #111827;
+  color: var(--app-text-heading);
   white-space: nowrap;
   justify-self: start;
 }
@@ -294,7 +296,7 @@
 
 .subscription-row__date {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   white-space: nowrap;
 }
 
@@ -361,11 +363,11 @@
 
 .subscription-row__payment-name {
   font-size: 13px;
-  color: #374151;
+  color: var(--app-text);
 }
 
 .subscription-row__payment-name--empty {
-  color: #9ca3af;
+  color: var(--app-text-subtle);
 }
 
 .subscription-row__actions {
@@ -409,16 +411,16 @@
   font-size: 12px;
   font-weight: 600;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--glass-control-border);
   background: rgba(255, 255, 255, 0.15);
-  color: #6b7280;
+  color: var(--app-text-subtle);
   cursor: pointer;
   white-space: nowrap;
 }
 
 .subscription-row__toggle:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.35);
-  color: #374151;
+  background: var(--glass-chip-bg);
+  color: var(--app-text);
 }
 
 .subscription-row__history {
@@ -497,12 +499,12 @@
   margin: 0;
   font-size: 18px;
   font-weight: 700;
-  color: #111827;
+  color: var(--app-text-heading);
 }
 
 .subscription-history-drawer__sub {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   margin: 4px 0 0;
 }
 
@@ -517,7 +519,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
+  color: var(--app-text-subtle);
 }
 
 .subscription-history-drawer__list {
@@ -534,7 +536,7 @@
 .subscription-history-drawer__item {
   padding: 12px 14px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.22);
+  background: var(--glass-control-bg);
   border: 1px solid rgba(255, 255, 255, 0.4);
   display: flex;
   justify-content: space-between;
@@ -544,13 +546,13 @@
 
 .subscription-history-drawer__item-date {
   font-size: 13px;
-  color: #374151;
+  color: var(--app-text);
   font-weight: 500;
 }
 
 .subscription-history-drawer__item-source {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--app-text-subtle);
   text-transform: capitalize;
 }
 
@@ -561,7 +563,7 @@
 }
 
 .subscription-history-drawer__empty {
-  color: #9ca3af;
+  color: var(--app-text-subtle);
   font-size: 14px;
   text-align: center;
   padding: 24px;
@@ -616,12 +618,6 @@
   width: 100%;
 }
 
-.subscriptions-page,
-.subscriptions-month-picker__calendar {
-  --picker-glass-bg: rgba(255, 255, 255, 0.52);
-  --picker-glass-border: rgba(255, 255, 255, 0.75);
-}
-
 .subscriptions-page__month .form-control,
 .subscriptions-page__month .datepicker-input-wrapper .react-datepicker__input-container input {
   height: 36px;
@@ -631,7 +627,7 @@
   border-radius: 12px;
   background: var(--picker-glass-bg);
   border: 1px solid var(--picker-glass-border);
-  color: #111827;
+  color: var(--app-text-heading);
   box-shadow: var(--picker-glass-shadow);
   -webkit-backdrop-filter: blur(20px) saturate(1.15);
   backdrop-filter: blur(20px) saturate(1.15);
@@ -644,7 +640,7 @@
 .subscriptions-page__month .form-control:hover,
 .subscriptions-page__month .datepicker-input-wrapper .react-datepicker__input-container input:hover {
   background: var(--picker-hover-bg);
-  border-color: rgba(255, 255, 255, 0.88);
+  border-color: rgba(var(--accent-rgb), 0.35);
   box-shadow: var(--picker-hover-shadow);
 }
 
@@ -652,7 +648,7 @@
 .subscriptions-page__month .datepicker-input-wrapper .react-datepicker__input-container input:focus {
   outline: none;
   background: var(--picker-hover-bg);
-  border-color: rgba(255, 255, 255, 0.92);
+  border-color: rgba(var(--accent-rgb), 0.45);
   box-shadow:
     0 0 0 2px var(--picker-violet-soft),
     var(--picker-hover-shadow);
@@ -668,12 +664,12 @@
 
 .subscriptions-month-picker__calendar {
   font-family: Inter, system-ui, -apple-system, sans-serif !important;
-  background: rgba(255, 255, 255, 0.58) !important;
-  border: 1px solid rgba(255, 255, 255, 0.78) !important;
+  background: var(--picker-popover-bg) !important;
+  border: 1px solid var(--picker-popover-border) !important;
   border-radius: 16px !important;
-  box-shadow: var(--picker-glass-shadow) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(1.15) !important;
-  backdrop-filter: blur(20px) saturate(1.15) !important;
+  box-shadow: var(--glass-shadow, var(--picker-glass-shadow)) !important;
+  -webkit-backdrop-filter: blur(var(--glass-blur, 20px)) saturate(var(--glass-saturate, 1.15)) !important;
+  backdrop-filter: blur(var(--glass-blur, 20px)) saturate(var(--glass-saturate, 1.15)) !important;
 }
 
 .subscriptions-month-picker__calendar.react-datepicker--month-only {
@@ -687,22 +683,22 @@
 
 .subscriptions-month-picker__calendar .react-datepicker__header {
   background: transparent !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.5) !important;
+  border-bottom: 1px solid var(--picker-divider) !important;
 }
 
 .subscriptions-month-picker__calendar .react-datepicker__current-month {
   font-weight: 600 !important;
-  color: #111827 !important;
+  color: var(--app-text-heading) !important;
 }
 
 .subscriptions-month-picker__calendar .react-datepicker__year-read-view,
 .subscriptions-month-picker__calendar .react-datepicker__month-read-view {
   font-weight: 600 !important;
-  color: #111827 !important;
+  color: var(--app-text-heading) !important;
   border-radius: 10px !important;
   padding: 4px 10px !important;
-  background: rgba(255, 255, 255, 0.42) !important;
-  border: 1px solid rgba(255, 255, 255, 0.58) !important;
+  background: var(--picker-chip-bg) !important;
+  border: 1px solid var(--picker-chip-border) !important;
   -webkit-backdrop-filter: blur(10px) saturate(1.1);
   backdrop-filter: blur(10px) saturate(1.1);
   transition:
@@ -715,7 +711,7 @@
 .subscriptions-month-picker__calendar .react-datepicker__year-read-view:hover,
 .subscriptions-month-picker__calendar .react-datepicker__month-read-view:hover {
   background: var(--picker-hover-bg) !important;
-  border-color: rgba(255, 255, 255, 0.85) !important;
+  border-color: rgba(var(--accent-rgb), 0.35) !important;
   box-shadow: var(--picker-hover-shadow) !important;
   color: var(--accent-text) !important;
 }
@@ -734,8 +730,8 @@
 .subscriptions-month-picker__calendar .react-datepicker__month-dropdown,
 .subscriptions-month-picker__calendar .react-datepicker__year-dropdown-container,
 .subscriptions-month-picker__calendar .react-datepicker__month-dropdown-container {
-  background: rgba(255, 255, 255, 0.62) !important;
-  border: 1px solid rgba(255, 255, 255, 0.78) !important;
+  background: var(--picker-popover-bg) !important;
+  border: 1px solid var(--picker-popover-border) !important;
   border-radius: 14px !important;
   padding: 6px !important;
   box-shadow: 0 8px 28px rgba(var(--accent-rgb), 0.1), 0 4px 14px rgba(249, 115, 22, 0.06) !important;
@@ -752,7 +748,7 @@
   padding: 8px 12px !important;
   font-size: 13px !important;
   font-weight: 500 !important;
-  color: #374151 !important;
+  color: var(--app-text) !important;
   background: transparent !important;
   transition:
     background 0.15s ease,
@@ -777,11 +773,11 @@
 }
 
 .subscriptions-month-picker__calendar .react-datepicker__month-text {
-  background: rgba(255, 255, 255, 0.38) !important;
-  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  background: var(--picker-chip-bg) !important;
+  border: 1px solid var(--picker-chip-border) !important;
   border-radius: 10px !important;
   font-weight: 500 !important;
-  color: #374151 !important;
+  color: var(--app-text) !important;
   transform: none !important;
   transition:
     background 0.15s ease,
@@ -792,7 +788,7 @@
 
 .subscriptions-month-picker__calendar .react-datepicker__month-text:hover {
   background: var(--picker-hover-bg) !important;
-  border-color: rgba(255, 255, 255, 0.82) !important;
+  border-color: rgba(var(--accent-rgb), 0.35) !important;
   color: var(--accent-text) !important;
   box-shadow: var(--picker-hover-shadow) !important;
   transform: none !important;
@@ -816,11 +812,11 @@
 }
 
 .subscriptions-month-picker__calendar .react-datepicker__year-text {
-  background: rgba(255, 255, 255, 0.38) !important;
-  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  background: var(--picker-chip-bg) !important;
+  border: 1px solid var(--picker-chip-border) !important;
   border-radius: 10px !important;
   font-weight: 500 !important;
-  color: #374151 !important;
+  color: var(--app-text) !important;
   transform: none !important;
   transition:
     background 0.15s ease,
@@ -831,7 +827,7 @@
 
 .subscriptions-month-picker__calendar .react-datepicker__year-text:hover {
   background: var(--picker-hover-bg) !important;
-  border-color: rgba(255, 255, 255, 0.82) !important;
+  border-color: rgba(var(--accent-rgb), 0.35) !important;
   color: var(--accent-text) !important;
   box-shadow: var(--picker-hover-shadow) !important;
   transform: none !important;
@@ -853,8 +849,8 @@
 }
 
 .subscriptions-month-picker__calendar .react-datepicker__navigation {
-  background: rgba(255, 255, 255, 0.42) !important;
-  border: 1px solid rgba(255, 255, 255, 0.58) !important;
+  background: var(--picker-chip-bg) !important;
+  border: 1px solid var(--picker-chip-border) !important;
   border-radius: 8px !important;
   transition:
     background 0.2s ease,
@@ -864,12 +860,12 @@
 
 .subscriptions-month-picker__calendar .react-datepicker__navigation:hover {
   background: var(--picker-hover-bg) !important;
-  border-color: rgba(255, 255, 255, 0.85) !important;
+  border-color: rgba(var(--accent-rgb), 0.35) !important;
   box-shadow: var(--picker-hover-shadow) !important;
 }
 
 .subscriptions-month-picker__calendar .react-datepicker__navigation-icon::before {
-  border-color: #6b7280 !important;
+  border-color: var(--app-text-subtle) !important;
 }
 
 .subscriptions-month-picker__calendar .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {

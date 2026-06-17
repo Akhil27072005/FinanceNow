@@ -1,8 +1,12 @@
-import React, { useMemo } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import { Loader2 } from 'lucide-react';
-import { AUTH_SWITCH_STATE } from '../../utils/authRouteState';
+import {
+  AUTH_SWITCH_STATE,
+  MARKETING_TRANSITION_MS,
+  TO_MARKETING_STATE
+} from '../../utils/authRouteState';
 import '../../styles/auth.css';
 
 const AuthLayout = ({
@@ -14,15 +18,33 @@ const AuthLayout = ({
   footerLinkTo
 }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [isExiting, setIsExiting] = useState(false);
 
   const cardAnimationClass = useMemo(() => {
+    if (isExiting) return 'auth-page__card--exit';
     if (location.state?.fromMarketing) return 'auth-page__card--from-marketing';
     if (location.state?.authSwitch) return 'auth-page__card--switch';
     return 'auth-page__card--enter';
-  }, [location.state]);
+  }, [location.state, isExiting]);
+
+  const handleBackdropClick = () => {
+    if (isExiting) return;
+    setIsExiting(true);
+    window.setTimeout(() => {
+      navigate('/', { state: TO_MARKETING_STATE });
+    }, MARKETING_TRANSITION_MS);
+  };
 
   return (
-    <div className="auth-page">
+    <div className={`auth-page${isExiting ? ' auth-page--exit' : ''}`}>
+      <button
+        type="button"
+        className="auth-page__backdrop"
+        onClick={handleBackdropClick}
+        aria-label="Back to home"
+        disabled={isExiting}
+      />
       <div className="auth-page__center">
         <div className={`auth-page__card ${cardAnimationClass}`}>
           <img

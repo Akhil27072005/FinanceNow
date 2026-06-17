@@ -233,6 +233,27 @@ const Tags = () => {
             showMonthYearPicker
             placeholder="Select month"
             calendarClassName="tags-month-picker__calendar"
+            popperPlacement="bottom-end"
+            popperProps={{
+              strategy: 'fixed',
+              modifiers: [
+                { name: 'offset', options: { offset: [0, 8] } },
+                {
+                  name: 'preventOverflow',
+                  options: {
+                    rootBoundary: 'viewport',
+                    padding: 14,
+                    altAxis: true
+                  }
+                },
+                {
+                  name: 'flip',
+                  options: {
+                    fallbackPlacements: ['bottom-end', 'top-end', 'bottom-start']
+                  }
+                }
+              ]
+            }}
           />
         </div>
       </div>

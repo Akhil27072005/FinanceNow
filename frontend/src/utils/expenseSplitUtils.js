@@ -1,3 +1,5 @@
+import { FALLBACK_CATEGORY_ICON } from '../constants/categoryIcons';
+
 /** Segment colors for allocation bar and row accents (cycles by index). */
 export const SPLIT_COLORS = [
   '#500CB0',
@@ -10,6 +12,18 @@ export const SPLIT_COLORS = [
   '#8B5CF6'
 ];
 
+export const getSplitRowIconMeta = (item) => {
+  const categoryType = item?.categoryType || 'expense';
+
+  if (item?.subCategoryIcon) {
+    return { icon: item.subCategoryIcon, categoryType };
+  }
+  if (item?.categoryIcon) {
+    return { icon: item.categoryIcon, categoryType };
+  }
+  return { icon: FALLBACK_CATEGORY_ICON, categoryType };
+};
+
 /**
  * Build display rows from API subcategory split + dashboard total expenses.
  * Appends Uncategorized when KPI total exceeds summed subcategory amounts.
@@ -17,14 +31,20 @@ export const SPLIT_COLORS = [
 export const buildSplitRows = (splitData = [], totalExpenses = 0) => {
   const items = (splitData || [])
     .filter((item) => item && (item.amount || 0) > 0)
-    .map((item, index) => ({
-      id: item.subCategoryId || `sub-${index}`,
-      subCategory: item.subCategory || item.name || 'Uncategorized',
-      category: item.category || null,
-      amount: Number(item.amount) || 0,
-      color: SPLIT_COLORS[index % SPLIT_COLORS.length],
-      isUncategorized: false
-    }));
+    .map((item, index) => {
+      const iconMeta = getSplitRowIconMeta(item);
+
+      return {
+        id: item.subCategoryId || `sub-${index}`,
+        subCategory: item.subCategory || item.name || 'Uncategorized',
+        category: item.category || null,
+        amount: Number(item.amount) || 0,
+        color: SPLIT_COLORS[index % SPLIT_COLORS.length],
+        icon: iconMeta.icon,
+        categoryType: iconMeta.categoryType,
+        isUncategorized: false
+      };
+    });
 
   const categorizedTotal = items.reduce((sum, row) => sum + row.amount, 0);
   const gap = Math.round((totalExpenses - categorizedTotal) * 100) / 100;
@@ -36,6 +56,8 @@ export const buildSplitRows = (splitData = [], totalExpenses = 0) => {
       category: null,
       amount: gap,
       color: '#9CA3AF',
+      icon: FALLBACK_CATEGORY_ICON,
+      categoryType: 'expense',
       isUncategorized: true
     });
   }

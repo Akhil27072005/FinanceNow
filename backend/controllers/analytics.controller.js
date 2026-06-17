@@ -420,8 +420,11 @@ const getSubCategorySplit = async (userId, type, dateStart, dateEnd, categoryId,
         _id: 0,
         subCategoryId: '$_id',
         subCategory: { $ifNull: ['$subcategory.name', 'Uncategorized'] },
+        subCategoryIcon: '$subcategory.icon',
         categoryId: '$subcategory.categoryId',
         category: { $ifNull: ['$category.name', null] },
+        categoryIcon: '$category.icon',
+        categoryType: { $ifNull: ['$category.type', 'expense'] },
         amount: { $round: ['$amount', 2] }
       }
     },

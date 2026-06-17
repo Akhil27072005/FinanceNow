@@ -1,0 +1,259 @@
+/**
+ * Semantic surface tokens — light/dark text, borders, glass controls, and interactive states.
+ * Mode is set on :root via data-theme-mode from appTheme.js.
+ */
+
+:root,
+[data-theme-mode='light'] {
+  --app-text: #121212;
+  --app-text-muted: rgba(18, 18, 18, 0.55);
+  --app-text-subtle: #6b7280;
+  --app-text-heading: #111827;
+  --app-border-subtle: rgba(18, 18, 18, 0.08);
+  --sidebar-text: #121212;
+  --sidebar-text-muted: rgba(18, 18, 18, 0.55);
+  --sidebar-hover-bg: rgba(255, 255, 255, 0.45);
+  --sidebar-border: rgba(255, 255, 255, 0.7);
+  --sidebar-tooltip-bg: #121212;
+  --sidebar-tooltip-text: #ffffff;
+  --app-surface-muted: rgba(255, 255, 255, 0.34);
+  --app-surface-border: rgba(255, 255, 255, 0.55);
+
+  /* Legacy theme.css aliases */
+  --bg-main: #f8f9fa;
+  --bg-card: #ffffff;
+  --text-primary: var(--app-text);
+  --text-secondary: var(--app-text-subtle);
+  --text-main: var(--app-text);
+  --text-light: var(--app-text-muted);
+  --border-light: rgba(0, 0, 0, 0.05);
+  --border-soft: rgba(0, 0, 0, 0.08);
+
+  /* Frosted controls inside glass panels */
+  --glass-control-bg: rgba(255, 255, 255, 0.22);
+  --glass-control-bg-hover: rgba(255, 255, 255, 0.35);
+  --glass-control-border: rgba(255, 255, 255, 0.55);
+  --glass-chip-bg: rgba(255, 255, 255, 0.35);
+  --glass-chip-border: rgba(255, 255, 255, 0.5);
+  --glass-divider: rgba(255, 255, 255, 0.4);
+  --glass-inset-highlight: rgba(255, 255, 255, 0.65);
+  --picker-glass-bg: rgba(255, 255, 255, 0.52);
+  --picker-glass-border: rgba(255, 255, 255, 0.75);
+  --picker-popover-bg: rgba(255, 255, 255, 0.58);
+  --picker-popover-border: rgba(255, 255, 255, 0.78);
+  --picker-chip-bg: rgba(255, 255, 255, 0.42);
+  --picker-chip-border: rgba(255, 255, 255, 0.58);
+  --picker-divider: rgba(255, 255, 255, 0.4);
+  --glass-row-bg: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.48) 0%,
+    rgba(255, 255, 255, 0.26) 45%,
+    rgba(245, 240, 252, 0.32) 100%
+  );
+  --glass-row-bg-hover: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.58) 0%,
+    rgba(255, 255, 255, 0.34) 45%,
+    rgba(var(--accent-rgb), 0.1) 100%
+  );
+  --glass-row-bg-selected: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.55) 0%,
+    rgba(var(--accent-rgb), 0.1) 55%,
+    rgba(var(--accent-rgb), 0.16) 100%
+  );
+  --glass-row-border: rgba(255, 255, 255, 0.62);
+  --glass-row-border-hover: rgba(255, 255, 255, 0.78);
+  --glass-row-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.12),
+    0 4px 18px rgba(var(--accent-rgb), 0.05),
+    0 2px 8px rgba(18, 18, 18, 0.03);
+  --glass-row-shadow-hover:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 6px 22px rgba(var(--accent-rgb), 0.08),
+    0 2px 10px rgba(18, 18, 18, 0.04);
+  --glass-row-shadow-selected:
+    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+    0 0 0 1px rgba(var(--accent-rgb), 0.22),
+    0 6px 24px rgba(var(--accent-rgb), 0.1);
+  --app-shimmer-gradient: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+}
+
+[data-theme-mode='dark'] {
+  --app-text: #f1f5f9;
+  --app-text-muted: rgba(241, 245, 249, 0.62);
+  --app-text-subtle: #94a3b8;
+  --app-text-heading: #f8fafc;
+  --app-border-subtle: rgba(255, 255, 255, 0.08);
+  --sidebar-text: #e2e8f0;
+  --sidebar-text-muted: rgba(226, 232, 240, 0.55);
+  --sidebar-hover-bg: rgba(255, 255, 255, 0.08);
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-tooltip-bg: #1e293b;
+  --sidebar-tooltip-text: #f1f5f9;
+  --app-surface-muted: rgba(255, 255, 255, 0.06);
+  --app-surface-border: rgba(255, 255, 255, 0.1);
+
+  /* Legacy theme.css aliases */
+  --bg-main: rgba(255, 255, 255, 0.04);
+  --bg-card: rgba(255, 255, 255, 0.06);
+  --text-primary: var(--app-text);
+  --text-secondary: var(--app-text-subtle);
+  --text-main: var(--app-text);
+  --text-light: var(--app-text-muted);
+  --border-light: rgba(255, 255, 255, 0.1);
+  --border-soft: rgba(255, 255, 255, 0.08);
+
+  --glass-control-bg: rgba(255, 255, 255, 0.03);
+  --glass-control-bg-hover: rgba(255, 255, 255, 0.06);
+  --glass-control-border: rgba(255, 255, 255, 0.07);
+  --glass-chip-bg: rgba(255, 255, 255, 0.04);
+  --glass-chip-border: rgba(255, 255, 255, 0.07);
+  --glass-divider: rgba(255, 255, 255, 0.07);
+  --glass-inset-highlight: rgba(255, 255, 255, 0.04);
+  --picker-glass-bg: rgba(255, 255, 255, 0.04);
+  --picker-glass-border: rgba(255, 255, 255, 0.08);
+  --picker-popover-bg: rgba(15, 23, 42, 0.52);
+  --picker-popover-border: rgba(255, 255, 255, 0.08);
+  --picker-chip-bg: rgba(255, 255, 255, 0.05);
+  --picker-chip-border: rgba(255, 255, 255, 0.08);
+  --picker-divider: rgba(255, 255, 255, 0.08);
+  --glass-row-bg: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.02) 45%,
+    rgba(var(--accent-rgb), 0.04) 100%
+  );
+  --glass-row-bg-hover: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    rgba(255, 255, 255, 0.03) 45%,
+    rgba(var(--accent-rgb), 0.1) 100%
+  );
+  --glass-row-bg-selected: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(var(--accent-rgb), 0.1) 55%,
+    rgba(var(--accent-rgb), 0.16) 100%
+  );
+  --glass-row-border: rgba(255, 255, 255, 0.06);
+  --glass-row-border-hover: rgba(var(--accent-rgb), 0.28);
+  --glass-row-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 4px 18px rgba(0, 0, 0, 0.22),
+    0 2px 8px rgba(0, 0, 0, 0.14);
+  --glass-row-shadow-hover:
+    0 6px 22px rgba(0, 0, 0, 0.3),
+    0 2px 10px rgba(var(--accent-rgb), 0.08);
+  --glass-row-shadow-selected:
+    0 0 0 1px rgba(var(--accent-rgb), 0.28),
+    0 6px 24px rgba(var(--accent-rgb), 0.12);
+  --app-shimmer-gradient: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 25%,
+    rgba(var(--accent-rgb), 0.18) 50%,
+    rgba(255, 255, 255, 0.03) 75%
+  );
+}
+
+/* Default before JS hydrates — matches Slate Professional */
+html:not([data-theme-mode]) {
+  --app-text: #f1f5f9;
+  --app-text-muted: rgba(241, 245, 249, 0.62);
+  --app-text-subtle: #94a3b8;
+  --app-text-heading: #f8fafc;
+}
+
+body {
+  color: var(--app-text);
+}
+
+/* App content typography helpers */
+.app-content [class$='__title'],
+.app-content [class*='-page__title'],
+.app-content [class*='-section__title'],
+.app-content [class*='-card__title'],
+.app-content [class*='-panel__title'] {
+  color: var(--app-text-heading);
+}
+
+.app-content [class$='__subtitle'],
+.app-content [class*='-page__subtitle'] {
+  color: var(--app-text-subtle);
+}
+
+[data-theme-mode='dark'] .form-control,
+[data-theme-mode='dark'] .form-select {
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--app-text);
+}
+
+[data-theme-mode='dark'] .form-control::placeholder {
+  color: var(--app-text-muted);
+}
+
+[data-theme-mode='dark'] .form-control:focus,
+[data-theme-mode='dark'] .form-select:focus {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(var(--accent-rgb), 0.45);
+}
+
+[data-theme-mode='dark'] .table {
+  color: var(--app-text);
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--app-text);
+  --bs-table-border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme-mode='dark'] .table thead th {
+  color: var(--app-text-subtle);
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme-mode='dark'] .table tbody td {
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme-mode='dark'] .table tbody tr:hover,
+[data-theme-mode='dark'] .table-hover tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+[data-theme-mode='dark'] .card {
+  background: var(--glass-bg, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--glass-border, rgba(255, 255, 255, 0.1));
+  color: var(--app-text);
+}
+
+[data-theme-mode='dark'] .card-header {
+  background-color: transparent;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  color: var(--app-text-heading);
+}
+
+[data-theme-mode='dark'] .dropdown-menu {
+  background-color: rgba(15, 23, 42, 0.95);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme-mode='dark'] .dropdown-item {
+  color: var(--app-text);
+}
+
+[data-theme-mode='dark'] .dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--app-text-heading);
+}
+
+/* Shared loading shimmer — used by dashboard, tags, budgets, reports skeletons */
+@keyframes app-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}

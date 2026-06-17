@@ -1,16 +1,20 @@
 import React, { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import LandingNavbar from '../components/landing/LandingNavbar';
 import LandingHero from '../components/landing/LandingHero';
 import '../styles/landing.css';
 
 const Landing = () => {
+  const location = useLocation();
+  const enterFromAuth = Boolean(location.state?.toMarketing);
+
   useEffect(() => {
-    document.title = 'FinanceNow — Take Control of Your Money with AI';
+    document.title = 'FinanceNow — All your finances, one place';
     const meta = document.querySelector('meta[name="description"]');
     if (meta) {
       meta.setAttribute(
         'content',
-        'Track spending, save smarter, and get personalized financial insights—powered by AI.'
+        'Track transactions, manage budgets and subscriptions, and see where your money goes — month by month.'
       );
     }
     return () => {
@@ -19,8 +23,16 @@ const Landing = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (!enterFromAuth) return undefined;
+    const id = window.setTimeout(() => {
+      window.history.replaceState({}, document.title);
+    }, 520);
+    return () => window.clearTimeout(id);
+  }, [enterFromAuth]);
+
   return (
-    <div className="landing-page">
+    <div className={`landing-page${enterFromAuth ? ' landing-page--enter' : ''}`}>
       <LandingNavbar />
       <main className="landing-main">
         <div className="landing-container">

@@ -2,7 +2,7 @@ import {
   DEFAULT_THEME_PRESET_ID,
   DEFAULT_GLASS_INTENSITY,
   getThemePresetById,
-  glassIntensityToGlassVars
+  glassVarsForPreset
 } from '../constants/themePresets';
 import { accentToCssVars, accentToChartPalette, rgbaFromHex } from './accentColor';
 
@@ -14,6 +14,7 @@ export const DEFAULT_APPEARANCE = {
 const THEME_VAR_KEYS = [
   '--app-content-gradient',
   '--app-sidebar-gradient',
+  '--app-shell-bg',
   '--app-blob-primary',
   '--app-blob-secondary',
   '--app-accent',
@@ -24,8 +25,21 @@ const THEME_VAR_KEYS = [
   '--app-accent-shadow-md',
   '--glass-bg',
   '--glass-bg-strong',
+  '--glass-border',
   '--glass-blur',
   '--glass-saturate',
+  '--glass-tile-bg',
+  '--glass-tile-border',
+  '--glass-panel-subtle-bg',
+  '--glass-shadow',
+  '--picker-popover-bg',
+  '--picker-popover-border',
+  '--picker-glass-bg',
+  '--picker-glass-border',
+  '--picker-chip-bg',
+  '--picker-chip-border',
+  '--filter-popover-surface-bg',
+  '--filter-popover-footer-bg',
   '--accent-rgb',
   '--accent-text',
   '--accent-bright',
@@ -76,12 +90,13 @@ export const normalizeAppearancePreferences = (preferences) => {
 export const appearanceToCssVars = (preferences) => {
   const appearance = normalizeAppearancePreferences(preferences);
   const preset = getThemePresetById(appearance.themePresetId);
-  const glassVars = glassIntensityToGlassVars(appearance.glassIntensity);
-  const accentVars = accentToCssVars(preset.accent, preset.accentSoft);
+  const glassVars = glassVarsForPreset(preset, appearance.glassIntensity);
+  const accentVars = accentToCssVars(preset.accent, preset.accentSoft, preset.mode);
 
   return {
     '--app-content-gradient': preset.contentGradient,
     '--app-sidebar-gradient': preset.sidebarGradient,
+    '--app-shell-bg': preset.shellBackground,
     '--app-blob-primary': preset.blobPrimary,
     '--app-blob-secondary': preset.blobSecondary,
     ...accentVars,
@@ -97,7 +112,7 @@ export const getThemeChartColors = (preferences) => {
 
 export const getThemeExpenseChartColor = (preferences) => {
   const preset = getThemePresetById(normalizeAppearancePreferences(preferences).themePresetId);
-  const accentVars = accentToCssVars(preset.accent, preset.accentSoft);
+  const accentVars = accentToCssVars(preset.accent, preset.accentSoft, preset.mode);
   return accentVars['--accent-bright'];
 };
 
@@ -113,6 +128,7 @@ export const applyAppTheme = (preferences) => {
   const root = document.documentElement;
   const vars = appearanceToCssVars(preferences);
   const appearance = normalizeAppearancePreferences(preferences);
+  const preset = getThemePresetById(appearance.themePresetId);
 
   THEME_VAR_KEYS.forEach((key) => {
     root.style.removeProperty(key);
@@ -123,10 +139,11 @@ export const applyAppTheme = (preferences) => {
   });
 
   root.dataset.themePreset = appearance.themePresetId;
+  root.dataset.themeMode = preset.mode;
 };
 
 /**
- * Restore default Violet Dawn appearance (e.g. on logout).
+ * Restore default appearance (e.g. on logout).
  */
 export const resetAppTheme = () => {
   applyAppTheme(DEFAULT_APPEARANCE);

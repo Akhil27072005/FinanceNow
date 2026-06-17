@@ -1,0 +1,211 @@
+/**
+ * Dark-mode datepicker + month-picker overrides (all app pickers).
+ */
+
+[data-theme-mode='dark'] .dashboard-page,
+[data-theme-mode='dark'] .dashboard-month-picker__calendar,
+[data-theme-mode='dark'] .tags-page,
+[data-theme-mode='dark'] .subscriptions-page,
+[data-theme-mode='dark'] .reports-filters,
+[data-theme-mode='dark'] .transactions-filters__popover {
+  --picker-glass-bg: rgba(255, 255, 255, 0.04);
+  --picker-glass-border: rgba(255, 255, 255, 0.08);
+}
+
+/* Input triggers */
+[data-theme-mode='dark'] .subscriptions-page__month .datepicker-input-wrapper .react-datepicker__input-container input,
+[data-theme-mode='dark'] .subscriptions-page__month .form-control,
+[data-theme-mode='dark'] .tags-page__month .form-control,
+[data-theme-mode='dark'] .tags-page__month .datepicker-input-wrapper .react-datepicker__input-container input,
+[data-theme-mode='dark'] .dashboard-page__month .datepicker-input-wrapper .react-datepicker__input-container input,
+[data-theme-mode='dark'] .dashboard-page__month .form-control,
+[data-theme-mode='dark'] .glass-content-datepicker .react-datepicker__input-container input,
+[data-theme-mode='dark'] .investments-panel__datepicker .react-datepicker__input-container input,
+[data-theme-mode='dark'] .reports-filters__datepicker .react-datepicker__input-container input,
+[data-theme-mode='dark'] .transactions-filters__datepicker .react-datepicker__input-container input {
+  background: var(--picker-glass-bg) !important;
+  border-color: var(--picker-glass-border) !important;
+  color: var(--app-text) !important;
+  box-shadow: none !important;
+}
+
+[data-theme-mode='dark'] .subscriptions-page__month .datepicker-input-wrapper .react-datepicker__input-container input:hover,
+[data-theme-mode='dark'] .subscriptions-page__month .form-control:hover,
+[data-theme-mode='dark'] .tags-page__month .form-control:hover,
+[data-theme-mode='dark'] .tags-page__month .datepicker-input-wrapper .react-datepicker__input-container input:hover,
+[data-theme-mode='dark'] .dashboard-page__month .datepicker-input-wrapper .react-datepicker__input-container input:hover,
+[data-theme-mode='dark'] .dashboard-page__month .form-control:hover,
+[data-theme-mode='dark'] .glass-content-datepicker .react-datepicker__input-container input:hover,
+[data-theme-mode='dark'] .investments-panel__datepicker .react-datepicker__input-container input:hover,
+[data-theme-mode='dark'] .reports-filters__datepicker .react-datepicker__input-container input:hover,
+[data-theme-mode='dark'] .transactions-filters__datepicker .react-datepicker__input-container input:hover {
+  background: var(--picker-hover-bg) !important;
+  border-color: rgba(var(--accent-rgb), 0.3) !important;
+  box-shadow: none !important;
+}
+
+[data-theme-mode='dark'] .subscriptions-page__month .datepicker-input-wrapper .react-datepicker__input-container input:focus,
+[data-theme-mode='dark'] .subscriptions-page__month .form-control:focus,
+[data-theme-mode='dark'] .tags-page__month .form-control:focus,
+[data-theme-mode='dark'] .tags-page__month .datepicker-input-wrapper .react-datepicker__input-container input:focus,
+[data-theme-mode='dark'] .dashboard-page__month .datepicker-input-wrapper .react-datepicker__input-container input:focus,
+[data-theme-mode='dark'] .dashboard-page__month .form-control:focus,
+[data-theme-mode='dark'] .glass-content-datepicker .react-datepicker__input-container input:focus,
+[data-theme-mode='dark'] .investments-panel__datepicker .react-datepicker__input-container input:focus,
+[data-theme-mode='dark'] .reports-filters__datepicker .react-datepicker__input-container input:focus,
+[data-theme-mode='dark'] .transactions-filters__datepicker .react-datepicker__input-container input:focus {
+  background: var(--picker-hover-bg) !important;
+  border-color: rgba(var(--accent-rgb), 0.45) !important;
+  box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.18) !important;
+}
+
+/* Base calendar popover */
+[data-theme-mode='dark'] .react-datepicker {
+  background-color: var(--picker-popover-bg) !important;
+  border-color: var(--picker-popover-border) !important;
+  color: var(--app-text) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+  backdrop-filter: blur(20px) saturate(1.15);
+}
+
+[data-theme-mode='dark'] .react-datepicker__header {
+  border-bottom-color: var(--picker-divider) !important;
+}
+
+[data-theme-mode='dark'] .react-datepicker__current-month,
+[data-theme-mode='dark'] .react-datepicker__day-name,
+[data-theme-mode='dark'] .react-datepicker__day,
+[data-theme-mode='dark'] .react-datepicker__month-text,
+[data-theme-mode='dark'] .react-datepicker__year-text {
+  color: var(--app-text) !important;
+}
+
+[data-theme-mode='dark'] .react-datepicker__day:hover,
+[data-theme-mode='dark'] .react-datepicker__month-text:hover,
+[data-theme-mode='dark'] .react-datepicker__year-text:hover {
+  background: var(--picker-hover-bg) !important;
+  color: var(--accent-text) !important;
+}
+
+[data-theme-mode='dark'] .react-datepicker__day--outside-month {
+  color: var(--app-text-muted) !important;
+}
+
+[data-theme-mode='dark'] .react-datepicker__day--disabled {
+  color: var(--app-text-muted) !important;
+  opacity: 0.35 !important;
+}
+
+/* Glass month-picker calendars (dashboard, subscriptions, tags, reports, modal) */
+[data-theme-mode='dark'] [class*='-month-picker__calendar'],
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'],
+[data-theme-mode='dark'] .modal-glass-datepicker__calendar {
+  background: var(--picker-popover-bg) !important;
+  border: 1px solid var(--picker-popover-border) !important;
+  color: var(--app-text) !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(1.15) !important;
+  backdrop-filter: blur(22px) saturate(1.15) !important;
+}
+
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__header,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__header,
+[data-theme-mode='dark'] .modal-glass-datepicker__calendar .react-datepicker__header {
+  background: transparent !important;
+  border-bottom-color: var(--picker-divider) !important;
+}
+
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__current-month,
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__year-read-view,
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__month-read-view,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__year-read-view,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__month-read-view {
+  color: var(--app-text-heading) !important;
+}
+
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__year-read-view,
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__month-read-view,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__year-read-view,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__month-read-view {
+  background: var(--picker-chip-bg) !important;
+  border: 1px solid var(--picker-chip-border) !important;
+  box-shadow: none !important;
+}
+
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__year-read-view:hover,
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__month-read-view:hover,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__year-read-view:hover,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__month-read-view:hover {
+  background: var(--picker-hover-bg) !important;
+  border-color: rgba(var(--accent-rgb), 0.3) !important;
+  color: var(--accent-text) !important;
+  box-shadow: none !important;
+}
+
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__year-dropdown,
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__month-dropdown,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__year-dropdown,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__month-dropdown {
+  background: var(--glass-bg-strong, var(--picker-popover-bg)) !important;
+  border: 1px solid var(--picker-popover-border) !important;
+  box-shadow: var(--glass-shadow, 0 8px 24px rgba(0, 0, 0, 0.4)) !important;
+}
+
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__year-option,
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__month-option,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__year-option,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__month-option {
+  color: var(--app-text) !important;
+}
+
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__year-option:hover,
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__month-option:hover,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__year-option:hover,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__month-option:hover {
+  background: var(--picker-hover-bg) !important;
+  color: var(--accent-text) !important;
+}
+
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__month-text,
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__year-text,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__month-text {
+  color: var(--app-text) !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+}
+
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__month-text:hover,
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__year-text:hover,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__month-text:hover {
+  background: var(--picker-hover-bg) !important;
+  border-color: transparent !important;
+  color: var(--accent-text) !important;
+  box-shadow: none !important;
+}
+
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__month-text--selected,
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__month-text--keyboard-selected,
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__year-text--selected,
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__year-text--keyboard-selected,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__month-text--selected,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__month-text--keyboard-selected {
+  background: rgba(var(--accent-rgb), 0.22) !important;
+  border-color: rgba(var(--accent-rgb), 0.35) !important;
+  color: var(--app-text-heading) !important;
+  box-shadow: none !important;
+}
+
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__navigation-icon::before,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__navigation-icon::before {
+  border-color: var(--app-text-subtle) !important;
+}
+
+[data-theme-mode='dark'] [class*='-month-picker__calendar'] .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before,
+[data-theme-mode='dark'] [class*='-filters-month-picker__calendar'] .react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
+  border-color: var(--accent-text) !important;
+}
+
+[data-theme-mode='dark'] .react-datepicker-year-header {
+  color: #fff !important;
+}

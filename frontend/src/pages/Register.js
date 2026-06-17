@@ -56,7 +56,7 @@ const Register = () => {
   return (
     <AuthLayout
       title="Welcome to FinanceNow"
-      subtitle="Start managing your finances faster and better"
+      subtitle="Start tracking spending, budgets, and subscriptions."
       footerText="Already have an account?"
       footerLinkText="Log in"
       footerLinkTo="/login"

@@ -9,20 +9,21 @@ const ALLOWED_TIMEZONES = [
 ];
 
 const ALLOWED_THEME_PRESET_IDS = [
-  'violetDawn',
+  'slateProfessional',
+  'deepNavy',
+  'midnightBlueCyan',
+  'graphite',
+  'darkTeal',
+  'financeTerminal',
+  'indigoCorporate',
+  'emeraldFinance',
+  'mint',
+  'sand',
+  'silver',
   'royalPlum',
-  'oceanTeal',
-  'forestGreen',
-  'sunsetCoral',
-  'roseBlush',
   'midnightBlue',
-  'slateSteel',
-  'amberGold',
-  'lavenderMist',
-  'mintFresh',
-  'berryWine',
   'skyCyan',
-  'charcoalNoir',
+  'lavenderMist',
   'electricIndigo'
 ];
 
@@ -33,7 +34,7 @@ const DEFAULT_PREFERENCES = {
   subscriptionReminderDays: 7,
   emailReminders: false,
   overdueAlerts: true,
-  themePresetId: 'violetDawn',
+  themePresetId: 'slateProfessional',
   glassIntensity: 65
 };
 

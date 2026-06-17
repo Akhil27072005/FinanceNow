@@ -9,11 +9,42 @@ import SettingsRow from '../SettingsRow';
 import ThemePreview from '../ThemePreview';
 import Button from '../../ui/Button';
 import {
-  THEME_PRESETS,
+  DARK_THEME_PRESETS,
+  LIGHT_THEME_PRESETS,
   DEFAULT_THEME_PRESET_ID,
   DEFAULT_GLASS_INTENSITY,
   getThemePresetById
 } from '../../../constants/themePresets';
+
+const PresetGrid = ({ presets, presetId, onSelect }) => (
+  <div className="settings-preset-grid" role="listbox" aria-label="Color presets">
+    {presets.map((p) => {
+      const selected = p.id === presetId;
+      return (
+        <button
+          key={p.id}
+          type="button"
+          role="option"
+          aria-selected={selected}
+          className={`settings-preset-card${selected ? ' settings-preset-card--selected' : ''}`}
+          onClick={() => onSelect(p.id)}
+          title={p.label}
+        >
+          <span
+            className="settings-preset-card__swatch"
+            style={{ background: p.contentGradient }}
+          />
+          <span className="settings-preset-card__label">{p.label}</span>
+          {selected && (
+            <span className="settings-preset-card__check" aria-hidden>
+              <Check size={14} strokeWidth={2.5} />
+            </span>
+          )}
+        </button>
+      );
+    })}
+  </div>
+);
 
 const AppearancePanel = ({ onRegisterSave, onSavingChange }) => {
   const { user, updateUser } = useAuth();
@@ -143,32 +174,23 @@ const AppearancePanel = ({ onRegisterSave, onSavingChange }) => {
 
         <div className="settings-appearance__controls">
           <SettingsRow label="Color theme" hint="Choose a gradient palette for the app.">
-            <div className="settings-preset-grid" role="listbox" aria-label="Color presets">
-              {THEME_PRESETS.map((p) => {
-                const selected = p.id === presetId;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    role="option"
-                    aria-selected={selected}
-                    className={`settings-preset-card${selected ? ' settings-preset-card--selected' : ''}`}
-                    onClick={() => setPresetId(p.id)}
-                    title={p.label}
-                  >
-                    <span
-                      className="settings-preset-card__swatch"
-                      style={{ background: p.contentGradient }}
-                    />
-                    <span className="settings-preset-card__label">{p.label}</span>
-                    {selected && (
-                      <span className="settings-preset-card__check" aria-hidden>
-                        <Check size={14} strokeWidth={2.5} />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+            <div className="settings-preset-groups">
+              <div className="settings-preset-group">
+                <p className="settings-preset-group__label">Dark themes</p>
+                <PresetGrid
+                  presets={DARK_THEME_PRESETS}
+                  presetId={presetId}
+                  onSelect={setPresetId}
+                />
+              </div>
+              <div className="settings-preset-group">
+                <p className="settings-preset-group__label">Light themes</p>
+                <PresetGrid
+                  presets={LIGHT_THEME_PRESETS}
+                  presetId={presetId}
+                  onSelect={setPresetId}
+                />
+              </div>
             </div>
           </SettingsRow>
 
@@ -244,7 +266,7 @@ const AppearancePanel = ({ onRegisterSave, onSavingChange }) => {
 
           <div className="settings-appearance__reset">
             <Button variant="secondary" type="button" glass onClick={handleReset}>
-              Reset to default theme
+              Reset to Slate Professional
             </Button>
           </div>
         </div>

@@ -2,8 +2,10 @@ import React, { useMemo } from 'react';
 import { glassIntensityToPreviewVars } from '../../constants/themePresets';
 
 const ThemePreview = ({ preset, glassIntensity, backgroundImageUrl }) => {
+  const isDark = preset.mode === 'dark';
+
   const previewStyle = useMemo(() => {
-    const glassVars = glassIntensityToPreviewVars(glassIntensity);
+    const glassVars = glassIntensityToPreviewVars(preset, glassIntensity);
     return {
       ...glassVars,
       '--preview-accent': preset.accent,
@@ -22,7 +24,7 @@ const ThemePreview = ({ preset, glassIntensity, backgroundImageUrl }) => {
 
   return (
     <div
-      className={`settings-theme-preview${backgroundImageUrl ? ' settings-theme-preview--custom-bg' : ''}`}
+      className={`settings-theme-preview${backgroundImageUrl ? ' settings-theme-preview--custom-bg' : ''}${isDark ? ' settings-theme-preview--dark' : ''}`}
       style={previewStyle}
       aria-label="Theme preview"
     >

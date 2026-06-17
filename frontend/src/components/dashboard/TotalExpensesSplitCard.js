@@ -1,33 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  ShoppingBag,
-  Utensils,
-  Car,
-  Home,
-  Heart,
-  Zap,
-  Briefcase,
-  Tag,
-  Wallet
-} from 'lucide-react';
+import CategoryIconDisplay from '../categories/CategoryIconDisplay';
 import { buildSplitRows, formatSplitPercent } from '../../utils/expenseSplitUtils';
 import { useUserFormatters } from '../../hooks/useUserFormatters';
-
-const ICON_MAP = [
-  ShoppingBag,
-  Utensils,
-  Car,
-  Home,
-  Heart,
-  Zap,
-  Briefcase,
-  Tag
-];
-
-const pickIcon = (name, index) => {
-  const Icon = ICON_MAP[index % ICON_MAP.length];
-  return <Icon size={22} strokeWidth={2} aria-hidden />;
-};
 
 /**
  * Fundwise-style total expenses card with sub-category allocation.
@@ -145,12 +119,12 @@ const TotalExpensesSplitCard = ({
               className="expense-split-card__row"
               style={{ '--row-i': index }}
             >
-              <div className="expense-split-card__row-icon">
-                {row.isUncategorized ? (
-                  <Wallet size={22} strokeWidth={2} aria-hidden />
-                ) : (
-                  pickIcon(row.subCategory, index)
-                )}
+              <div className="expense-split-card__row-icon" aria-hidden>
+                <CategoryIconDisplay
+                  icon={row.icon}
+                  size={22}
+                  categoryType={row.categoryType}
+                />
               </div>
               <div
                 className="expense-split-card__row-accent"

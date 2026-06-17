@@ -17,14 +17,14 @@
   margin: 0;
   font-weight: 800;
   font-size: 26px;
-  color: #111827;
+  color: var(--app-text-heading);
   letter-spacing: -0.03em;
 }
 
 .budgets-header__subtitle {
   margin: 6px 0 0;
   font-size: 14px;
-  color: #6b7280;
+  color: var(--app-text-subtle);
 }
 
 .budgets-header__controls {
@@ -41,8 +41,8 @@
   gap: 10px;
   padding: 10px 12px;
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-control-border);
   -webkit-backdrop-filter: blur(12px) saturate(1.1);
   backdrop-filter: blur(12px) saturate(1.1);
 }
@@ -50,7 +50,7 @@
 .budgets-month__label {
   font-size: 14px;
   font-weight: 700;
-  color: #111827;
+  color: var(--app-text-heading);
   white-space: nowrap;
 }
 
@@ -100,9 +100,9 @@
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.22);
-  color: #374151;
+  border: 1px solid var(--glass-control-border);
+  background: var(--glass-control-bg);
+  color: var(--app-text);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -111,8 +111,8 @@
 }
 
 .budgets-month__nav:hover {
-  background: rgba(255, 255, 255, 0.35);
-  border-color: rgba(255, 255, 255, 0.7);
+  background: var(--glass-control-bg-hover);
+  border-color: rgba(var(--accent-rgb), 0.28);
   transform: translateY(-1px);
 }
 
@@ -136,7 +136,7 @@
   margin: 0;
   font-size: 12px;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -145,7 +145,7 @@
   margin: 8px 0 0;
   font-size: 18px;
   font-weight: 800;
-  color: #111827;
+  color: var(--app-text-heading);
 }
 
 .budgets-kpi__value--spent {
@@ -161,12 +161,14 @@
 }
 
 .budgets-kpi__value--count {
-  color: #111827;
+  color: var(--app-text-heading);
 }
 
 .budgets-kpi__skeleton {
   border-radius: 8px;
-  background: rgba(17, 24, 39, 0.08);
+  background: var(--app-shimmer-gradient);
+  background-size: 200% 100%;
+  animation: app-shimmer 1.2s ease-in-out infinite;
 }
 
 .budgets-kpi__skeleton--label {
@@ -256,8 +258,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.65);
+  background: var(--glass-chip-bg);
+  border: 1px solid var(--glass-chip-border);
 }
 
 .budget-card__title-text {
@@ -269,7 +271,7 @@
   margin: 0;
   font-size: 14px;
   font-weight: 800;
-  color: #111827;
+  color: var(--app-text-heading);
   letter-spacing: -0.01em;
   white-space: nowrap;
   overflow: hidden;
@@ -279,7 +281,7 @@
 .budget-card__subtitle {
   margin: 2px 0 0;
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--app-text-subtle);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -336,9 +338,9 @@
   min-width: 0;
   height: 8px;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--glass-chip-bg);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--glass-chip-border);
 }
 
 .budget-card__bar-fill {
@@ -394,7 +396,7 @@
   justify-content: space-between;
   gap: 10px;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--app-text-subtle);
 }
 
 .budget-card__numbers {
@@ -407,15 +409,15 @@
 .budget-card__metric {
   padding: 8px 10px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-control-border);
 }
 
 .budget-card__metric-label {
   display: block;
   font-size: 11px;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -425,7 +427,7 @@
   margin-top: 4px;
   font-size: 14px;
   font-weight: 800;
-  color: #111827;
+  color: var(--app-text-heading);
 }
 
 .budget-card__metric-value--good {
@@ -440,14 +442,14 @@
   margin-top: 12px;
   padding: 10px 12px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: var(--glass-control-bg);
+  border: 1px solid var(--glass-control-border);
 }
 
 .budget-card__burn-note {
   margin: 0;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--app-text-subtle);
   line-height: 1.45;
 }
 
@@ -460,8 +462,8 @@
 .budget-card__burn-metric {
   padding: 8px 10px;
   border-radius: 10px;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: var(--glass-chip-bg);
+  border: 1px solid var(--glass-chip-border);
 }
 
 .budget-card__burn-metric--wide {
@@ -472,7 +474,7 @@
   display: block;
   font-size: 11px;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--app-text-subtle);
 }
 
 .budget-card__burn-value {
@@ -480,7 +482,7 @@
   margin-top: 4px;
   font-size: 13px;
   font-weight: 800;
-  color: #111827;
+  color: var(--app-text-heading);
 }
 
 .budget-card__burn-value--good {
@@ -495,7 +497,7 @@
   display: block;
   margin-top: 4px;
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--app-text-subtle);
 }
 
 .budget-card__foot {
@@ -524,13 +526,13 @@
   margin: 0;
   font-size: 18px;
   font-weight: 800;
-  color: #111827;
+  color: var(--app-text-heading);
 }
 
 .budgets-empty__desc {
   margin: 8px 0 0;
   font-size: 14px;
-  color: #6b7280;
+  color: var(--app-text-subtle);
 }
 
 .budgets-empty__cta {
@@ -548,6 +550,12 @@
 
 .budgets-empty__cta:hover {
   background: rgba(var(--accent-rgb), 0.95);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .budgets-kpi__skeleton {
+    animation: none;
+  }
 }
 
 @media (max-width: 980px) {

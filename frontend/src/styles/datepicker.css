@@ -604,6 +604,11 @@
   padding-bottom: 12px !important;
 }
 
+/* Month picker year label (showMonthYearPicker header) */
+.react-datepicker-year-header {
+  color: #000 !important;
+}
+
 /* Current Month/Year Display in Month Picker */
 .react-datepicker__current-month--hasMonthDropdown,
 .react-datepicker__current-month--hasYearDropdown {
