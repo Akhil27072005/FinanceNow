@@ -54,6 +54,48 @@
   white-space: nowrap;
 }
 
+/* Budget cards month slide */
+.budgets-cards-viewport {
+  overflow: hidden;
+  position: relative;
+}
+
+.budgets-cards-panel {
+  will-change: transform, opacity;
+}
+
+.budgets-cards-panel--from-next {
+  animation: budgets-cards-slide-next 0.48s var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+}
+
+.budgets-cards-panel--from-prev {
+  animation: budgets-cards-slide-prev 0.48s var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+}
+
+@keyframes budgets-cards-slide-next {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes budgets-cards-slide-prev {
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .budgets-month__nav {
   width: 34px;
   height: 34px;
@@ -152,6 +194,41 @@
   padding: 14px 16px;
 }
 
+.budgets-cards-panel--from-next .budget-card,
+.budgets-cards-panel--from-prev .budget-card {
+  opacity: 0;
+  animation: budgets-card-reveal 0.42s var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: calc(160ms + var(--card-i, 0) * 50ms);
+}
+
+@keyframes budgets-card-reveal {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.budgets-cards-panel--from-prev .budget-card {
+  animation-name: budgets-card-reveal-prev;
+}
+
+@keyframes budgets-card-reveal-prev {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .budget-card--skeleton {
   min-height: 220px;
 }
@@ -233,7 +310,7 @@
 }
 
 .budget-card__status--neutral {
-  background: rgba(237, 233, 254, 0.9);
+  background: rgba(var(--accent-rgb), 0.12);
   color: var(--accent-text);
 }
 
@@ -486,6 +563,17 @@
   }
   .budgets-header__controls {
     justify-content: space-between;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .budgets-cards-panel--from-next,
+  .budgets-cards-panel--from-prev,
+  .budgets-cards-panel--from-next .budget-card,
+  .budgets-cards-panel--from-prev .budget-card {
+    animation: none;
+    opacity: 1;
+    transform: none;
   }
 }
 

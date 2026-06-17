@@ -8,14 +8,14 @@ import {
 } from '../../utils/paymentMethodDisplay';
 import { getCardNetworkIconifyIcon } from '../../utils/cardNetworkFromPrefix';
 
-const CardPaymentMethodRow = ({ method, onEdit, onDelete }) => {
+const CardPaymentMethodRow = ({ method, rowIndex = 0, onEdit, onDelete }) => {
   const meta = method.metadata || {};
   const cardRole = meta.cardRole || 'credit';
   const networkFallbackIcon =
     getCardNetworkIconifyIcon(meta.network) || 'mdi:credit-card-outline';
 
   return (
-    <tr>
+    <tr className="payment-methods-table__row" style={{ '--row-i': rowIndex }}>
       <td>
         <div className="card-row__main">
           <MiniCardVisual

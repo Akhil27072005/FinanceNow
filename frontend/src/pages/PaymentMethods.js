@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Alert } from 'react-bootstrap';
 import { paymentMethodService } from '../services/paymentMethodService';
 import Modal from '../components/ui/Modal';
@@ -29,6 +29,9 @@ const OTHER_GROUP_ORDER = [
 const PaymentMethods = () => {
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [animateIn, setAnimateIn] = useState(false);
+  const hasAnimatedRef = useRef(false);
+  const isInitialLoad = useRef(true);
   const [error, setError] = useState('');
   const [showCardModal, setShowCardModal] = useState(false);
   const [showOtherModal, setShowOtherModal] = useState(false);
@@ -44,13 +47,18 @@ const PaymentMethods = () => {
 
   const loadPaymentMethods = async () => {
     try {
-      setLoading(true);
+      if (isInitialLoad.current) setLoading(true);
       const response = await paymentMethodService.getPaymentMethods();
       setPaymentMethods(response.data || []);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to load payment methods');
     } finally {
       setLoading(false);
+      isInitialLoad.current = false;
+      if (!hasAnimatedRef.current) {
+        hasAnimatedRef.current = true;
+        setAnimateIn(true);
+      }
     }
   };
 
@@ -159,10 +167,11 @@ const PaymentMethods = () => {
           </tr>
         </thead>
         <tbody>
-          {methods.map((method) => (
+          {methods.map((method, index) => (
             <OtherPaymentMethodRow
               key={method._id}
               method={method}
+              rowIndex={index}
               onEdit={openEditOther}
               onDelete={handleDelete}
             />
@@ -171,6 +180,9 @@ const PaymentMethods = () => {
       </table>
     </div>
   );
+
+  const contentLoadedClass =
+    animateIn && !loading ? 'payment-methods-section__content--loaded' : '';
 
   return (
     <div className="payment-methods-page">
@@ -192,6 +204,7 @@ const PaymentMethods = () => {
           </Button>
         </div>
 
+        <div className={`payment-methods-section__content ${contentLoadedClass}`.trim()}>
         {loading ? (
           <div className="payment-methods-empty">Loading…</div>
         ) : cards.length === 0 ? (
@@ -210,10 +223,11 @@ const PaymentMethods = () => {
                 </tr>
               </thead>
               <tbody>
-                {cards.map((method) => (
+                {cards.map((method, index) => (
                   <CardPaymentMethodRow
                     key={method._id}
                     method={method}
+                    rowIndex={index}
                     onEdit={openEditCard}
                     onDelete={handleDelete}
                   />
@@ -222,6 +236,7 @@ const PaymentMethods = () => {
             </table>
           </div>
         )}
+        </div>
       </section>
 
       <section className="glass-panel payment-methods-section">
@@ -245,6 +260,7 @@ const PaymentMethods = () => {
           ))}
         </div>
 
+        <div className={`payment-methods-section__content ${contentLoadedClass}`.trim()}>
         {loading ? (
           <div className="payment-methods-empty">Loading…</div>
         ) : otherMethods.length === 0 ? (
@@ -263,6 +279,7 @@ const PaymentMethods = () => {
             );
           })
         )}
+        </div>
       </section>
 
       <Modal

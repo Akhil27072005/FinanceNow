@@ -155,6 +155,47 @@ const Transactions = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
   const [totalTransactions, setTotalTransactions] = useState(0);
+  const [revealedCount, setRevealedCount] = useState(0);
+  const [useStreamAnimation, setUseStreamAnimation] = useState(false);
+  const streamRevealRef = useRef(true);
+  const revealTimerRef = useRef(null);
+
+  const clearRevealTimer = useCallback(() => {
+    if (revealTimerRef.current) {
+      window.clearTimeout(revealTimerRef.current);
+      revealTimerRef.current = null;
+    }
+  }, []);
+
+  const startStreamReveal = useCallback(
+    (total) => {
+      clearRevealTimer();
+      if (total <= 0) {
+        setRevealedCount(0);
+        return;
+      }
+      if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        setRevealedCount(total);
+        setUseStreamAnimation(false);
+        return;
+      }
+      setUseStreamAnimation(true);
+      let count = 0;
+      const step = () => {
+        count += 1;
+        setRevealedCount(count);
+        if (count < total) {
+          revealTimerRef.current = window.setTimeout(step, 18);
+        } else {
+          revealTimerRef.current = window.setTimeout(() => setUseStreamAnimation(false), 280);
+        }
+      };
+      step();
+    },
+    [clearRevealTimer]
+  );
+
+  useEffect(() => () => clearRevealTimer(), [clearRevealTimer]);
 
   const loadData = useCallback(async () => {
     try {
@@ -180,12 +221,22 @@ const Transactions = () => {
       setSubcategories(subcategoriesRes.data || []);
       setTags(tagsRes.data || []);
       setPaymentMethods(paymentMethodsRes.data || []);
+
+      const total = transactionsRes.data?.length || 0;
+      if (streamRevealRef.current) {
+        streamRevealRef.current = false;
+        startStreamReveal(total);
+      } else {
+        setRevealedCount(total);
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to load data');
+      setRevealedCount(0);
+      setUseStreamAnimation(false);
     } finally {
       setLoading(false);
     }
-  }, [filters, currentPage, itemsPerPage]);
+  }, [filters, currentPage, itemsPerPage, startStreamReveal]);
 
   useEffect(() => {
     loadData();
@@ -290,10 +341,18 @@ const Transactions = () => {
     setCurrentPage(1);
   }, [filters]);
 
+  useEffect(() => {
+    streamRevealRef.current = true;
+    setRevealedCount(0);
+    setUseStreamAnimation(false);
+    clearRevealTimer();
+  }, [filters, currentPage, clearRevealTimer]);
+
   // Calculate total pages from total transactions count (server-side pagination)
   const totalPages = Math.ceil(totalTransactions / itemsPerPage);
   // Use transactions directly (already paginated from server)
   const paginatedTransactions = transactions;
+  const visibleTransactions = paginatedTransactions.slice(0, revealedCount);
 
   const buildPaginationPages = () => {
     const pages = [];
@@ -507,10 +566,11 @@ const Transactions = () => {
               </div>
               <span />
             </div>
-            {paginatedTransactions.map((transaction) => (
+            {visibleTransactions.map((transaction) => (
               <TransactionRow
                 key={transaction._id}
                 transaction={transaction}
+                streamIn={useStreamAnimation}
                 isSelected={selectedTransaction?._id === transaction._id}
                 formatCurrency={formatCurrency}
                 formatDate={formatDate}

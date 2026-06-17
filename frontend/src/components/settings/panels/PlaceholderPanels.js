@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import { APP_VERSION } from '../../../constants/appVersion';
 import SettingsSection from '../SettingsSection';
 import SettingsRow from '../SettingsRow';
 import ConfirmationModal from '../../ui/ConfirmationModal';
@@ -76,7 +77,7 @@ export const AboutPanel = () => (
       <span className="settings-field-value">FinanceNow</span>
     </SettingsRow>
     <SettingsRow label="Version">
-      <span className="settings-field-value">0.1.0</span>
+      <span className="settings-field-value">{APP_VERSION}</span>
     </SettingsRow>
     <div className="settings-about-links">
       <button type="button" className="settings-about-links__item">

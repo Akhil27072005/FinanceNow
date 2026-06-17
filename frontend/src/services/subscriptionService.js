@@ -4,9 +4,18 @@ import api from './api';
  * Subscription service
  */
 export const subscriptionService = {
-  getSubscriptions: async (isActive = null) => {
-    const params = isActive !== null ? `?isActive=${isActive}` : '';
-    const response = await api.get(`/subscriptions${params}`);
+  getPage: async (month = null) => {
+    const params = month ? `?month=${month}` : '';
+    const response = await api.get(`/subscriptions/page${params}`);
+    return response.data;
+  },
+
+  getSubscriptions: async (isActive = null, options = {}) => {
+    const searchParams = new URLSearchParams();
+    if (isActive !== null) searchParams.set('isActive', String(isActive));
+    if (options.skipAdvance) searchParams.set('skipAdvance', 'true');
+    const qs = searchParams.toString();
+    const response = await api.get(`/subscriptions${qs ? `?${qs}` : ''}`);
     return response.data;
   },
 
@@ -15,9 +24,12 @@ export const subscriptionService = {
     return response.data;
   },
 
-  getSummary: async (month = null) => {
-    const params = month ? `?month=${month}` : '';
-    const response = await api.get(`/subscriptions/summary${params}`);
+  getSummary: async (month = null, options = {}) => {
+    const searchParams = new URLSearchParams();
+    if (month) searchParams.set('month', month);
+    if (options.skipAdvance) searchParams.set('skipAdvance', 'true');
+    const qs = searchParams.toString();
+    const response = await api.get(`/subscriptions/summary${qs ? `?${qs}` : ''}`);
     return response.data;
   },
 

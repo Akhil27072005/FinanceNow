@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { AppThemeProvider } from './contexts/AppThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './components/layout/MainLayout';
+import MarketingShell from './components/layout/MarketingShell';
 
 // Pages
 import Login from './pages/Login';
@@ -19,10 +20,11 @@ import Tags from './pages/Tags';
 import PaymentMethods from './pages/PaymentMethods';
 import Subscriptions from './pages/Subscriptions';
 import Budgets from './pages/Budgets';
-import Reports from './pages/Reports';
 import Investments from './pages/Investments';
 import Settings from './pages/Settings';
 import LandingRoute from './components/LandingRoute';
+
+const Reports = lazy(() => import('./pages/Reports'));
 
 /**
  * Main App Component
@@ -34,9 +36,13 @@ function App() {
       <AppThemeProvider>
       <Router>
         <Routes>
+          <Route element={<MarketingShell />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/" element={<LandingRoute />} />
+          </Route>
+
           {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
@@ -127,7 +133,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <MainLayout>
-                  <Reports />
+                  <Suspense
+                    fallback={
+                      <div className="reports-page" style={{ padding: '2rem', opacity: 0.7 }}>
+                        Loading reports…
+                      </div>
+                    }
+                  >
+                    <Reports />
+                  </Suspense>
                 </MainLayout>
               </ProtectedRoute>
             }
@@ -154,7 +168,6 @@ function App() {
           />
 
           {/* Landing (guests) or redirect to dashboard (authenticated) */}
-          <Route path="/" element={<LandingRoute />} />
         </Routes>
       </Router>
       </AppThemeProvider>

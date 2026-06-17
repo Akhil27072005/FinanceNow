@@ -25,6 +25,8 @@ const ReportsFilters = ({
   setFiltersExpanded,
   categories = [],
   subcategories = [],
+  categoriesLoading = false,
+  subcategoriesLoading = false,
   hasAdvancedFilters,
   hasAnyFilters,
   onClearAll,
@@ -55,12 +57,21 @@ const ReportsFilters = ({
     'modal-glass-datepicker__calendar modal-glass-datepicker__calendar--compact';
   const monthCalendarClass = `${dateCalendarClass} reports-filters-month-picker__calendar`;
 
-  const filteredSubs = subcategories.filter(
-    (sc) =>
-      !filters.categoryId ||
-      sc.categoryId?._id === filters.categoryId ||
-      sc.categoryId === filters.categoryId
-  );
+  const categoryOptions = categoriesLoading
+    ? [{ value: '', label: 'Loading categories…' }]
+    : [
+        { value: '', label: 'All categories' },
+        ...categories.map((c) => ({ value: c._id, label: c.name }))
+      ];
+
+  const subcategoryOptions = !filters.categoryId
+    ? [{ value: '', label: 'Select a category first' }]
+    : subcategoriesLoading
+      ? [{ value: '', label: 'Loading subcategories…' }]
+      : [
+          { value: '', label: 'All subcategories' },
+          ...subcategories.map((s) => ({ value: s._id, label: s.name }))
+        ];
 
   return (
     <div
@@ -201,10 +212,8 @@ const ReportsFilters = ({
                           subCategoryId: ''
                         })
                       }
-                      options={[
-                        { value: '', label: 'All categories' },
-                        ...categories.map((c) => ({ value: c._id, label: c.name }))
-                      ]}
+                      disabled={categoriesLoading}
+                      options={categoryOptions}
                     />
                   </label>
                   <label className="reports-filters__field reports-filters__field--wide">
@@ -215,14 +224,8 @@ const ReportsFilters = ({
                       onChange={(e) =>
                         setFilters({ ...filters, subCategoryId: e.target.value })
                       }
-                      disabled={!filters.categoryId}
-                      options={[
-                        { value: '', label: 'All subcategories' },
-                        ...filteredSubs.map((s) => ({
-                          value: s._id,
-                          label: s.name
-                        }))
-                      ]}
+                      disabled={!filters.categoryId || subcategoriesLoading}
+                      options={subcategoryOptions}
                     />
                   </label>
                 </div>

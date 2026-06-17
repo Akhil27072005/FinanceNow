@@ -3,21 +3,19 @@ import LandingNavbar from '../components/landing/LandingNavbar';
 import LandingHero from '../components/landing/LandingHero';
 import '../styles/landing.css';
 
-/**
- * Public marketing landing page (hero + navbar).
- */
 const Landing = () => {
   useEffect(() => {
-    document.title = 'FinanceNow — Maximize Your Financial Potential';
+    document.title = 'FinanceNow — Take Control of Your Money with AI';
     const meta = document.querySelector('meta[name="description"]');
     if (meta) {
       meta.setAttribute(
         'content',
-        'FinanceNow — financial management with simplicity and efficiency.'
+        'Track spending, save smarter, and get personalized financial insights—powered by AI.'
       );
     }
     return () => {
       document.title = 'Finance Now';
+      document.querySelector('.landing-page')?.classList.remove('landing-page--exit');
     };
   }, []);
 

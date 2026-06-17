@@ -201,32 +201,30 @@ const CardPaymentMethodForm = ({ editing, initial, onSubmit, onCancel }) => {
 
   return (
     <Form onSubmit={handleSubmit}>
-      {!editing && (
-        <Form.Group className="mb-3">
-          <Form.Label>First 4 digits (detect network only)</Form.Label>
-          <Form.Control
-            type="text"
-            inputMode="numeric"
-            maxLength={4}
-            value={first4}
-            onChange={(e) =>
-              setFirst4(e.target.value.replace(/\D/g, '').slice(0, 4))
-            }
-            onBlur={handleFirst4Blur}
-            placeholder="e.g. 4532"
-            autoComplete="off"
-          />
-          <div className="card-form-hint">
-            Used only to detect card network. Cleared after detection — never saved.
+      <Form.Group className="mb-3">
+        <Form.Label>First 4 digits (detect network only)</Form.Label>
+        <Form.Control
+          type="text"
+          inputMode="numeric"
+          maxLength={4}
+          value={first4}
+          onChange={(e) =>
+            setFirst4(e.target.value.replace(/\D/g, '').slice(0, 4))
+          }
+          onBlur={handleFirst4Blur}
+          placeholder="e.g. 4532"
+          autoComplete="off"
+        />
+        <div className="card-form-hint">
+          Used only to detect card network. Cleared after detection — never saved.
+        </div>
+        {(detectingNetwork || networkHint) && (
+          <div className="card-form-detect">
+            {detectingNetwork && <Icon icon="mdi:loading" className="spin" />}
+            {networkHint}
           </div>
-          {(detectingNetwork || networkHint) && (
-            <div className="card-form-detect">
-              {detectingNetwork && <Icon icon="mdi:loading" className="spin" />}
-              {networkHint}
-            </div>
-          )}
-        </Form.Group>
-      )}
+        )}
+      </Form.Group>
 
       <Form.Group className="mb-3">
         <Form.Label>Last 4 digits *</Form.Label>

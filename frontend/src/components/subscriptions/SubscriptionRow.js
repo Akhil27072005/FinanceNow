@@ -15,6 +15,7 @@ import {
 const SubscriptionRow = ({
   subscription,
   inactive = false,
+  rowIndex = 0,
   onEdit,
   onDelete,
   onMarkPaid,
@@ -36,7 +37,10 @@ const SubscriptionRow = ({
   const initial = (subscription.name || '?').charAt(0).toUpperCase();
 
   return (
-    <div className={`subscription-row ${inactive ? 'subscription-row--inactive' : ''}`}>
+    <div
+      className={`subscription-row ${inactive ? 'subscription-row--inactive' : ''}`}
+      style={{ '--row-i': rowIndex }}
+    >
       <div className="subscription-row__brand">
         <div className="subscription-row__logo">
           {logoUrl ? (

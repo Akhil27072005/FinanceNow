@@ -3,12 +3,12 @@ import PaymentMethodLogo from './PaymentMethodLogo';
 import IconButton from '../ui/IconButton';
 import { getPaymentMethodTypeLabel } from '../../utils/paymentMethodDisplay';
 
-const OtherPaymentMethodRow = ({ method, onEdit, onDelete }) => {
+const OtherPaymentMethodRow = ({ method, rowIndex = 0, onEdit, onDelete }) => {
   const meta = method.metadata || {};
   const showBank = method.type !== 'cash';
 
   return (
-    <tr>
+    <tr className="payment-methods-table__row" style={{ '--row-i': rowIndex }}>
       <td>
         <div className="card-row__main">
           <div className="pm-logo-plain pm-logo-plain--lg">

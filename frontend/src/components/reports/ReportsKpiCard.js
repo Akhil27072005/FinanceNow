@@ -21,7 +21,8 @@ const ReportsKpiCard = ({
   amount = 0,
   changePercent = 0,
   trendData = [],
-  loading = false
+  loading = false,
+  sparkLoading = false
 }) => {
   const { formatCurrency } = useUserFormatters();
   const { expenseColor } = useThemeChartColors();
@@ -84,7 +85,9 @@ const ReportsKpiCard = ({
       </div>
 
       <div className="reports-kpi-card__spark">
-        {sparkData.length > 0 ? (
+        {sparkLoading ? (
+          <div className="reports-kpi-card__skeleton reports-kpi-card__skeleton--chart" />
+        ) : sparkData.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={sparkData} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
               <defs>

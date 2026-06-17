@@ -804,12 +804,12 @@
   background: linear-gradient(
     145deg,
     rgba(255, 255, 255, 0.55) 0%,
-    rgba(243, 232, 255, 0.45) 100%
+    rgba(var(--accent-rgb), 0.12) 100%
   );
 }
 
 .modal-glass__body .category-icon-picker__item--selected {
-  background: rgba(243, 232, 255, 0.55);
+  background: rgba(var(--accent-rgb), 0.12);
   border-color: rgba(var(--accent-rgb), 0.35);
 }
 

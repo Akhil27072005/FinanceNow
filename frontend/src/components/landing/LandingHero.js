@@ -1,64 +1,45 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { TrendingUp } from 'lucide-react';
 import LandingHeroMockup from './LandingHeroMockup';
+import MarketingAuthLink from './MarketingAuthLink';
 
-const FinancialUnderline = () => (
-  <svg
-    className="landing-hero__underline"
-    viewBox="0 0 200 12"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    preserveAspectRatio="none"
-    aria-hidden
-  >
-    <path
-      d="M2 8C40 2 80 10 120 6C150 4 175 8 198 5"
-      stroke="#3B5BDB"
-      strokeWidth="4"
-      strokeLinecap="round"
-    />
-  </svg>
+const SocialAvatars = () => (
+  <div className="landing-hero__avatars" aria-hidden="true">
+    {[0, 1, 2, 3].map((seed) => (
+      <svg key={seed} width="36" height="36" viewBox="0 0 36 36" className="landing-hero__avatar">
+        <defs>
+          <linearGradient id={`social-avatar-${seed}`} x1="0" y1="0" x2="36" y2="36">
+            <stop stopColor={['#FF8A5C', '#60A5FA', '#B264FF', '#4ADE80'][seed]} />
+            <stop offset="1" stopColor={['#B264FF', '#818CF8', '#500CB0', '#22C55E'][seed]} />
+          </linearGradient>
+        </defs>
+        <circle cx="18" cy="18" r="18" fill={`url(#social-avatar-${seed})`} />
+        <circle cx="18" cy="14" r="5.5" fill="rgba(255,255,255,0.9)" />
+        <ellipse cx="18" cy="27" rx="8.5" ry="6" fill="rgba(255,255,255,0.82)" />
+      </svg>
+    ))}
+  </div>
 );
 
-/**
- * Landing hero — left copy + right mockup.
- */
 const LandingHero = () => {
   return (
     <div className="landing-hero-grid">
       <div className="landing-hero__content">
-        <span className="landing-hero__badge">Finance Solutions for You</span>
-
-        <div className="landing-hero__title-wrap">
-          <h1 className="landing-hero__title">
-            <span className="landing-hero__title-line">
-              Maximize Your
-            </span>
-            <span className="landing-hero__title-line">
-              <span className="landing-hero__financial">
-                Financial
-                <FinancialUnderline />
-              </span>
-              Potential
-              <span className="landing-hero__decor" aria-hidden>
-                <span className="landing-hero__decor-black" />
-                <span className="landing-hero__decor-lime">
-                  <TrendingUp size={18} strokeWidth={3} />
-                </span>
-              </span>
-            </span>
-          </h1>
-        </div>
+        <h1 className="landing-hero__title">
+          Take Control of Your Money with AI
+        </h1>
 
         <p className="landing-hero__subtitle">
-          Welcome to FinanceNow, where financial management meets simplicity and
-          efficiency.
+          Track spending, save smarter, and get personalized financial insights—powered by AI.
         </p>
 
-        <Link to="/register" className="landing-btn-pill landing-btn-pill--lg">
+        <MarketingAuthLink to="/register" className="landing-hero__cta landing-hero__cta--primary">
           Get Started
-        </Link>
+        </MarketingAuthLink>
+
+        <div className="landing-hero__social">
+          <SocialAvatars />
+          <p className="landing-hero__social-text">Used by 10k people around the globe</p>
+        </div>
       </div>
 
       <div className="landing-hero__visual">

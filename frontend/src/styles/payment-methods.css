@@ -21,6 +21,22 @@
   margin-bottom: 20px;
 }
 
+.payment-methods-section__content {
+  min-height: 0;
+}
+
+@keyframes payment-methods-reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(var(--content-reveal-slide, 10px));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .payment-methods-section__head {
   display: flex;
   justify-content: space-between;
@@ -105,11 +121,34 @@
   background: rgba(255, 255, 255, 0.28);
 }
 
+.payment-methods-section__content--loaded .payment-methods-table__row {
+  opacity: 0;
+  animation: payment-methods-row-reveal 0.42s var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: calc(var(--row-i, 0) * var(--content-reveal-stagger, 55ms));
+}
+
+@keyframes payment-methods-row-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .payment-methods-empty {
   padding: 32px 16px;
   text-align: center;
   color: #6b7280;
   font-size: 14px;
+}
+
+.payment-methods-section__content--loaded .payment-methods-empty {
+  animation: payment-methods-reveal-up 0.48s var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: 60ms;
 }
 
 .payment-methods-group {
@@ -250,7 +289,7 @@
 }
 
 .pm-pill--debit {
-  background: rgba(237, 233, 254, 0.95);
+  background: rgba(var(--accent-rgb), 0.12);
   color: var(--accent-text);
 }
 
@@ -304,7 +343,7 @@
   font-weight: 600;
   padding: 4px 8px;
   border-radius: 6px;
-  background: rgba(237, 233, 254, 0.85);
+  background: rgba(var(--accent-rgb), 0.1);
   color: var(--accent-text);
   white-space: nowrap;
 }
@@ -375,7 +414,7 @@
   background: linear-gradient(
     145deg,
     rgba(255, 255, 255, 0.72) 0%,
-    rgba(243, 232, 255, 0.5) 100%
+    rgba(var(--accent-rgb), 0.12) 100%
   );
   border-color: rgba(255, 255, 255, 0.82);
   box-shadow:
@@ -403,4 +442,13 @@
   padding: 8px 16px;
   font-size: 13px;
   border-radius: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .payment-methods-section__content--loaded .payment-methods-table__row,
+  .payment-methods-section__content--loaded .payment-methods-empty {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
 }

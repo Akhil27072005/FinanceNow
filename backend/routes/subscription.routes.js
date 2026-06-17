@@ -8,6 +8,7 @@ const {
   updateSubscription,
   deleteSubscription,
   getSubscriptionSummary,
+  getSubscriptionPage,
   getSubscriptionPayments,
   getSubscriptionAlerts,
   markSubscriptionAsPaid
@@ -27,6 +28,9 @@ router.get('/alerts', authenticateUser, getSubscriptionAlerts);
 
 // Monthly paid vs scheduled summary
 router.get('/summary', authenticateUser, getSubscriptionSummary);
+
+// Combined list + summary for subscriptions page
+router.get('/page', authenticateUser, getSubscriptionPage);
 
 // Payment history — before generic /:id
 router.get('/:id/payments', authenticateUser, getSubscriptionPayments);

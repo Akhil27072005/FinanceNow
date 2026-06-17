@@ -26,7 +26,8 @@ const ReportsCashFlowChart = ({
   netChangePercent = 0,
   periodLabel = '',
   filters = {},
-  loading = false
+  loading = false,
+  chartLoading = false
 }) => {
   const { formatCurrency } = useUserFormatters();
   const { expenseColor } = useThemeChartColors();
@@ -93,7 +94,11 @@ const ReportsCashFlowChart = ({
       </div>
 
       {!chartData.length ? (
-        <p className="reports-cashflow__empty">No cash flow data yet.</p>
+        chartLoading ? (
+          <div className="reports-cashflow__skeleton-chart" />
+        ) : (
+          <p className="reports-cashflow__empty">No cash flow data yet.</p>
+        )
       ) : (
         <div className="reports-cashflow__chart">
           <ResponsiveContainer width="100%" height="100%">

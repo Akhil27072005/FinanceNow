@@ -14,6 +14,7 @@ const MAX_TAGS = 3;
 const TransactionRow = ({
   transaction,
   isSelected,
+  streamIn = false,
   formatCurrency,
   formatDate,
   onSelect,
@@ -33,7 +34,9 @@ const TransactionRow = ({
 
   return (
     <article
-      className={`txn-row ${isSelected ? 'txn-row--selected' : ''}`}
+      className={`txn-row ${streamIn ? 'txn-row--stream-in' : ''} ${
+        isSelected ? 'txn-row--selected' : ''
+      }`.trim()}
       onClick={handleRowClick}
       role="button"
       tabIndex={0}

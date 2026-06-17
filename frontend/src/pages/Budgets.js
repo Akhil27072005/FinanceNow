@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Form } from 'react-bootstrap';
 import { budgetService } from '../services/budgetService';
 import { categoryService } from '../services/categoryService';
@@ -18,6 +18,9 @@ import '../styles/budgets.css';
 const Budgets = () => {
   const { formatCurrency } = useUserFormatters();
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
+  const monthRef = useRef(month);
+  monthRef.current = month;
+  const [slideDirection, setSlideDirection] = useState(0);
   const [budgets, setBudgets] = useState([]);
   const [spentByBudgetId, setSpentByBudgetId] = useState({});
   const [totals, setTotals] = useState(null);
@@ -53,18 +56,38 @@ const Budgets = () => {
     })();
   }, []);
 
+  const handleChangeMonth = useCallback((newMonth, direction) => {
+    if (newMonth === month) return;
+    setSlideDirection(direction ?? (newMonth > month ? 1 : -1));
+    setMonth(newMonth);
+    setTotals(null);
+    setSuccess('');
+    setError('');
+  }, [month]);
+
   const loadSummary = useCallback(async () => {
+    const targetMonth = month;
     try {
       setLoading(true);
       setError('');
-      const res = await budgetService.getBudgetSummary(month);
+      setBudgets([]);
+      setSpentByBudgetId({});
+      setTotals(null);
+
+      const res = await budgetService.getBudgetSummary(targetMonth);
+      if (targetMonth !== monthRef.current) return;
+
       setBudgets(res?.budgets || []);
       setSpentByBudgetId(res?.spentByBudgetId || {});
       setTotals(res?.totals || null);
-      setLoading(false);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load data');
-      setLoading(false);
+      if (targetMonth === monthRef.current) {
+        setError(err.response?.data?.error || 'Failed to load data');
+      }
+    } finally {
+      if (targetMonth === monthRef.current) {
+        setLoading(false);
+      }
     }
   }, [month]);
 
@@ -161,11 +184,7 @@ const Budgets = () => {
     <div className="budgets-page">
       <BudgetMonthHeader
         month={month}
-        onChangeMonth={(m) => {
-          setMonth(m);
-          setSuccess('');
-          setError('');
-        }}
+        onChangeMonth={handleChangeMonth}
         onAddBudget={() => {
           resetForm();
           setShowModal(true);
@@ -188,19 +207,32 @@ const Budgets = () => {
 
       <BudgetKpiStrip totals={totals} formatCurrency={formatCurrency} loading={loading} />
 
-      <BudgetCardGrid
-        budgets={budgets}
-        month={month}
-        spentByBudgetId={spentByBudgetId}
-        formatCurrency={formatCurrency}
-        loading={loading}
-        onAddBudget={() => {
-          resetForm();
-          setShowModal(true);
-        }}
-        onEditBudget={handleEdit}
-        onDeleteBudget={handleDelete}
-      />
+      <div className="budgets-cards-viewport">
+        <div
+          key={month}
+          className={`budgets-cards-panel ${
+            slideDirection > 0
+              ? 'budgets-cards-panel--from-next'
+              : slideDirection < 0
+                ? 'budgets-cards-panel--from-prev'
+                : ''
+          }`.trim()}
+        >
+          <BudgetCardGrid
+            budgets={budgets}
+            month={month}
+            spentByBudgetId={spentByBudgetId}
+            formatCurrency={formatCurrency}
+            loading={loading}
+            onAddBudget={() => {
+              resetForm();
+              setShowModal(true);
+            }}
+            onEditBudget={handleEdit}
+            onDeleteBudget={handleDelete}
+          />
+        </div>
+      </div>
 
       <Modal
         isOpen={showModal}

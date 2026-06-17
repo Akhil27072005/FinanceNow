@@ -812,8 +812,35 @@
 .reports-pm-list__bar-fill {
   display: block;
   height: 100%;
+  width: var(--bar-pct, 0%);
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--accent-bright), #a78bfa);
+  background: linear-gradient(90deg, var(--accent-bright), var(--accent-text));
+}
+
+.reports-pm-list--loaded .reports-pm-list__bar-fill {
+  animation: reports-pm-bar-grow var(--content-reveal-duration, 0.58s) var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: calc(80ms + var(--row-i, 0) * var(--content-reveal-stagger, 55ms));
+}
+
+@keyframes reports-pm-bar-grow {
+  from {
+    width: 0;
+  }
+
+  to {
+    width: var(--bar-pct, 0%);
+  }
+}
+
+.reports-pm-list__empty {
+  margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reports-pm-list--loaded .reports-pm-list__bar-fill {
+    animation: none;
+    width: var(--bar-pct, 0%);
+  }
 }
 
 .reports-pm-list__amounts {

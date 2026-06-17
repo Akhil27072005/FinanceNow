@@ -236,6 +236,15 @@ const invalidateTransactionsCache = async (userId) => {
  * @param {string} userId - User ID
  * @returns {Promise<number>} Number of keys invalidated
  */
+/**
+ * Invalidate subscription summary cache for a user (version-based).
+ * @param {string} userId
+ * @returns {Promise<string|null>}
+ */
+const invalidateSubscriptionSummaryCache = async (userId) => {
+  return await bumpVersion(userId, 'subscriptions-summary');
+};
+
 const invalidateSubscriptionAlertsCache = async (userId) => {
   if (!isRedisAvailable()) {
     return 0;
@@ -276,6 +285,7 @@ module.exports = {
   invalidateTransactionsCache,
   invalidateUserCache,
   getVersionedKey,
-  invalidateSubscriptionAlertsCache
+  invalidateSubscriptionAlertsCache,
+  invalidateSubscriptionSummaryCache
 };
 

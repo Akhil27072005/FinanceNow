@@ -12,10 +12,12 @@ const defaultDashboard = {
 };
 
 /**
- * Load all analytics payloads for the reports page.
+ * Load analytics for the reports page with staged fetching:
+ * dashboard KPIs first, then chart datasets in parallel.
  */
 export function useReportsData(filters) {
-  const [loading, setLoading] = useState(true);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [chartsLoading, setChartsLoading] = useState(true);
   const [error, setError] = useState('');
   const [dashboard, setDashboard] = useState(defaultDashboard);
   const [incomeTrend, setIncomeTrend] = useState([]);
@@ -24,38 +26,31 @@ export function useReportsData(filters) {
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [monthlyComparison, setMonthlyComparison] = useState([]);
 
-  const chartFilters = useMemo(() => buildReportsChartFilters(filters), [filters]);
-  const cashFlowFilters = useMemo(() => buildCashFlowChartFilters(filters), [filters]);
+  const chartFilters = useMemo(
+    () => buildReportsChartFilters(filters),
+    [filters.month, filters.startDate, filters.endDate, filters.account]
+  );
+  const cashFlowFilters = useMemo(
+    () => buildCashFlowChartFilters(filters),
+    [filters.month, filters.startDate, filters.endDate, filters.account]
+  );
 
   useEffect(() => {
     let cancelled = false;
 
     const load = async () => {
       try {
-        setLoading(true);
         setError('');
+        setDashboardLoading(true);
+        setChartsLoading(true);
 
         const accountOpt = filters.account === 'self' ? { account: 'self' } : {};
 
-        const [
-          dashRes,
-          incomeRes,
-          expenseRes,
-          categoryRes,
-          pmRes,
-          comparisonRes
-        ] = await Promise.all([
-          analyticsService.getDashboard({
-            ...chartFilters,
-            ...accountOpt,
-            includeComparison: true
-          }),
-          analyticsService.getCharts('income', 'monthlyTrend', chartFilters),
-          analyticsService.getCharts('expense', 'monthlyTrend', chartFilters),
-          analyticsService.getCharts('expense', 'categorySplit', chartFilters),
-          analyticsService.getCharts('expense', 'paymentMethodSplit', chartFilters),
-          analyticsService.getCharts(null, 'monthlyComparison', cashFlowFilters)
-        ]);
+        const dashRes = await analyticsService.getDashboard({
+          ...chartFilters,
+          ...accountOpt,
+          includeComparison: true
+        });
 
         if (cancelled) return;
 
@@ -65,6 +60,18 @@ export function useReportsData(filters) {
           priorKpis: dashRes?.priorKpis || {},
           range: dashRes?.range
         });
+        setDashboardLoading(false);
+
+        const [incomeRes, expenseRes, categoryRes, pmRes, comparisonRes] = await Promise.all([
+          analyticsService.getCharts('income', 'monthlyTrend', chartFilters),
+          analyticsService.getCharts('expense', 'monthlyTrend', chartFilters),
+          analyticsService.getCharts('expense', 'categorySplit', chartFilters),
+          analyticsService.getCharts('expense', 'paymentMethodSplit', chartFilters),
+          analyticsService.getCharts(null, 'monthlyComparison', cashFlowFilters)
+        ]);
+
+        if (cancelled) return;
+
         setIncomeTrend(incomeRes?.data || []);
         setExpenseTrend(expenseRes?.data || []);
         setCategorySplit(categoryRes?.data || []);
@@ -75,7 +82,10 @@ export function useReportsData(filters) {
           setError(err.response?.data?.error || 'Failed to load reports');
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setDashboardLoading(false);
+          setChartsLoading(false);
+        }
       }
     };
 
@@ -94,7 +104,9 @@ export function useReportsData(filters) {
   }, [categorySplit]);
 
   return {
-    loading,
+    dashboardLoading,
+    chartsLoading,
+    loading: dashboardLoading || chartsLoading,
     error,
     dashboard,
     incomeTrend,

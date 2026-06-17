@@ -8,7 +8,6 @@ import {
   Zap,
   Briefcase,
   Tag,
-  ChevronDown,
   Wallet
 } from 'lucide-react';
 import { buildSplitRows, formatSplitPercent } from '../../utils/expenseSplitUtils';
@@ -109,10 +108,6 @@ const TotalExpensesSplitCard = ({
           <p className="expense-split-card__title">Total expenses</p>
           <p className="expense-split-card__total">{formatCurrency(totalExpenses)}</p>
         </div>
-        <span className="expense-split-card__filter" aria-label="Expense type filter">
-          Expenses
-          <ChevronDown size={14} strokeWidth={2.5} aria-hidden />
-        </span>
       </div>
 
       <p className="expense-split-card__allocation-label">Allocation</p>

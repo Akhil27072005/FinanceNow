@@ -49,7 +49,7 @@ const SubscriptionForm = ({ editing, initial, categories, paymentMethods, onSubm
   }, [initial]);
 
   useEffect(() => {
-    if (!debouncedName.trim() || editing) return;
+    if (!debouncedName.trim()) return;
     let cancelled = false;
     (async () => {
       const res = await detectPaymentLogo(debouncedName.trim());
@@ -69,7 +69,7 @@ const SubscriptionForm = ({ editing, initial, categories, paymentMethods, onSubm
     return () => {
       cancelled = true;
     };
-  }, [debouncedName, editing]);
+  }, [debouncedName]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

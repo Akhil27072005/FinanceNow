@@ -172,7 +172,7 @@
 
 .investments-holding-row--selected {
   border-color: rgba(var(--accent-rgb), 0.45);
-  background: rgba(237, 233, 254, 0.35);
+  background: rgba(var(--accent-rgb), 0.12);
 }
 
 .investments-holding-row__brand {

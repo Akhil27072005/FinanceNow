@@ -15,7 +15,63 @@ const { sanitizeSubscriptionMetadata } = require('../utils/subscriptionMetadata'
 const invalidateSubscriptionRelatedCaches = async (userId) => {
   const userIdStr = userId.toString();
   await cache.invalidateSubscriptionAlertsCache(userIdStr);
+  await cache.invalidateSubscriptionSummaryCache(userIdStr);
   await cache.invalidateAnalyticsCache(userIdStr);
+};
+
+const buildSubscriptionSummaryResponse = async (userId, monthStr) => {
+  const { month, dateStart, dateEnd } = parseMonthRange(monthStr);
+
+  const [paid, projected, activeCount] = await Promise.all([
+    getSubscriptionSpendInRange(userId, dateStart, dateEnd),
+    getProjectedSubscriptionSpendForMonth(userId, dateStart, dateEnd),
+    Subscription.countDocuments({ userId, isActive: true })
+  ]);
+
+  const paidTotal = paid.total;
+  const scheduledTotal = projected.total;
+
+  return {
+    success: true,
+    month,
+    summary: {
+      activeCount,
+      paidThisMonth: paidTotal,
+      scheduledThisMonth: scheduledTotal,
+      remainingThisMonth: Math.max(
+        0,
+        Math.round((scheduledTotal - paidTotal) * 100) / 100
+      ),
+      paymentCount: paid.paymentCount,
+      projectedCount: projected.projectedCount
+    }
+  };
+};
+
+const getCachedSubscriptionSummary = async (userId, monthStr) => {
+  const userIdStr = userId.toString();
+  const { month } = parseMonthRange(monthStr);
+  const baseKey = `subscriptions:${userIdStr}:summary:${month}`;
+  const cacheKey = await cache.getVersionedKey(baseKey, userIdStr, 'subscriptions-summary');
+  const cached = await cache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const payload = await buildSubscriptionSummaryResponse(userId, monthStr);
+  await cache.set(cacheKey, payload, 300);
+  return payload;
+};
+
+const maybeAdvanceAutoRenew = async (userId, skipAdvance) => {
+  if (skipAdvance === 'true' || skipAdvance === true) {
+    return { changed: false };
+  }
+  const advanceResult = await advanceAutoRenewSubscriptions(userId);
+  if (advanceResult.changed) {
+    await invalidateSubscriptionRelatedCaches(userId);
+  }
+  return advanceResult;
 };
 
 const parseMonthRange = (monthStr) => {
@@ -181,7 +237,7 @@ const createSubscription = async (req, res, next) => {
  */
 const getSubscriptions = async (req, res, next) => {
   try {
-    const { isActive } = req.query;
+    const { isActive, skipAdvance } = req.query;
 
     // Build filter (always include userId for security)
     const filter = {
@@ -202,10 +258,7 @@ const getSubscriptions = async (req, res, next) => {
       }
     }
 
-    const advanceResult = await advanceAutoRenewSubscriptions(req.user._id);
-    if (advanceResult.changed) {
-      await invalidateSubscriptionRelatedCaches(req.user._id);
-    }
+    await maybeAdvanceAutoRenew(req.user._id, skipAdvance);
 
     // Get subscriptions sorted by nextPaymentDate ascending
     const subscriptions = await Subscription.find(filter)
@@ -499,13 +552,41 @@ const deleteSubscription = async (req, res, next) => {
       });
     }
 
-    // Invalidate subscription alerts cache
-    const userIdStr = req.user._id.toString();
-    await cache.del(`subscriptions:${userIdStr}:alerts:7`); // Default 7 days
+    // Invalidate subscription caches
+    await invalidateSubscriptionRelatedCaches(req.user._id);
 
     res.json({
       success: true,
       message: 'Subscription deleted successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Combined page payload: subscriptions list + monthly summary (single auto-renew pass)
+ * GET /api/subscriptions/page?month=YYYY-MM
+ */
+const getSubscriptionPage = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    const { month: monthStr } = req.query;
+
+    await maybeAdvanceAutoRenew(userId, false);
+
+    const [subscriptions, summaryPayload] = await Promise.all([
+      Subscription.find({ userId })
+        .populate('categoryId paymentMethodId')
+        .sort({ nextPaymentDate: 1 }),
+      getCachedSubscriptionSummary(userId, monthStr)
+    ]);
+
+    res.json({
+      success: true,
+      data: subscriptions,
+      month: summaryPayload.month,
+      summary: summaryPayload.summary
     });
   } catch (error) {
     next(error);
@@ -519,39 +600,12 @@ const deleteSubscription = async (req, res, next) => {
 const getSubscriptionSummary = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    const { month: monthStr } = req.query;
+    const { month: monthStr, skipAdvance } = req.query;
 
-    const advanceResult = await advanceAutoRenewSubscriptions(userId);
-    if (advanceResult.changed) {
-      await invalidateSubscriptionRelatedCaches(userId);
-    }
+    await maybeAdvanceAutoRenew(userId, skipAdvance);
 
-    const { month, dateStart, dateEnd } = parseMonthRange(monthStr);
-
-    const [paid, projected, activeCount] = await Promise.all([
-      getSubscriptionSpendInRange(userId, dateStart, dateEnd),
-      getProjectedSubscriptionSpendForMonth(userId, dateStart, dateEnd),
-      Subscription.countDocuments({ userId, isActive: true })
-    ]);
-
-    const paidTotal = paid.total;
-    const scheduledTotal = projected.total;
-
-    res.json({
-      success: true,
-      month,
-      summary: {
-        activeCount,
-        paidThisMonth: paidTotal,
-        scheduledThisMonth: scheduledTotal,
-        remainingThisMonth: Math.max(
-          0,
-          Math.round((scheduledTotal - paidTotal) * 100) / 100
-        ),
-        paymentCount: paid.paymentCount,
-        projectedCount: projected.projectedCount
-      }
-    });
+    const payload = await getCachedSubscriptionSummary(userId, monthStr);
+    res.json(payload);
   } catch (error) {
     next(error);
   }
@@ -782,6 +836,7 @@ module.exports = {
   getSubscription,
   updateSubscription,
   deleteSubscription,
+  getSubscriptionPage,
   getSubscriptionSummary,
   getSubscriptionPayments,
   getSubscriptionAlerts,

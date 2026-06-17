@@ -37,7 +37,7 @@ const BudgetCardGrid = ({
 
   return (
     <div className="budgets-grid">
-      {budgets.map((b) => (
+      {budgets.map((b, index) => (
         <BudgetCard
           key={b._id}
           budget={b}
@@ -47,6 +47,7 @@ const BudgetCardGrid = ({
           onEdit={onEditBudget}
           onDelete={onDeleteBudget}
           burnRate
+          style={{ '--card-i': index }}
         />
       ))}
     </div>

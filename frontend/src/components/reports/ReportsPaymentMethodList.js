@@ -27,7 +27,7 @@ const ReportsPaymentMethodList = ({ data = [], filters = {}, loading = false }) 
   }
 
   return (
-    <div className="reports-pm-list glass-panel">
+    <div className="reports-pm-list glass-panel reports-pm-list--loaded">
       <div className="reports-pm-list__header">
         <h2 className="reports-pm-list__title">Spending by payment method</h2>
         <div className="reports-pm-list__actions">
@@ -47,18 +47,22 @@ const ReportsPaymentMethodList = ({ data = [], filters = {}, loading = false }) 
         <p className="reports-pm-list__empty">No payment method spending in this period.</p>
       ) : (
         <ul className="reports-pm-list__rows">
-          {rows.map((row) => (
-            <li key={row.paymentMethodId || row.paymentMethod} className="reports-pm-list__row">
+          {rows.map((row, index) => (
+            <li
+              key={row.paymentMethodId || row.paymentMethod}
+              className="reports-pm-list__row"
+              style={{
+                '--row-i': index,
+                '--bar-pct': `${Math.min(row.percent, 100)}%`
+              }}
+            >
               <span className="reports-pm-list__logo">
                 <PaymentMethodLogo icon={row.icon} size={22} />
               </span>
               <div className="reports-pm-list__meta">
                 <span className="reports-pm-list__name">{row.paymentMethod}</span>
                 <div className="reports-pm-list__bar-track">
-                  <span
-                    className="reports-pm-list__bar-fill"
-                    style={{ width: `${Math.min(row.percent, 100)}%` }}
-                  />
+                  <span className="reports-pm-list__bar-fill" />
                 </div>
               </div>
               <div className="reports-pm-list__amounts">

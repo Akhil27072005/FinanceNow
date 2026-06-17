@@ -72,6 +72,79 @@
   margin-bottom: 20px;
 }
 
+.subscriptions-section__content {
+  min-height: 0;
+}
+
+@keyframes subscriptions-content-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(var(--content-reveal-slide, 10px));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes subscriptions-row-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes subscriptions-row-reveal-inactive {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 0.72;
+    transform: translateY(0);
+  }
+}
+
+.subscriptions-section__content--loaded .subscription-row {
+  opacity: 0;
+  animation: subscriptions-row-reveal 0.42s var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: calc(var(--row-i, 0) * var(--content-reveal-stagger, 55ms));
+}
+
+.subscriptions-section__content--loaded .subscription-row--inactive {
+  animation-name: subscriptions-row-reveal-inactive;
+  animation-delay: calc(var(--row-i, 0) * var(--content-reveal-stagger, 55ms));
+}
+
+.subscriptions-section__content--loaded .subscriptions-empty {
+  animation: subscriptions-content-reveal 0.48s var(--content-reveal-ease, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: 60ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .subscriptions-section__content--loaded .subscription-row,
+  .subscriptions-section__content--loaded .subscription-row--inactive,
+  .subscriptions-section__content--loaded .subscriptions-empty {
+    animation: none;
+    transform: none;
+  }
+
+  .subscriptions-section__content--loaded .subscription-row {
+    opacity: 1;
+  }
+
+  .subscriptions-section__content--loaded .subscription-row--inactive {
+    opacity: 0.72;
+  }
+}
+
 .subscriptions-section__head {
   display: flex;
   justify-content: space-between;
@@ -109,7 +182,7 @@
 }
 
 .subscriptions-section__collapse:hover {
-  background: rgba(237, 233, 254, 0.5);
+  background: rgba(var(--accent-rgb), 0.08);
 }
 
 .subscriptions-list {
@@ -256,7 +329,7 @@
 }
 
 .subscription-row__pill--cycle {
-  background: rgba(237, 233, 254, 0.9);
+  background: rgba(var(--accent-rgb), 0.12);
   color: var(--accent-text);
 }
 
@@ -360,7 +433,7 @@
 }
 
 .subscription-row__history:hover {
-  background: rgba(237, 233, 254, 0.4);
+  background: rgba(var(--accent-rgb), 0.1);
 }
 
 /* History drawer */
@@ -547,17 +620,6 @@
 .subscriptions-month-picker__calendar {
   --picker-glass-bg: rgba(255, 255, 255, 0.52);
   --picker-glass-border: rgba(255, 255, 255, 0.75);
-  --picker-glass-shadow: 0 8px 32px rgba(var(--accent-rgb), 0.06), 0 4px 16px rgba(18, 18, 18, 0.04);
-  --picker-hover-bg: linear-gradient(
-    145deg,
-    rgba(255, 255, 255, 0.78) 0%,
-    rgba(245, 240, 250, 0.62) 48%,
-    rgba(238, 242, 255, 0.55) 100%
-  );
-  --picker-hover-shadow: 0 4px 16px rgba(var(--accent-rgb), 0.07), 0 2px 10px rgba(249, 115, 22, 0.05);
-  --picker-violet-soft: rgba(var(--accent-rgb), 0.1);
-  --picker-violet-mid: rgba(var(--accent-rgb), 0.18);
-  --picker-violet-strong: rgba(var(--accent-rgb), 0.82);
 }
 
 .subscriptions-page__month .form-control,

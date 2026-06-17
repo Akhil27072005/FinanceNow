@@ -1,0 +1,44 @@
+/* Shared dark marketing background — landing + auth */
+
+.marketing-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  background: #050510;
+}
+
+.marketing-bg__orb {
+  position: absolute;
+  display: block;
+}
+
+.marketing-bg__orb--orange {
+  width: min(52vw, 520px);
+  height: min(52vw, 520px);
+  top: 8%;
+  left: -8%;
+  opacity: 0.75;
+  filter: blur(2px);
+}
+
+.marketing-bg__orb--purple {
+  width: min(58vw, 560px);
+  height: min(58vw, 560px);
+  right: -6%;
+  top: 18%;
+  opacity: 0.8;
+  filter: blur(2px);
+}
+
+.marketing-shell {
+  position: relative;
+  min-height: 100vh;
+  background: #050510;
+}
+
+.marketing-shell > :not(.marketing-bg) {
+  position: relative;
+  z-index: 1;
+}

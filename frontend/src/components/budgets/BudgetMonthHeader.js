@@ -43,7 +43,7 @@ const BudgetMonthHeader = ({
           <button
             type="button"
             className="budgets-month__nav"
-            onClick={() => onChangeMonth?.(addMonths(month, -1))}
+            onClick={() => onChangeMonth?.(addMonths(month, -1), -1)}
             aria-label="Previous month"
           >
             <ChevronLeft size={18} strokeWidth={2} />
@@ -52,7 +52,7 @@ const BudgetMonthHeader = ({
           <button
             type="button"
             className="budgets-month__nav"
-            onClick={() => onChangeMonth?.(addMonths(month, 1))}
+            onClick={() => onChangeMonth?.(addMonths(month, 1), 1)}
             aria-label="Next month"
           >
             <ChevronRight size={18} strokeWidth={2} />

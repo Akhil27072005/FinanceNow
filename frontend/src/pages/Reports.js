@@ -1,21 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef, Suspense, lazy } from 'react';
 import { categoryService } from '../services/categoryService';
 import { subcategoryService } from '../services/subcategoryService';
 import { exportService } from '../services/exportService';
 import GlassAlert from '../components/ui/GlassAlert';
 import ReportsFilters from '../components/reports/ReportsFilters';
-import ReportsCashFlowChart from '../components/reports/ReportsCashFlowChart';
-import ReportsKpiCard from '../components/reports/ReportsKpiCard';
-import ReportsPaymentMethodList from '../components/reports/ReportsPaymentMethodList';
 import ReportsFinancialTable from '../components/reports/ReportsFinancialTable';
 import ReportsInsightsCard from '../components/reports/ReportsInsightsCard';
-import ReportsCategoryDonut from '../components/reports/ReportsCategoryDonut';
 import { useReportsData } from '../hooks/useReportsData';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import {
   formatCashFlowPeriodLabel,
   getDefaultReportsMonth
 } from '../utils/reportsFilterUtils';
 import '../styles/reports.css';
+
+const ReportsCashFlowChart = lazy(() => import('../components/reports/ReportsCashFlowChart'));
+const ReportsKpiCard = lazy(() => import('../components/reports/ReportsKpiCard'));
+const ReportsPaymentMethodList = lazy(() => import('../components/reports/ReportsPaymentMethodList'));
+const ReportsCategoryDonut = lazy(() => import('../components/reports/ReportsCategoryDonut'));
+
+const ChartFallback = () => (
+  <div className="glass-panel reports-cashflow">
+    <div className="reports-cashflow__skeleton-title" />
+    <div className="reports-cashflow__skeleton-chart" />
+  </div>
+);
 
 const Reports = () => {
   const [filters, setFilters] = useState({
@@ -30,12 +39,17 @@ const Reports = () => {
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [subcategoriesLoading, setSubcategoriesLoading] = useState(false);
   const [exportError, setExportError] = useState('');
-
   const [dismissedError, setDismissedError] = useState(false);
 
+  const categoriesLoadedRef = useRef(false);
+  const debouncedFilters = useDebouncedValue(filters, 300);
+
   const {
-    loading,
+    dashboardLoading,
+    chartsLoading,
     error: loadError,
     dashboard,
     incomeTrend,
@@ -44,28 +58,63 @@ const Reports = () => {
     paymentMethods,
     monthlyComparison,
     topCategory
-  } = useReportsData(filters);
+  } = useReportsData(debouncedFilters);
+
+  const loadCategories = useCallback(async () => {
+    if (categoriesLoadedRef.current) return;
+    try {
+      setCategoriesLoading(true);
+      const catRes = await categoryService.getCategories();
+      setCategories(catRes?.data || []);
+      categoriesLoadedRef.current = true;
+    } catch {
+      setCategories([]);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
+
+  useEffect(() => {
+    if (!filters.categoryId) {
+      setSubcategories([]);
+      setSubcategoriesLoading(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const loadSubcategories = async () => {
+      try {
+        setSubcategoriesLoading(true);
+        const subRes = await subcategoryService.getSubCategories(filters.categoryId);
+        if (!cancelled) {
+          setSubcategories(subRes?.data || []);
+        }
+      } catch {
+        if (!cancelled) setSubcategories([]);
+      } finally {
+        if (!cancelled) setSubcategoriesLoading(false);
+      }
+    };
+
+    loadSubcategories();
+    return () => {
+      cancelled = true;
+    };
+  }, [filters.categoryId]);
 
   useEffect(() => {
     setDismissedError(false);
-  }, [filters.month, filters.startDate, filters.endDate, filters.account]);
-
-  useEffect(() => {
-    const loadMeta = async () => {
-      try {
-        const [catRes, subRes] = await Promise.all([
-          categoryService.getCategories(),
-          subcategoryService.getSubCategories()
-        ]);
-        setCategories(catRes?.data || []);
-        setSubcategories(subRes?.data || []);
-      } catch {
-        setCategories([]);
-        setSubcategories([]);
-      }
-    };
-    loadMeta();
-  }, []);
+  }, [
+    debouncedFilters.month,
+    debouncedFilters.startDate,
+    debouncedFilters.endDate,
+    debouncedFilters.account
+  ]);
 
   const hasAdvancedFilters = Boolean(
     filters.startDate ||
@@ -88,6 +137,7 @@ const Reports = () => {
       categoryId: '',
       subCategoryId: ''
     });
+    setSubcategories([]);
     setFiltersExpanded(false);
   };
 
@@ -122,7 +172,7 @@ const Reports = () => {
   };
 
   const { kpis, changes } = dashboard;
-  const cashFlowPeriodLabel = formatCashFlowPeriodLabel(filters);
+  const cashFlowPeriodLabel = formatCashFlowPeriodLabel(debouncedFilters);
 
   return (
     <div className="reports-page">
@@ -144,6 +194,8 @@ const Reports = () => {
         setFiltersExpanded={setFiltersExpanded}
         categories={categories}
         subcategories={subcategories}
+        categoriesLoading={categoriesLoading}
+        subcategoriesLoading={subcategoriesLoading}
         hasAdvancedFilters={hasAdvancedFilters}
         hasAnyFilters={hasAnyFilters}
         onClearAll={clearAllFilters}
@@ -153,49 +205,64 @@ const Reports = () => {
 
       <div className="reports-grid">
         <div className="reports-grid__left">
-          <ReportsCashFlowChart
-            data={monthlyComparison}
-            netAmount={kpis.netSavings ?? 0}
-            netChangePercent={changes.netSavings ?? 0}
-            periodLabel={cashFlowPeriodLabel}
-            filters={filters}
-            loading={loading}
-          />
+          <Suspense fallback={<ChartFallback />}>
+            <ReportsCashFlowChart
+              data={monthlyComparison}
+              netAmount={kpis.netSavings ?? 0}
+              netChangePercent={changes.netSavings ?? 0}
+              periodLabel={cashFlowPeriodLabel}
+              filters={debouncedFilters}
+              loading={dashboardLoading}
+              chartLoading={chartsLoading}
+            />
+          </Suspense>
 
           <div className="reports-grid__kpi-row">
-            <ReportsKpiCard
-              variant="income"
-              amount={kpis.totalIncome ?? 0}
-              changePercent={changes.totalIncome ?? 0}
-              trendData={incomeTrend}
-              loading={loading}
-            />
-            <ReportsKpiCard
-              variant="expense"
-              amount={kpis.totalExpenses ?? 0}
-              changePercent={changes.totalExpenses ?? 0}
-              trendData={expenseTrend}
-              loading={loading}
-            />
+            <Suspense fallback={<ChartFallback />}>
+              <ReportsKpiCard
+                variant="income"
+                amount={kpis.totalIncome ?? 0}
+                changePercent={changes.totalIncome ?? 0}
+                trendData={incomeTrend}
+                loading={dashboardLoading}
+                sparkLoading={chartsLoading}
+              />
+              <ReportsKpiCard
+                variant="expense"
+                amount={kpis.totalExpenses ?? 0}
+                changePercent={changes.totalExpenses ?? 0}
+                trendData={expenseTrend}
+                loading={dashboardLoading}
+                sparkLoading={chartsLoading}
+              />
+            </Suspense>
           </div>
 
-          <ReportsPaymentMethodList
-            data={paymentMethods}
-            filters={filters}
-            loading={loading}
-          />
+          <Suspense fallback={<ChartFallback />}>
+            <ReportsPaymentMethodList
+              data={paymentMethods}
+              filters={debouncedFilters}
+              loading={chartsLoading}
+            />
+          </Suspense>
         </div>
 
         <div className="reports-grid__right">
-          <ReportsFinancialTable kpis={kpis} changes={changes} loading={loading} />
+          <ReportsFinancialTable kpis={kpis} changes={changes} loading={dashboardLoading} />
 
-          <ReportsInsightsCard kpis={kpis} topCategory={topCategory} loading={loading} />
-
-          <ReportsCategoryDonut
-            data={categorySplit}
-            filters={filters}
-            loading={loading}
+          <ReportsInsightsCard
+            kpis={kpis}
+            topCategory={topCategory}
+            loading={dashboardLoading}
           />
+
+          <Suspense fallback={<ChartFallback />}>
+            <ReportsCategoryDonut
+              data={categorySplit}
+              filters={debouncedFilters}
+              loading={chartsLoading}
+            />
+          </Suspense>
         </div>
       </div>
     </div>

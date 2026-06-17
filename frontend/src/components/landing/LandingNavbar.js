@@ -1,14 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronDown } from 'lucide-react';
+import MarketingAuthLink from './MarketingAuthLink';
 
-const PLACEHOLDER_NAV = ['Home', 'About Us', 'Blog'];
+const NAV_LINKS = ['Features', 'Pricing', 'About', 'Blog', 'Contact'];
 
-const PAGES_PLACEHOLDERS = ['Overview', 'Features', 'Contact'];
-
-/**
- * Landing page top navigation.
- */
 const LandingNavbar = () => {
   return (
     <header className="landing-header">
@@ -23,47 +18,20 @@ const LandingNavbar = () => {
           </Link>
 
           <div className="landing-nav__links">
-            {PLACEHOLDER_NAV.map((label) => (
+            {NAV_LINKS.map((label) => (
               <button key={label} type="button" className="landing-nav__link">
                 {label}
               </button>
             ))}
-
-            <div className="landing-nav__dropdown">
-              <button
-                type="button"
-                className="landing-nav__link landing-nav__dropdown-trigger"
-                aria-haspopup="true"
-              >
-                Pages
-                <ChevronDown size={14} strokeWidth={2} />
-              </button>
-              <div className="landing-nav__dropdown-menu" role="menu">
-                {PAGES_PLACEHOLDERS.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    className="landing-nav__dropdown-item"
-                    role="menuitem"
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <button type="button" className="landing-nav__link">
-              Pricing
-            </button>
           </div>
 
           <div className="landing-nav__actions">
-            <Link to="/login" className="landing-nav__login">
-              Log In
-            </Link>
-            <Link to="/register" className="landing-btn-pill">
-              Get Started
-            </Link>
+            <MarketingAuthLink to="/login" className="landing-nav__btn landing-nav__btn--login">
+              Login
+            </MarketingAuthLink>
+            <MarketingAuthLink to="/register" className="landing-nav__btn landing-nav__btn--signup">
+              Sign Up
+            </MarketingAuthLink>
           </div>
         </nav>
       </div>

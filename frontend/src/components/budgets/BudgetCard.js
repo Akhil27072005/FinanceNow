@@ -33,7 +33,8 @@ const BudgetCard = ({
   formatCurrency,
   onEdit,
   onDelete,
-  burnRate
+  burnRate,
+  style
 }) => {
   const amount = Number(budget?.amount) || 0;
   const remaining = amount - spent;
@@ -61,7 +62,7 @@ const BudgetCard = ({
   }, [budget?.categoryId?._id, budget?.subCategoryId?._id, month]);
 
   return (
-    <div className="glass-panel budget-card">
+    <div className="glass-panel budget-card" style={style}>
       <div className="budget-card__head">
         <div className="budget-card__title-wrap">
           <span className="budget-card__icon" aria-hidden>
