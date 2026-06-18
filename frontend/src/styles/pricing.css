@@ -1,0 +1,295 @@
+/* Pricing marketing page — shares landing tokens via .landing-page */
+
+.pricing-page {
+  min-height: 100vh;
+}
+
+.pricing-main {
+  padding-bottom: 96px;
+}
+
+/* Hero */
+.pricing-hero {
+  padding: 24px 0 40px;
+  text-align: center;
+}
+
+.pricing-hero__eyebrow {
+  margin: 0 0 16px;
+  font-family: var(--landing-font-bold);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--landing-purple);
+}
+
+.pricing-hero__title {
+  margin: 0 auto 20px;
+  max-width: 720px;
+  font-family: var(--landing-font-bold);
+  font-size: clamp(32px, 4.2vw, 52px);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+}
+
+.pricing-hero__subtitle {
+  margin: 0 auto;
+  max-width: 620px;
+  font-size: 17px;
+  line-height: 1.65;
+  color: var(--landing-muted);
+}
+
+/* Plan card */
+.pricing-plan {
+  padding-bottom: 64px;
+}
+
+.pricing-plan__card {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 32px 28px 28px;
+  border-radius: 24px;
+  background: linear-gradient(
+    155deg,
+    rgba(80, 12, 176, 0.2) 0%,
+    rgba(255, 255, 255, 0.05) 45%,
+    rgba(255, 138, 92, 0.1) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(20px) saturate(1.12);
+  backdrop-filter: blur(20px) saturate(1.12);
+}
+
+.pricing-plan__header {
+  text-align: center;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pricing-plan__badge {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-family: var(--landing-font-bold);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: linear-gradient(135deg, var(--landing-violet) 0%, var(--landing-purple) 100%);
+}
+
+.pricing-plan__price {
+  margin: 0 0 4px;
+  font-family: var(--landing-font-bold);
+  font-size: clamp(40px, 6vw, 56px);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+}
+
+.pricing-plan__period {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: var(--landing-muted);
+}
+
+.pricing-plan__description {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.pricing-plan__features {
+  list-style: none;
+  margin: 0 0 28px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pricing-plan__features li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.pricing-plan__features svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--landing-purple);
+}
+
+.pricing-plan__cta {
+  display: flex;
+  width: 100%;
+  margin-bottom: 0;
+  justify-content: center;
+}
+
+/* Why free */
+.pricing-why {
+  padding-bottom: 64px;
+}
+
+.pricing-why__panel {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 28px 26px;
+  border-radius: 20px;
+  background: var(--landing-glass);
+  border: 1px solid var(--landing-glass-border);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  backdrop-filter: blur(16px) saturate(1.1);
+  text-align: center;
+}
+
+.pricing-why__title {
+  margin: 0 0 16px;
+  font-family: var(--landing-font-bold);
+  font-size: clamp(20px, 2.4vw, 26px);
+  color: #ffffff;
+}
+
+.pricing-why__paragraph {
+  margin: 0 0 14px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--landing-muted);
+}
+
+.pricing-why__paragraph:last-child {
+  margin-bottom: 0;
+}
+
+/* FAQ */
+.pricing-faq {
+  padding-bottom: 72px;
+}
+
+.pricing-faq__header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.pricing-faq__title {
+  margin: 0;
+  font-family: var(--landing-font-bold);
+  font-size: clamp(24px, 3vw, 32px);
+  line-height: 1.2;
+  color: #ffffff;
+}
+
+.pricing-faq__list {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pricing-faq__item {
+  padding: 18px 20px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pricing-faq__question {
+  margin: 0 0 8px;
+  font-family: var(--landing-font-bold);
+  font-size: 15px;
+  line-height: 1.4;
+  color: #ffffff;
+}
+
+.pricing-faq__answer {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--landing-muted);
+}
+
+/* CTA */
+.pricing-cta__panel {
+  text-align: center;
+  padding: 48px 32px;
+  border-radius: 24px;
+  background: linear-gradient(
+    145deg,
+    rgba(80, 12, 176, 0.22) 0%,
+    rgba(255, 255, 255, 0.04) 45%,
+    rgba(255, 138, 92, 0.12) 100%
+  );
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+.pricing-cta__title {
+  margin: 0 0 12px;
+  font-family: var(--landing-font-bold);
+  font-size: clamp(24px, 3vw, 34px);
+  line-height: 1.2;
+  color: #ffffff;
+}
+
+.pricing-cta__text {
+  margin: 0 auto 28px;
+  max-width: 480px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--landing-muted);
+}
+
+.pricing-cta__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.pricing-cta__link {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--landing-purple);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.pricing-cta__link:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.pricing-cta .landing-hero__cta {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .pricing-hero {
+    padding-top: 8px;
+    padding-bottom: 32px;
+  }
+
+  .pricing-plan__card {
+    padding: 24px 20px 22px;
+  }
+
+  .pricing-cta__panel {
+    padding: 36px 20px;
+  }
+}

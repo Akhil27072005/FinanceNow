@@ -23,8 +23,16 @@ import Budgets from './pages/Budgets';
 import Investments from './pages/Investments';
 import Settings from './pages/Settings';
 import LandingRoute from './components/LandingRoute';
+import Features from './pages/Features';
+import About from './pages/About';
+import Pricing from './pages/Pricing';
+import Contact from './pages/Contact';
 
 const Reports = lazy(() => import('./pages/Reports'));
+const LoadingScreenDev =
+  process.env.NODE_ENV === 'development'
+    ? lazy(() => import('./pages/dev/LoadingScreenDev'))
+    : null;
 
 /**
  * Main App Component
@@ -40,12 +48,27 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/" element={<LandingRoute />} />
+            <Route path="/features" element={<Features />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/contact" element={<Contact />} />
           </Route>
 
           {/* Public Routes */}
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+
+          {LoadingScreenDev ? (
+            <Route
+              path="/dev/loading"
+              element={
+                <Suspense fallback={null}>
+                  <LoadingScreenDev />
+                </Suspense>
+              }
+            />
+          ) : null}
 
           {/* Protected Routes */}
           <Route

@@ -121,7 +121,8 @@
 [data-theme-mode='dark'] .glass-panel .glass-panel--subtle,
 [data-theme-mode='dark'] .glass-panel .budgets-kpi__tile,
 [data-theme-mode='dark'] .glass-panel .subscriptions-kpi__tile,
-[data-theme-mode='dark'] .glass-panel .budget-card {
+[data-theme-mode='dark'] .glass-panel .budget-card,
+[data-theme-mode='dark'] .glass-panel .reports-pm-list__row {
   background: rgba(255, 255, 255, 0.02) !important;
   border-color: rgba(255, 255, 255, 0.05) !important;
   box-shadow: none !important;

@@ -1,632 +1,746 @@
 /**
- * Development Seed Script
- * Seeds realistic test data for test@example.com user
- * 
- * Usage: node scripts/seedTestUser.js
- * 
- * Requirements:
- * - Server must be running on PORT (default: 5000)
- * - Test user must exist: test@example.com / test1234
- * - MongoDB must be connected
+ * Screenshot / demo seed for test@example.com
+ *
+ * Seeds two months of representative data (previous + current calendar month):
+ * categories, transactions, budgets, subscriptions, payment methods, portfolio.
+ *
+ * Usage (from backend/): npm run seed
+ * Requires: MONGODB_URI in .env (server does not need to be running)
  */
 
 require('dotenv').config();
-const axios = require('axios');
+const mongoose = require('mongoose');
+const connectDB = require('../config/database');
 
-// Configuration
-const API_BASE_URL = process.env.API_BASE_URL || `http://localhost:${process.env.PORT || 5000}/api`;
+const User = require('../models/User');
+const Category = require('../src/models/Category');
+const SubCategory = require('../src/models/SubCategory');
+const Tag = require('../src/models/Tag');
+const PaymentMethod = require('../src/models/PaymentMethod');
+const Transaction = require('../src/models/Transaction');
+const Budget = require('../src/models/Budget');
+const Subscription = require('../src/models/Subscription');
+const SubscriptionPayment = require('../src/models/SubscriptionPayment');
+const PortfolioHolding = require('../src/models/PortfolioHolding');
+const PortfolioActivity = require('../src/models/PortfolioActivity');
+
+const cache = require('../utils/cache');
+
 const TEST_EMAIL = 'test@example.com';
 const TEST_PASSWORD = 'test1234';
+const TEST_NAME = 'Alex Demo';
 
-// Global state
-let accessToken = null;
-let categoryIds = {};
-let subCategoryIds = {};
-let tagIds = {};
+const atNoon = (year, monthIndex, day) => new Date(year, monthIndex, day, 12, 0, 0, 0);
 
-/**
- * Make authenticated API request
- */
-async function apiRequest(method, endpoint, data = null) {
-  const config = {
-    method,
-    url: `${API_BASE_URL}${endpoint}`,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(accessToken && { Authorization: `Bearer ${accessToken}` })
-    }
-  };
+const monthKey = (date) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  return `${y}-${m}`;
+};
 
-  if (data) {
-    config.data = data;
-  }
+const addDays = (date, days) => {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  next.setHours(12, 0, 0, 0);
+  return next;
+};
 
-  try {
-    const response = await axios(config);
-    return response.data;
-  } catch (error) {
-    console.error(`❌ Error ${method} ${endpoint}:`, error.response?.data?.error || error.message);
-    throw error;
-  }
-}
-
-/**
- * Authenticate as test user
- */
-async function authenticate() {
-  console.log('🔐 Authenticating...');
-  try {
-    const response = await apiRequest('POST', '/auth/login', {
+async function ensureUser() {
+  let user = await User.findOne({ email: TEST_EMAIL });
+  if (!user) {
+    user = new User({
+      name: TEST_NAME,
       email: TEST_EMAIL,
-      password: TEST_PASSWORD
+      password: TEST_PASSWORD,
+      authProvider: 'local',
+      preferences: {
+        currency: 'INR',
+        dateFormat: 'DD/MM/YYYY',
+        timezone: 'Asia/Kolkata',
+        themePresetId: 'slateProfessional'
+      }
     });
-
-    if (response.success && response.accessToken) {
-      accessToken = response.accessToken;
-      console.log(`✔ Authenticated as ${TEST_EMAIL}`);
-      return true;
-    } else {
-      throw new Error('Authentication failed: No access token received');
+    await user.save();
+    console.log(`✔ Created user ${TEST_EMAIL}`);
+  } else {
+    user.name = TEST_NAME;
+    user.password = TEST_PASSWORD;
+    user.authProvider = 'local';
+    if (!user.preferences?.currency) {
+      user.preferences = { ...user.preferences, currency: 'INR' };
     }
-  } catch (error) {
-    console.error('❌ Authentication failed:', error.message);
-    throw error;
+    await user.save();
+    console.log(`✔ Reset credentials for ${TEST_EMAIL}`);
   }
+  return user;
 }
 
-/**
- * Get existing data (for idempotency check)
- */
-async function getExistingData() {
-  console.log('📋 Checking existing data...');
-  try {
-    const [categories, subcategories, tags, transactions, subscriptions, budgets] = await Promise.all([
-      apiRequest('GET', '/categories').catch(() => ({ data: [] })),
-      apiRequest('GET', '/subcategories').catch(() => ({ data: [] })),
-      apiRequest('GET', '/tags').catch(() => ({ data: [] })),
-      apiRequest('GET', '/transactions').catch(() => ({ data: [] })),
-      apiRequest('GET', '/subscriptions').catch(() => ({ data: [] })),
-      apiRequest('GET', '/budgets').catch(() => ({ data: [] }))
-    ]);
-
-    return {
-      categories: categories.data || [],
-      subcategories: subcategories.data || [],
-      tags: tags.data || [],
-      transactions: transactions.data || [],
-      subscriptions: subscriptions.data || [],
-      budgets: budgets.data || []
-    };
-  } catch (error) {
-    console.error('❌ Error fetching existing data:', error.message);
-    return {
-      categories: [],
-      subcategories: [],
-      tags: [],
-      transactions: [],
-      subscriptions: [],
-      budgets: []
-    };
-  }
+async function clearUserData(userId) {
+  const id = userId;
+  await PortfolioActivity.deleteMany({ userId: id });
+  await PortfolioHolding.deleteMany({ userId: id });
+  await SubscriptionPayment.deleteMany({ userId: id });
+  await Subscription.deleteMany({ userId: id });
+  await Budget.deleteMany({ userId: id });
+  await Transaction.deleteMany({ userId: id });
+  await Tag.deleteMany({ userId: id });
+  await SubCategory.deleteMany({ userId: id });
+  await Category.deleteMany({ userId: id });
+  await PaymentMethod.deleteMany({ userId: id });
+  console.log('✔ Cleared existing demo data');
 }
 
-/**
- * Delete existing data (for clean reseed)
- */
-async function deleteExistingData(existing) {
-  console.log('🗑️  Clearing existing data...');
-  
-  // Delete in reverse order of dependencies
-  for (const budget of existing.budgets) {
-    await apiRequest('DELETE', `/budgets/${budget._id}`).catch(() => {});
-  }
-  
-  for (const subscription of existing.subscriptions) {
-    await apiRequest('DELETE', `/subscriptions/${subscription._id}`).catch(() => {});
-  }
-  
-  for (const transaction of existing.transactions) {
-    await apiRequest('DELETE', `/transactions/${transaction._id}`).catch(() => {});
-  }
-  
-  for (const tag of existing.tags) {
-    await apiRequest('DELETE', `/tags/${tag._id}`).catch(() => {});
-  }
-  
-  for (const subcategory of existing.subcategories) {
-    await apiRequest('DELETE', `/subcategories/${subcategory._id}`).catch(() => {});
-  }
-  
-  for (const category of existing.categories) {
-    await apiRequest('DELETE', `/categories/${category._id}`).catch(() => {});
-  }
-  
-  console.log('✔ Existing data cleared');
-}
+async function seedCatalog(userId) {
+  const categories = await Category.insertMany([
+    { userId, name: 'Salary', type: 'income', icon: 'lucide:wallet' },
+    { userId, name: 'Freelance', type: 'income', icon: 'lucide:laptop' },
+    { userId, name: 'Food', type: 'expense', icon: 'lucide:utensils' },
+    { userId, name: 'Transport', type: 'expense', icon: 'lucide:car' },
+    { userId, name: 'Housing', type: 'expense', icon: 'lucide:home' },
+    { userId, name: 'Shopping', type: 'expense', icon: 'lucide:shopping-bag' },
+    { userId, name: 'Entertainment', type: 'expense', icon: 'lucide:tv' },
+    { userId, name: 'Health', type: 'expense', icon: 'lucide:heart-pulse' },
+    { userId, name: 'Emergency Fund', type: 'savings', icon: 'lucide:piggy-bank' },
+    { userId, name: 'Investments', type: 'investment', icon: 'lucide:trending-up' }
+  ]);
 
-/**
- * Seed Categories
- */
-async function seedCategories() {
-  console.log('📁 Seeding categories...');
-  
-  const categories = [
-    { name: 'Income', type: 'income' },
-    { name: 'Food', type: 'expense' },
-    { name: 'Transport', type: 'expense' },
-    { name: 'Rent', type: 'expense' },
-    { name: 'Subscriptions', type: 'expense' },
-    { name: 'Shopping', type: 'expense' }
-  ];
+  const byName = Object.fromEntries(categories.map((c) => [c.name, c]));
 
-  let created = 0;
-  for (const cat of categories) {
-    try {
-      const response = await apiRequest('POST', '/categories', cat);
-      if (response.success && response.data) {
-        categoryIds[cat.name] = response.data._id;
-        created++;
-      }
-    } catch (error) {
-      // Category might already exist, try to find it
-      try {
-        const existing = await apiRequest('GET', '/categories');
-        const found = existing.data?.find(c => c.name === cat.name && c.type === cat.type);
-        if (found) {
-          categoryIds[cat.name] = found._id || found._id?.toString();
-        }
-      } catch (fetchError) {
-        // Ignore fetch errors
-      }
-    }
-  }
+  const subCategories = await SubCategory.insertMany([
+    { userId, categoryId: byName.Food._id, name: 'Groceries', icon: 'lucide:shopping-cart' },
+    { userId, categoryId: byName.Food._id, name: 'Restaurants', icon: 'lucide:utensils-crossed' },
+    { userId, categoryId: byName.Food._id, name: 'Coffee', icon: 'lucide:coffee' },
+    { userId, categoryId: byName.Transport._id, name: 'Fuel', icon: 'lucide:fuel' },
+    { userId, categoryId: byName.Transport._id, name: 'Ride Share', icon: 'lucide:car-taxi-front' },
+    { userId, categoryId: byName.Transport._id, name: 'Public Transit', icon: 'lucide:train-front' },
+    { userId, categoryId: byName.Housing._id, name: 'Rent', icon: 'lucide:building-2' },
+    { userId, categoryId: byName.Housing._id, name: 'Utilities', icon: 'lucide:lightbulb' },
+    { userId, categoryId: byName.Shopping._id, name: 'Clothing', icon: 'lucide:shirt' },
+    { userId, categoryId: byName.Shopping._id, name: 'Electronics', icon: 'lucide:smartphone' },
+    { userId, categoryId: byName.Entertainment._id, name: 'Streaming', icon: 'lucide:play-circle' },
+    { userId, categoryId: byName.Health._id, name: 'Pharmacy', icon: 'lucide:pill' }
+  ]);
 
-  console.log(`✔ Categories seeded (${created})`);
-  return created;
-}
+  const subByName = Object.fromEntries(subCategories.map((s) => [s.name, s]));
 
-/**
- * Seed Subcategories
- */
-async function seedSubcategories() {
-  console.log('📂 Seeding subcategories...');
-  
-  const subcategories = [
-    { categoryId: categoryIds['Income'], name: 'Salary' },
-    { categoryId: categoryIds['Income'], name: 'Freelance' },
-    { categoryId: categoryIds['Food'], name: 'Groceries' },
-    { categoryId: categoryIds['Food'], name: 'Dining Out' },
-    { categoryId: categoryIds['Transport'], name: 'Fuel' },
-    { categoryId: categoryIds['Transport'], name: 'Public Transport' },
-    { categoryId: categoryIds['Subscriptions'], name: 'Streaming' },
-    { categoryId: categoryIds['Subscriptions'], name: 'Utilities' },
-    { categoryId: categoryIds['Shopping'], name: 'Clothing' },
-    { categoryId: categoryIds['Shopping'], name: 'Electronics' }
-  ];
+  const tags = await Tag.insertMany([
+    { userId, name: 'Essential', color: '#3b82f6' },
+    { userId, name: 'Work', color: '#8b5cf6' },
+    { userId, name: 'Personal', color: '#ec4899' },
+    { userId, name: 'Discretionary', color: '#f59e0b' }
+  ]);
 
-  let created = 0;
-  for (const subcat of subcategories) {
-    try {
-      const response = await apiRequest('POST', '/subcategories', subcat);
-      if (response.success && response.data) {
-        subCategoryIds[subcat.name] = response.data._id;
-        created++;
-      }
-    } catch (error) {
-      // Subcategory might already exist
-      const existing = await apiRequest('GET', '/subcategories');
-      const found = existing.data?.find(s => s.name === subcat.name && 
-        (s.categoryId?._id === subcat.categoryId || s.categoryId === subcat.categoryId));
-      if (found) {
-        subCategoryIds[subcat.name] = found._id;
-      }
-    }
-  }
+  const tagByName = Object.fromEntries(tags.map((t) => [t.name, t]));
 
-  console.log(`✔ Subcategories seeded (${created})`);
-  return created;
-}
-
-/**
- * Seed Tags
- */
-async function seedTags() {
-  console.log('🏷️  Seeding tags...');
-  
-  const tags = [
-    { name: 'essential', color: '#ef4444' },
-    { name: 'recurring', color: '#3b82f6' },
-    { name: 'non-essential', color: '#10b981' },
-    { name: 'work', color: '#f59e0b' },
-    { name: 'personal', color: '#8b5cf6' }
-  ];
-
-  let created = 0;
-  for (const tag of tags) {
-    try {
-      const response = await apiRequest('POST', '/tags', tag);
-      if (response.success && response.data) {
-        tagIds[tag.name] = response.data._id;
-        created++;
-      }
-    } catch (error) {
-      // Tag might already exist
-      const existing = await apiRequest('GET', '/tags');
-      const found = existing.data?.find(t => t.name === tag.name);
-      if (found) {
-        tagIds[tag.name] = found._id;
-      }
-    }
-  }
-
-  console.log(`✔ Tags seeded (${created})`);
-  return created;
-}
-
-/**
- * Generate random date within last 3 months
- */
-function getRandomDate() {
-  const now = new Date();
-  const threeMonthsAgo = new Date(now);
-  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-  
-  const randomTime = threeMonthsAgo.getTime() + 
-    Math.random() * (now.getTime() - threeMonthsAgo.getTime());
-  
-  return new Date(randomTime);
-}
-
-/**
- * Seed Transactions
- */
-async function seedTransactions() {
-  console.log('💰 Seeding transactions...');
-  
-  const transactions = [];
-  const now = new Date();
-  
-  // Generate 50-60 transactions over last 3 months
-  const numTransactions = 54;
-  
-  // Monthly salary transactions (3 months)
-  for (let month = 0; month < 3; month++) {
-    const salaryDate = new Date(now);
-    salaryDate.setMonth(salaryDate.getMonth() - month);
-    salaryDate.setDate(1); // First of the month
-    
-    transactions.push({
-      type: 'income',
-      amount: 40000,
-      date: salaryDate.toISOString().split('T')[0],
-      categoryId: categoryIds['Income'],
-      subCategoryId: subCategoryIds['Salary'],
-      tags: [tagIds['essential'], tagIds['recurring'], tagIds['work']],
-      paymentMethod: 'Bank Transfer',
-      account: 'self',
-      notes: 'Monthly salary'
-    });
-  }
-  
-  // Freelance income (random)
-  for (let i = 0; i < 5; i++) {
-    transactions.push({
-      type: 'income',
-      amount: Math.floor(Math.random() * 10000) + 5000, // ₹5,000 - ₹15,000
-      date: getRandomDate().toISOString().split('T')[0],
-      categoryId: categoryIds['Income'],
-      subCategoryId: subCategoryIds['Freelance'],
-      tags: [tagIds['work']],
-      paymentMethod: 'UPI',
-      account: 'self',
-      notes: 'Freelance project'
-    });
-  }
-  
-  // Groceries (frequent)
-  for (let i = 0; i < 12; i++) {
-    transactions.push({
-      type: 'expense',
-      amount: Math.floor(Math.random() * 1000) + 500, // ₹500 - ₹1,500
-      date: getRandomDate().toISOString().split('T')[0],
-      categoryId: categoryIds['Food'],
-      subCategoryId: subCategoryIds['Groceries'],
-      tags: [tagIds['essential'], tagIds['recurring']],
-      paymentMethod: 'UPI',
-      account: 'self',
-      notes: 'Weekly groceries'
-    });
-  }
-  
-  // Dining Out
-  for (let i = 0; i < 8; i++) {
-    transactions.push({
-      type: 'expense',
-      amount: Math.floor(Math.random() * 800) + 200, // ₹200 - ₹1,000
-      date: getRandomDate().toISOString().split('T')[0],
-      categoryId: categoryIds['Food'],
-      subCategoryId: subCategoryIds['Dining Out'],
-      tags: [tagIds['non-essential'], tagIds['personal']],
-      paymentMethod: 'UPI',
-      account: 'self',
-      notes: 'Restaurant'
-    });
-  }
-  
-  // Transport - Fuel
-  for (let i = 0; i < 6; i++) {
-    transactions.push({
-      type: 'expense',
-      amount: Math.floor(Math.random() * 500) + 500, // ₹500 - ₹1,000
-      date: getRandomDate().toISOString().split('T')[0],
-      categoryId: categoryIds['Transport'],
-      subCategoryId: subCategoryIds['Fuel'],
-      tags: [tagIds['essential'], tagIds['recurring']],
-      paymentMethod: 'UPI',
-      account: 'self',
-      notes: 'Fuel'
-    });
-  }
-  
-  // Transport - Public Transport
-  for (let i = 0; i < 10; i++) {
-    transactions.push({
-      type: 'expense',
-      amount: Math.floor(Math.random() * 200) + 50, // ₹50 - ₹250
-      date: getRandomDate().toISOString().split('T')[0],
-      categoryId: categoryIds['Transport'],
-      subCategoryId: subCategoryIds['Public Transport'],
-      tags: [tagIds['essential']],
-      paymentMethod: 'UPI',
-      account: 'self',
-      notes: 'Metro/Bus'
-    });
-  }
-  
-  // Rent (monthly)
-  for (let month = 0; month < 3; month++) {
-    const rentDate = new Date(now);
-    rentDate.setMonth(rentDate.getMonth() - month);
-    rentDate.setDate(1);
-    
-    transactions.push({
-      type: 'expense',
-      amount: 15000,
-      date: rentDate.toISOString().split('T')[0],
-      categoryId: categoryIds['Rent'],
-      tags: [tagIds['essential'], tagIds['recurring']],
-      paymentMethod: 'Bank Transfer',
-      account: 'self',
-      notes: 'Monthly rent'
-    });
-  }
-  
-  // Shopping - Clothing
-  for (let i = 0; i < 4; i++) {
-    transactions.push({
-      type: 'expense',
-      amount: Math.floor(Math.random() * 3000) + 1000, // ₹1,000 - ₹4,000
-      date: getRandomDate().toISOString().split('T')[0],
-      categoryId: categoryIds['Shopping'],
-      subCategoryId: subCategoryIds['Clothing'],
-      tags: [tagIds['non-essential'], tagIds['personal']],
-      paymentMethod: 'Credit Card',
-      account: 'self',
-      notes: 'Clothing purchase'
-    });
-  }
-  
-  // Shopping - Electronics
-  for (let i = 0; i < 2; i++) {
-    transactions.push({
-      type: 'expense',
-      amount: Math.floor(Math.random() * 20000) + 5000, // ₹5,000 - ₹25,000
-      date: getRandomDate().toISOString().split('T')[0],
-      categoryId: categoryIds['Shopping'],
-      subCategoryId: subCategoryIds['Electronics'],
-      tags: [tagIds['non-essential']],
-      paymentMethod: 'Credit Card',
-      account: 'self',
-      notes: 'Electronics purchase'
-    });
-  }
-  
-  // Fill remaining slots with random expenses
-  const remaining = numTransactions - transactions.length;
-  for (let i = 0; i < remaining; i++) {
-    const categories = ['Food', 'Transport', 'Shopping'];
-    const category = categories[Math.floor(Math.random() * categories.length)];
-    
-    transactions.push({
-      type: 'expense',
-      amount: Math.floor(Math.random() * 2000) + 100, // ₹100 - ₹2,100
-      date: getRandomDate().toISOString().split('T')[0],
-      categoryId: categoryIds[category],
-      tags: [tagIds['personal']],
-      paymentMethod: 'UPI',
-      account: 'self',
-      notes: 'Misc expense'
-    });
-  }
-  
-  // Create transactions
-  let created = 0;
-  for (const transaction of transactions) {
-    try {
-      const response = await apiRequest('POST', '/transactions', transaction);
-      if (response.success) {
-        created++;
-      }
-    } catch (error) {
-      // Skip duplicates
-    }
-  }
-
-  console.log(`✔ Transactions seeded (${created})`);
-  return created;
-}
-
-/**
- * Seed Subscriptions
- */
-async function seedSubscriptions() {
-  console.log('💳 Seeding subscriptions...');
-  
-  const now = new Date();
-  const subscriptions = [
+  const paymentMethods = await PaymentMethod.insertMany([
     {
+      userId,
+      name: 'HDFC Credit Card',
+      icon: 'logos:mastercard',
+      type: 'card',
+      detailLabel: 'Last 4 digits'
+    },
+    {
+      userId,
+      name: 'PhonePe UPI',
+      icon: 'simple-icons:phonepe',
+      type: 'digital_wallet',
+      detailLabel: 'UPI ID'
+    },
+    {
+      userId,
+      name: 'HDFC Savings',
+      icon: 'lucide:landmark',
+      type: 'bank',
+      detailLabel: 'Account number'
+    }
+  ]);
+
+  const pmByName = Object.fromEntries(paymentMethods.map((p) => [p.name, p]));
+
+  console.log('✔ Seeded catalog (categories, tags, payment methods)');
+
+  return { byName, subByName, tagByName, pmByName };
+}
+
+function buildTransactions(userId, catalog, prevMonthStart, currMonthStart, today) {
+  const { byName, subByName, tagByName, pmByName } = catalog;
+  const essential = tagByName.Essential._id;
+  const work = tagByName.Work._id;
+  const personal = tagByName.Personal._id;
+  const discretionary = tagByName.Discretionary._id;
+
+  const py = prevMonthStart.getFullYear();
+  const pm = prevMonthStart.getMonth();
+  const cy = currMonthStart.getFullYear();
+  const cm = currMonthStart.getMonth();
+  const todayDay = today.getDate();
+
+  const tx = (fields) => ({ userId, account: 'self', ...fields });
+
+  const prevMonthTx = [
+    tx({
+      type: 'income',
+      amount: 85000,
+      date: atNoon(py, pm, 1),
+      categoryId: byName.Salary._id,
+      paymentMethodId: pmByName['HDFC Savings']._id,
+      paymentMethodDetail: '****4821',
+      tags: [essential],
+      notes: 'Monthly salary'
+    }),
+    tx({
+      type: 'income',
+      amount: 15000,
+      date: atNoon(py, pm, 15),
+      categoryId: byName.Freelance._id,
+      paymentMethodId: pmByName['HDFC Savings']._id,
+      tags: [work],
+      notes: 'Client invoice — design project'
+    }),
+    tx({
+      type: 'expense',
+      amount: 22000,
+      date: atNoon(py, pm, 1),
+      categoryId: byName.Housing._id,
+      subCategoryId: subByName.Rent._id,
+      paymentMethodId: pmByName['HDFC Savings']._id,
+      tags: [essential],
+      notes: 'Apartment rent'
+    }),
+    tx({
+      type: 'expense',
+      amount: 4500,
+      date: atNoon(py, pm, 3),
+      categoryId: byName.Food._id,
+      subCategoryId: subByName.Groceries._id,
+      paymentMethodId: pmByName['PhonePe UPI']._id,
+      tags: [essential]
+    }),
+    tx({
+      type: 'expense',
+      amount: 3800,
+      date: atNoon(py, pm, 10),
+      categoryId: byName.Food._id,
+      subCategoryId: subByName.Groceries._id,
+      paymentMethodId: pmByName['PhonePe UPI']._id,
+      tags: [essential]
+    }),
+    tx({
+      type: 'expense',
+      amount: 4200,
+      date: atNoon(py, pm, 17),
+      categoryId: byName.Food._id,
+      subCategoryId: subByName.Groceries._id,
+      paymentMethodId: pmByName['HDFC Credit Card']._id,
+      paymentMethodDetail: '4532',
+      tags: [essential]
+    }),
+    tx({
+      type: 'expense',
+      amount: 3600,
+      date: atNoon(py, pm, 24),
+      categoryId: byName.Food._id,
+      subCategoryId: subByName.Groceries._id,
+      paymentMethodId: pmByName['PhonePe UPI']._id,
+      tags: [essential]
+    }),
+    tx({
+      type: 'expense',
+      amount: 1800,
+      date: atNoon(py, pm, 6),
+      categoryId: byName.Food._id,
+      subCategoryId: subByName.Restaurants._id,
+      paymentMethodId: pmByName['HDFC Credit Card']._id,
+      paymentMethodDetail: '4532',
+      tags: [personal, discretionary]
+    }),
+    tx({
+      type: 'expense',
+      amount: 2400,
+      date: atNoon(py, pm, 14),
+      categoryId: byName.Food._id,
+      subCategoryId: subByName.Restaurants._id,
+      paymentMethodId: pmByName['HDFC Credit Card']._id,
+      paymentMethodDetail: '4532',
+      tags: [personal, discretionary]
+    }),
+    tx({
+      type: 'expense',
+      amount: 3200,
+      date: atNoon(py, pm, 22),
+      categoryId: byName.Food._id,
+      subCategoryId: subByName.Restaurants._id,
+      paymentMethodId: pmByName['PhonePe UPI']._id,
+      tags: [personal, discretionary]
+    }),
+    tx({
+      type: 'expense',
+      amount: 2500,
+      date: atNoon(py, pm, 5),
+      categoryId: byName.Transport._id,
+      subCategoryId: subByName.Fuel._id,
+      paymentMethodId: pmByName['HDFC Credit Card']._id,
+      paymentMethodDetail: '4532',
+      tags: [essential]
+    }),
+    tx({
+      type: 'expense',
+      amount: 2200,
+      date: atNoon(py, pm, 19),
+      categoryId: byName.Transport._id,
+      subCategoryId: subByName.Fuel._id,
+      paymentMethodId: pmByName['HDFC Credit Card']._id,
+      paymentMethodDetail: '4532',
+      tags: [essential]
+    }),
+    tx({
+      type: 'expense',
+      amount: 800,
+      date: atNoon(py, pm, 8),
+      categoryId: byName.Transport._id,
+      subCategoryId: subByName['Public Transit']._id,
+      paymentMethodId: pmByName['PhonePe UPI']._id,
+      tags: [work]
+    }),
+    tx({
+      type: 'expense',
+      amount: 4500,
+      date: atNoon(py, pm, 12),
+      categoryId: byName.Shopping._id,
+      subCategoryId: subByName.Clothing._id,
+      paymentMethodId: pmByName['HDFC Credit Card']._id,
+      paymentMethodDetail: '4532',
+      tags: [discretionary]
+    }),
+    tx({
+      type: 'expense',
+      amount: 2800,
+      date: atNoon(py, pm, 28),
+      categoryId: byName.Shopping._id,
+      subCategoryId: subByName.Electronics._id,
+      paymentMethodId: pmByName['HDFC Credit Card']._id,
+      paymentMethodDetail: '4532',
+      tags: [discretionary]
+    }),
+    tx({
+      type: 'expense',
+      amount: 599,
+      date: atNoon(py, pm, 7),
+      categoryId: byName.Housing._id,
+      subCategoryId: subByName.Utilities._id,
+      paymentMethodId: pmByName['PhonePe UPI']._id,
+      tags: [essential],
+      notes: 'Mobile recharge'
+    }),
+    tx({
+      type: 'expense',
+      amount: 1200,
+      date: atNoon(py, pm, 20),
+      categoryId: byName.Health._id,
+      subCategoryId: subByName.Pharmacy._id,
+      paymentMethodId: pmByName['PhonePe UPI']._id,
+      tags: [essential]
+    }),
+    tx({
+      type: 'savings',
+      amount: 10000,
+      date: atNoon(py, pm, 5),
+      categoryId: byName['Emergency Fund']._id,
+      paymentMethodId: pmByName['HDFC Savings']._id,
+      tags: [essential],
+      notes: 'Monthly transfer to emergency fund'
+    })
+  ];
+
+  const currentMonthTx = [
+    tx({
+      type: 'income',
+      amount: 85000,
+      date: atNoon(cy, cm, 1),
+      categoryId: byName.Salary._id,
+      paymentMethodId: pmByName['HDFC Savings']._id,
+      paymentMethodDetail: '****4821',
+      tags: [essential],
+      notes: 'Monthly salary'
+    }),
+    tx({
+      type: 'expense',
+      amount: 22000,
+      date: atNoon(cy, cm, 1),
+      categoryId: byName.Housing._id,
+      subCategoryId: subByName.Rent._id,
+      paymentMethodId: pmByName['HDFC Savings']._id,
+      tags: [essential],
+      notes: 'Apartment rent'
+    }),
+    tx({
+      type: 'expense',
+      amount: 4800,
+      date: atNoon(cy, cm, 4),
+      categoryId: byName.Food._id,
+      subCategoryId: subByName.Groceries._id,
+      paymentMethodId: pmByName['PhonePe UPI']._id,
+      tags: [essential]
+    }),
+    tx({
+      type: 'expense',
+      amount: 3900,
+      date: atNoon(cy, cm, 11),
+      categoryId: byName.Food._id,
+      subCategoryId: subByName.Groceries._id,
+      paymentMethodId: pmByName['PhonePe UPI']._id,
+      tags: [essential]
+    }),
+    tx({
+      type: 'expense',
+      amount: 2100,
+      date: atNoon(cy, cm, 7),
+      categoryId: byName.Food._id,
+      subCategoryId: subByName.Restaurants._id,
+      paymentMethodId: pmByName['HDFC Credit Card']._id,
+      paymentMethodDetail: '4532',
+      tags: [personal, discretionary]
+    }),
+    tx({
+      type: 'expense',
+      amount: 2850,
+      date: atNoon(cy, cm, 15),
+      categoryId: byName.Food._id,
+      subCategoryId: subByName.Restaurants._id,
+      paymentMethodId: pmByName['HDFC Credit Card']._id,
+      paymentMethodDetail: '4532',
+      tags: [personal, discretionary]
+    }),
+    tx({
+      type: 'expense',
+      amount: 350,
+      date: atNoon(cy, cm, 12),
+      categoryId: byName.Food._id,
+      subCategoryId: subByName.Coffee._id,
+      paymentMethodId: pmByName['PhonePe UPI']._id,
+      tags: [work]
+    }),
+    tx({
+      type: 'expense',
+      amount: 280,
+      date: atNoon(cy, cm, 16),
+      categoryId: byName.Food._id,
+      subCategoryId: subByName.Coffee._id,
+      paymentMethodId: pmByName['PhonePe UPI']._id,
+      tags: [work]
+    }),
+    tx({
+      type: 'expense',
+      amount: 2600,
+      date: atNoon(cy, cm, 6),
+      categoryId: byName.Transport._id,
+      subCategoryId: subByName.Fuel._id,
+      paymentMethodId: pmByName['HDFC Credit Card']._id,
+      paymentMethodDetail: '4532',
+      tags: [essential]
+    }),
+    tx({
+      type: 'expense',
+      amount: 450,
+      date: atNoon(cy, cm, 9),
+      categoryId: byName.Transport._id,
+      subCategoryId: subByName['Ride Share']._id,
+      paymentMethodId: pmByName['PhonePe UPI']._id,
+      tags: [work]
+    }),
+    tx({
+      type: 'expense',
+      amount: 380,
+      date: atNoon(cy, cm, 14),
+      categoryId: byName.Transport._id,
+      subCategoryId: subByName['Ride Share']._id,
+      paymentMethodId: pmByName['PhonePe UPI']._id,
+      tags: [work]
+    }),
+    tx({
+      type: 'expense',
+      amount: 5200,
+      date: atNoon(cy, cm, 10),
+      categoryId: byName.Shopping._id,
+      subCategoryId: subByName.Electronics._id,
+      paymentMethodId: pmByName['HDFC Credit Card']._id,
+      paymentMethodDetail: '4532',
+      tags: [discretionary],
+      notes: 'Wireless earbuds'
+    }),
+    tx({
+      type: 'expense',
+      amount: 599,
+      date: atNoon(cy, cm, 5),
+      categoryId: byName.Housing._id,
+      subCategoryId: subByName.Utilities._id,
+      paymentMethodId: pmByName['PhonePe UPI']._id,
+      tags: [essential],
+      notes: 'Mobile recharge'
+    }),
+    tx({
+      type: 'savings',
+      amount: 12000,
+      date: atNoon(cy, cm, 8),
+      categoryId: byName['Emergency Fund']._id,
+      paymentMethodId: pmByName['HDFC Savings']._id,
+      tags: [essential],
+      notes: 'Monthly transfer to emergency fund'
+    })
+  ];
+
+  // Only include current-month rows up to today (keeps dashboard realistic mid-month)
+  const filteredCurrent = currentMonthTx.filter((row) => row.date.getDate() <= todayDay);
+
+  return [...prevMonthTx, ...filteredCurrent];
+}
+
+async function seedTransactions(userId, catalog, prevMonthStart, currMonthStart, today) {
+  const rows = buildTransactions(userId, catalog, prevMonthStart, currMonthStart, today);
+  const created = await Transaction.insertMany(rows);
+  console.log(`✔ Seeded ${created.length} transactions (${monthKey(prevMonthStart)} + ${monthKey(currMonthStart)})`);
+  return created;
+}
+
+async function seedBudgets(userId, catalog, prevKey, currKey) {
+  const { byName, subByName } = catalog;
+  await Budget.insertMany([
+    { userId, categoryId: byName.Food._id, amount: 20000, month: prevKey },
+    { userId, categoryId: byName.Transport._id, amount: 6000, month: prevKey },
+    { userId, categoryId: byName.Shopping._id, amount: 8000, month: prevKey },
+    { userId, categoryId: byName.Food._id, amount: 18000, month: currKey },
+    { userId, categoryId: byName.Transport._id, amount: 5000, month: currKey },
+    { userId, categoryId: byName.Shopping._id, amount: 4000, month: currKey },
+    { userId, subCategoryId: subByName.Restaurants._id, amount: 6000, month: currKey }
+  ]);
+  console.log('✔ Seeded budgets for both months');
+}
+
+async function seedSubscriptions(userId, catalog, today, pmByName) {
+  const { byName, subByName } = catalog;
+
+  const subs = await Subscription.insertMany([
+    {
+      userId,
       name: 'Netflix',
-      amount: 499,
-      categoryId: categoryIds['Subscriptions'],
+      amount: 649,
+      categoryId: byName.Entertainment._id,
       billingCycle: 'monthly',
-      nextPaymentDate: new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 5 days from now
-      paymentMethod: 'Credit Card',
+      nextPaymentDate: addDays(today, 3),
+      paymentMethodId: pmByName['HDFC Credit Card']._id,
+      paymentMethodDetail: '4532',
       isActive: true,
       autoRenew: true
     },
     {
+      userId,
       name: 'Spotify',
       amount: 119,
-      categoryId: categoryIds['Subscriptions'],
+      categoryId: byName.Entertainment._id,
       billingCycle: 'monthly',
-      nextPaymentDate: new Date(now.getTime() + 12 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 12 days from now
-      paymentMethod: 'Credit Card',
+      nextPaymentDate: addDays(today, 12),
+      paymentMethodId: pmByName['PhonePe UPI']._id,
       isActive: true,
       autoRenew: true
     },
     {
-      name: 'Google Drive',
+      userId,
+      name: 'Google One',
       amount: 130,
-      categoryId: categoryIds['Subscriptions'],
+      categoryId: byName.Entertainment._id,
       billingCycle: 'monthly',
-      nextPaymentDate: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 3 days ago (overdue)
-      paymentMethod: 'Credit Card',
+      nextPaymentDate: addDays(today, -2),
+      paymentMethodId: pmByName['HDFC Credit Card']._id,
+      paymentMethodDetail: '4532',
       isActive: true,
       autoRenew: true
     },
     {
-      name: 'Mobile Recharge',
-      amount: 239,
-      categoryId: categoryIds['Subscriptions'],
+      userId,
+      name: 'Cult.fit Gym',
+      amount: 2500,
+      categoryId: byName.Health._id,
       billingCycle: 'monthly',
-      nextPaymentDate: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1 day ago (overdue)
-      paymentMethod: 'UPI',
+      nextPaymentDate: addDays(today, 8),
+      paymentMethodId: pmByName['HDFC Savings']._id,
+      isActive: true,
+      autoRenew: true
+    },
+    {
+      userId,
+      name: 'Adobe Creative Cloud',
+      amount: 1675,
+      categoryId: byName.Entertainment._id,
+      billingCycle: 'yearly',
+      nextPaymentDate: addDays(today, 45),
+      paymentMethodId: pmByName['HDFC Credit Card']._id,
+      paymentMethodDetail: '4532',
       isActive: true,
       autoRenew: true
     }
-  ];
+  ]);
 
-  let created = 0;
-  for (const sub of subscriptions) {
-    try {
-      const response = await apiRequest('POST', '/subscriptions', sub);
-      if (response.success) {
-        created++;
-      }
-    } catch (error) {
-      // Skip duplicates
-    }
-  }
+  const netflix = subs.find((s) => s.name === 'Netflix');
+  const spotify = subs.find((s) => s.name === 'Spotify');
 
-  console.log(`✔ Subscriptions seeded (${created})`);
-  return created;
-}
-
-/**
- * Seed Budgets
- */
-async function seedBudgets() {
-  console.log('📊 Seeding budgets...');
-  
-  const now = new Date();
-  const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  
-  const budgets = [
+  await SubscriptionPayment.insertMany([
     {
-      categoryId: categoryIds['Food'],
-      amount: 6000,
-      month: currentMonth
+      userId,
+      subscriptionId: netflix._id,
+      amount: 649,
+      billingDueDate: addDays(today, -27),
+      source: 'auto-renew'
     },
     {
-      categoryId: categoryIds['Transport'],
-      amount: 3000,
-      month: currentMonth
-    },
-    {
-      categoryId: categoryIds['Shopping'],
-      amount: 5000,
-      month: currentMonth
+      userId,
+      subscriptionId: spotify._id,
+      amount: 119,
+      billingDueDate: addDays(today, -18),
+      source: 'auto-renew'
     }
-  ];
+  ]);
 
-  let created = 0;
-  for (const budget of budgets) {
-    try {
-      const response = await apiRequest('POST', '/budgets', budget);
-      if (response.success) {
-        created++;
-      }
-    } catch (error) {
-      // Skip duplicates
-    }
-  }
-
-  console.log(`✔ Budgets seeded (${created})`);
-  return created;
+  console.log(`✔ Seeded ${subs.length} subscriptions (1 overdue, mix of upcoming)`);
+  return subs;
 }
 
-/**
- * Main execution
- */
-async function main() {
-  console.log('🌱 Starting test data seeding...\n');
-  
-  try {
-    // Authenticate
-    await authenticate();
-    
-    // Check existing data
-    const existing = await getExistingData();
-    
-    // If data exists, ask to clear (for dev, we'll auto-clear)
-    const hasData = existing.categories.length > 0 || 
-                    existing.transactions.length > 0 ||
-                    existing.subscriptions.length > 0;
-    
-    if (hasData) {
-      console.log('⚠️  Existing data found. Clearing for fresh seed...\n');
-      await deleteExistingData(existing);
-      // Reset IDs
-      categoryIds = {};
-      subCategoryIds = {};
-      tagIds = {};
+async function seedPortfolio(userId, catalog, prevMonthStart, currMonthStart) {
+  const { byName } = catalog;
+  const investmentCategory = byName.Investments;
+
+  const nifty = await PortfolioHolding.create({
+    userId,
+    assetKey: 'NIFTY50-INDEX',
+    finnhubSymbol: 'NIFTY50-INDEX',
+    assetType: 'mutual_fund',
+    dataProvider: 'manual',
+    displayName: 'Nifty 50 Index Fund',
+    categoryId: investmentCategory._id,
+    quoteCurrency: 'INR',
+    totalQuantity: 0,
+    totalCostBasis: 125000
+  });
+
+  const largeCap = await PortfolioHolding.create({
+    userId,
+    assetKey: 'LARGE-CAP-MF',
+    finnhubSymbol: 'LARGE-CAP-MF',
+    assetType: 'mutual_fund',
+    dataProvider: 'manual',
+    displayName: 'Large Cap Equity Fund',
+    categoryId: investmentCategory._id,
+    quoteCurrency: 'INR',
+    totalQuantity: 0,
+    totalCostBasis: 80000
+  });
+
+  await PortfolioActivity.insertMany([
+    {
+      userId,
+      holdingId: nifty._id,
+      type: 'set_position',
+      date: atNoon(prevMonthStart.getFullYear(), prevMonthStart.getMonth(), 10),
+      amount: 125000
+    },
+    {
+      userId,
+      holdingId: largeCap._id,
+      type: 'set_position',
+      date: atNoon(prevMonthStart.getFullYear(), prevMonthStart.getMonth(), 20),
+      amount: 80000
     }
-    
-    // Seed in order
-    await seedCategories();
-    await seedSubcategories();
-    await seedTags();
-    await seedTransactions();
-    await seedSubscriptions();
-    await seedBudgets();
-    
-    console.log('\n🎉 Test data seeding complete!');
-    console.log('\n✅ You can now:');
-    console.log('   - View dashboard with charts');
-    console.log('   - Check analytics endpoints');
-    console.log('   - See subscription reminders');
-    console.log('   - Export CSV reports');
-    
-  } catch (error) {
-    console.error('\n❌ Seeding failed:', error.message);
+  ]);
+
+  const contribDate = atNoon(currMonthStart.getFullYear(), currMonthStart.getMonth(), 3);
+  const contribAmount = 10000;
+
+  nifty.totalCostBasis += contribAmount;
+  await nifty.save();
+
+  const investmentTx = await Transaction.create({
+    userId,
+    type: 'investment',
+    amount: contribAmount,
+    date: contribDate,
+    categoryId: investmentCategory._id,
+    paymentMethodId: null,
+    account: 'self',
+    notes: `Portfolio: ${nifty.displayName}`
+  });
+
+  await PortfolioActivity.create({
+    userId,
+    holdingId: nifty._id,
+    type: 'add_contribution',
+    date: contribDate,
+    amount: contribAmount,
+    transactionId: investmentTx._id
+  });
+
+  console.log('✔ Seeded portfolio (2 holdings, 3 activities)');
+}
+
+async function invalidateCaches(userId) {
+  const id = userId.toString();
+  await cache.invalidateAnalyticsCache(id);
+  await cache.invalidateTransactionsCache(id);
+  await cache.del(`ref:${id}:categories:all`);
+  await cache.del(`ref:${id}:categories:expense`);
+  await cache.del(`ref:${id}:categories:income`);
+  await cache.del(`ref:${id}:subcategories:all`);
+  await cache.del(`ref:${id}:tags`);
+  await cache.del(`ref:${id}:paymentMethods`);
+}
+
+async function seed() {
+  console.log('🌱 FinanceNow screenshot seed');
+  console.log(`   User: ${TEST_EMAIL} / ${TEST_PASSWORD}`);
+  console.log('');
+
+  if (!process.env.MONGODB_URI) {
+    console.error('❌ MONGODB_URI is not set in .env');
     process.exit(1);
   }
+
+  await connectDB();
+
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+
+  const currMonthStart = new Date(today.getFullYear(), today.getMonth(), 1, 12, 0, 0, 0);
+  const prevMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1, 12, 0, 0, 0);
+  const prevKey = monthKey(prevMonthStart);
+  const currKey = monthKey(currMonthStart);
+
+  console.log(`📅 Months: ${prevKey} (full) + ${currKey} (through day ${today.getDate()})`);
+  console.log('');
+
+  const user = await ensureUser();
+  await clearUserData(user._id);
+  const catalog = await seedCatalog(user._id);
+  await seedTransactions(user._id, catalog, prevMonthStart, currMonthStart, today);
+  await seedBudgets(user._id, catalog, prevKey, currKey);
+  await seedSubscriptions(user._id, catalog, today, catalog.pmByName);
+  await seedPortfolio(user._id, catalog, prevMonthStart, currMonthStart);
+  await invalidateCaches(user._id);
+
+  console.log('');
+  console.log('✅ Seed complete — log in and capture screenshots.');
+  console.log('   Dashboard: expense split, month-over-month comparison');
+  console.log('   Budgets: Shopping over budget this month');
+  console.log('   Subscriptions: Google One overdue, Netflix due soon');
+  console.log('   Portfolio: ~₹2.15L across two mutual funds');
+
+  await mongoose.connection.close();
 }
 
-// Run if executed directly
 if (require.main === module) {
-  main();
+  seed().catch(async (err) => {
+    console.error('❌ Seed failed:', err);
+    await mongoose.connection.close().catch(() => {});
+    process.exit(1);
+  });
 }
 
-module.exports = { main };
-
+module.exports = { seed, TEST_EMAIL, TEST_PASSWORD };

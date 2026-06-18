@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import AuthLoader from './ui/AuthLoader';
+import AppLoadingScreen from './ui/AppLoadingScreen';
 
 /**
  * Protected Route Component
@@ -11,11 +11,7 @@ const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="auth-loader-screen">
-        <AuthLoader />
-      </div>
-    );
+    return <AppLoadingScreen variant="app" />;
   }
 
   if (!isAuthenticated()) {

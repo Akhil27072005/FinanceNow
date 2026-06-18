@@ -716,6 +716,7 @@
 }
 
 .expense-split-card__row-icon {
+  --expense-split-card-icon-color: var(--app-text-subtle);
   width: 44px;
   height: 44px;
   border-radius: 12px;

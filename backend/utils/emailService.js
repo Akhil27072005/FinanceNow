@@ -1,21 +1,51 @@
 const nodemailer = require('nodemailer');
 
-/**
- * Email Service
- * Handles sending emails using nodemailer
- */
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Create reusable transporter
+const trimEnv = (key) => process.env[key]?.trim() || '';
+
+/** App passwords are often copied with spaces — strip them for SMTP auth. */
+const smtpPassword = () => trimEnv('SMTP_PASS').replace(/\s+/g, '');
+
+const getSmtpUser = () => trimEnv('SMTP_USER');
+
+/**
+ * Envelope "from" must be a real address accepted by the SMTP server (usually SMTP_USER).
+ */
+const getFromEmail = () => {
+  const configured = trimEnv('SMTP_FROM');
+  if (EMAIL_REGEX.test(configured)) return configured;
+  return getSmtpUser();
+};
+
+const formatFrom = (displayName) => `"${displayName}" <${getFromEmail()}>`;
+
 const createTransporter = () => {
+  const user = getSmtpUser();
+  const pass = smtpPassword();
+
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
+    host: trimEnv('SMTP_HOST'),
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    secure: process.env.SMTP_SECURE === 'true',
+    auth: { user, pass }
   });
+};
+
+const mapMailError = (error, fallbackMessage) => {
+  if (error.statusCode) return error;
+
+  if (error.code === 'EAUTH') {
+    const err = new Error(
+      'Email authentication failed. Check SMTP_USER and SMTP_PASS (use a Gmail App Password).'
+    );
+    err.statusCode = 503;
+    return err;
+  }
+
+  const err = new Error(fallbackMessage);
+  err.statusCode = 503;
+  return err;
 };
 
 /**
@@ -31,7 +61,7 @@ const sendPasswordResetEmail = async (email, resetToken) => {
     const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
     const mailOptions = {
-      from: `"Finance Now" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
+      from: formatFrom('Finance Now'),
       to: email,
       subject: 'Password Reset Request - Finance Now',
       html: `
@@ -67,11 +97,87 @@ const sendPasswordResetEmail = async (email, resetToken) => {
     await transporter.sendMail(mailOptions);
   } catch (error) {
     console.error('Error sending password reset email:', error);
-    throw new Error('Failed to send password reset email');
+    throw mapMailError(error, 'Failed to send password reset email');
+  }
+};
+
+const escapeHtml = (value) =>
+  String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+/**
+ * Send contact / feedback form submission to the developer inbox.
+ * Recipient is read from CONTACT_FEEDBACK_TO (never exposed to the client).
+ */
+const sendContactFeedbackEmail = async ({ name, email, topic, topicLabel, message }) => {
+  const to = trimEnv('CONTACT_FEEDBACK_TO');
+  if (!to) {
+    const err = new Error('Contact form is not configured');
+    err.statusCode = 503;
+    throw err;
+  }
+
+  if (!trimEnv('SMTP_HOST') || !getSmtpUser() || !smtpPassword()) {
+    const err = new Error('Email service is not configured');
+    err.statusCode = 503;
+    throw err;
+  }
+
+  try {
+    const transporter = createTransporter();
+    const safeName = escapeHtml(name);
+    const safeEmail = escapeHtml(email);
+    const safeTopic = escapeHtml(topicLabel || topic);
+    const safeMessage = escapeHtml(message).replace(/\n/g, '<br>');
+
+    const mailOptions = {
+      from: formatFrom('FinanceNow Contact'),
+      to,
+      replyTo: email,
+      subject: `[FinanceNow] ${topicLabel || topic} — ${name}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #111827; margin-top: 0;">New contact form message</h2>
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tr>
+              <td style="padding: 8px 0; color: #6B7280; width: 100px;">Name</td>
+              <td style="padding: 8px 0; color: #111827;">${safeName}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6B7280;">Email</td>
+              <td style="padding: 8px 0;"><a href="mailto:${safeEmail}">${safeEmail}</a></td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0; color: #6B7280;">Topic</td>
+              <td style="padding: 8px 0; color: #111827;">${safeTopic}</td>
+            </tr>
+          </table>
+          <h3 style="color: #111827; font-size: 16px; margin: 24px 0 8px;">Message</h3>
+          <div style="color: #374151; font-size: 14px; line-height: 1.6; background: #F9FAFB; padding: 16px; border-radius: 8px; border: 1px solid #E5E7EB;">
+            ${safeMessage}
+          </div>
+          <p style="color: #9CA3AF; font-size: 12px; margin-top: 24px;">
+            Reply directly to this email to reach the sender.
+          </p>
+        </div>
+      `,
+      text: `Name: ${name}\nEmail: ${email}\nTopic: ${topicLabel || topic}\n\n${message}`
+    };
+
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.error('Error sending contact feedback email:', error);
+    throw mapMailError(error, 'Failed to send message');
   }
 };
 
 module.exports = {
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  sendContactFeedbackEmail,
+  createTransporter,
+  getFromEmail
 };
-

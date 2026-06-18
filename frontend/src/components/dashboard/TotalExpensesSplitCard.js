@@ -123,7 +123,7 @@ const TotalExpensesSplitCard = ({
                 <CategoryIconDisplay
                   icon={row.icon}
                   size={22}
-                  categoryType={row.categoryType}
+                  color="var(--expense-split-card-icon-color)"
                 />
               </div>
               <div

@@ -1,0 +1,57 @@
+.loading-screen-dev {
+  position: relative;
+  min-height: 100vh;
+}
+
+.loading-screen-dev--marketing {
+  background: #050510;
+}
+
+.loading-screen-dev__toolbar {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  z-index: 10;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(18, 18, 18, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.loading-screen-dev__label {
+  padding-right: 4px;
+  white-space: nowrap;
+  opacity: 0.75;
+}
+
+.loading-screen-dev__tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.loading-screen-dev__tab {
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.loading-screen-dev__tab:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.loading-screen-dev__tab--active {
+  background: rgba(178, 100, 255, 0.35);
+  border-color: rgba(178, 100, 255, 0.5);
+}

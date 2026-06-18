@@ -774,8 +774,11 @@
   gap: 10px;
   padding: 8px 10px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: var(--glass-tile-bg, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--glass-tile-border, rgba(255, 255, 255, 0.1));
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(8px) saturate(var(--glass-saturate, 1.1));
+  backdrop-filter: blur(8px) saturate(var(--glass-saturate, 1.1));
 }
 
 .reports-pm-list__meta {

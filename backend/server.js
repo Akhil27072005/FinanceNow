@@ -1,11 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 
-// Load environment variables FIRST before requiring other modules
-dotenv.config();
+// Load backend/.env explicitly (process cwd may not be backend/)
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const connectDB = require('./config/database');
 const passport = require('./config/passport');
@@ -99,6 +100,7 @@ app.use('/api/analytics', require('./routes/analytics.routes'));
 app.use('/api/export', require('./routes/export.routes'));
 app.use('/api/payment-logo', require('./routes/paymentLogo.routes'));
 app.use('/api/portfolio', require('./routes/portfolio.routes'));
+app.use('/api/contact', require('./routes/contact.routes'));
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

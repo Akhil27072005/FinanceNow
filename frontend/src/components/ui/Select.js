@@ -16,6 +16,8 @@ const Select = ({
   required = false,
   className = '',
   glass = false,
+  glassMenuClassName = '',
+  glassTriggerClassName = '',
   ...props
 }) => {
   const inModalGlass = useModalGlass();
@@ -42,7 +44,13 @@ const Select = ({
   };
 
   const triggerClassName = useGlass
-    ? `modal-glass__select-trigger${!selectedOption ? ' modal-glass__select-trigger--placeholder' : ''}`
+    ? [
+        'modal-glass__select-trigger',
+        !selectedOption ? 'modal-glass__select-trigger--placeholder' : '',
+        glassTriggerClassName
+      ]
+        .filter(Boolean)
+        .join(' ')
     : '';
 
   return (
@@ -106,7 +114,7 @@ const Select = ({
             <Menu.Items
               anchor="bottom start"
               transition
-              className="modal-glass__select-menu"
+              className={['modal-glass__select-menu', glassMenuClassName].filter(Boolean).join(' ')}
               style={{ outline: 'none', boxSizing: 'border-box' }}
             >
               {options.map((option) => (

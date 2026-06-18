@@ -149,13 +149,16 @@ SESSION_SECRET=another-random-secret
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
 
-# Optional: SMTP (password reset)
+# Optional: SMTP (password reset + contact form)
 SMTP_HOST=
 SMTP_PORT=587
 SMTP_SECURE=false
 SMTP_USER=
 SMTP_PASS=
 SMTP_FROM=
+
+# Contact form — developer inbox (server-side only, never sent to the browser)
+CONTACT_FEEDBACK_TO=
 ```
 
 Create `**frontend/.env**`:

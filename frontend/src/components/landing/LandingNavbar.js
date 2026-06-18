@@ -1,8 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import MarketingAuthLink from './MarketingAuthLink';
-
-const NAV_LINKS = ['Features', 'Pricing', 'About', 'Blog', 'Contact'];
+import { MARKETING_NAV_LINKS } from '../../constants/marketingContent';
 
 const LandingNavbar = () => {
   return (
@@ -18,11 +17,27 @@ const LandingNavbar = () => {
           </Link>
 
           <div className="landing-nav__links">
-            {NAV_LINKS.map((label) => (
-              <button key={label} type="button" className="landing-nav__link">
-                {label}
-              </button>
-            ))}
+            {MARKETING_NAV_LINKS.map((item) =>
+              item.available ? (
+                <NavLink
+                  key={item.label}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `landing-nav__link${isActive ? ' landing-nav__link--active' : ''}`
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ) : (
+                <span
+                  key={item.label}
+                  className="landing-nav__link landing-nav__link--disabled"
+                  aria-disabled="true"
+                >
+                  {item.label}
+                </span>
+              )
+            )}
           </div>
 
           <div className="landing-nav__actions">

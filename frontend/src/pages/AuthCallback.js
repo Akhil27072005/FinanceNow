@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { authService } from '../services/authService';
+import AppLoadingScreen from '../components/ui/AppLoadingScreen';
 
 /**
  * OAuth Callback Handler
@@ -48,13 +49,7 @@ const AuthCallback = () => {
       });
   }, [navigate, fetchUser]);
 
-  return (
-    <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
-      <div className="spinner-border" role="status">
-        <span className="visually-hidden">Completing authentication...</span>
-      </div>
-    </div>
-  );
+  return <AppLoadingScreen variant="app" label="Completing authentication…" />;
 };
 
 export default AuthCallback;
