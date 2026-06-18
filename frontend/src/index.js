@@ -6,6 +6,8 @@ import './styles/theme-surfaces.css';
 import './styles/theme-dark-glass.css';
 import './styles/theme-dark-datepicker.css';
 import './styles/theme-accent.css';
+import './styles/breakpoints.css';
+import './styles/page-header.css';
 import './styles/datepicker.css';
 import './styles/button.css';
 import './styles/select.css';

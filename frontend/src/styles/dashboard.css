@@ -1,40 +1,42 @@
 /* Dashboard rework — scoped to .dashboard-page */
 
-/* Prevent shell column from growing past the viewport */
-.app-shell > div:has(> .app-content .dashboard-page--fit) {
-  height: 100vh;
-  max-height: 100vh;
-  overflow: hidden;
-  min-height: 0;
-}
+/* Prevent shell column from growing past the viewport — desktop only */
+@media (min-width: 1024px) {
+  .app-shell > div:has(> .app-content .dashboard-page--fit) {
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    min-height: 0;
+  }
 
-/* Dashboard: lock to viewport — no page scroll */
-.app-content:has(.dashboard-page--fit) {
-  height: 100vh;
-  max-height: 100vh;
-  padding: 10px 14px 8px 14px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
+  /* Dashboard: lock to viewport — no page scroll */
+  .app-content:has(.dashboard-page--fit) {
+    height: 100dvh;
+    max-height: 100dvh;
+    padding: 10px 14px 8px 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
 
-.app-content__inner:has(.dashboard-page--fit) {
-  flex: 1;
-  min-height: 0;
-  max-height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
+  .app-content__inner:has(.dashboard-page--fit) {
+    flex: 1;
+    min-height: 0;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
-.dashboard-page--fit {
-  flex: 1;
-  min-height: 0;
-  height: auto;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  .dashboard-page--fit {
+    flex: 1;
+    min-height: 0;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 }
 
 .dashboard-page__header {

@@ -11,22 +11,24 @@ const SidebarNavGroup = ({
   label,
   icon: Icon,
   childItems = [],
-  defaultOpen = false
+  defaultOpen = false,
+  forceExpanded = false
 }) => {
-  const { collapsed } = useSidebar();
+  const { collapsed, isMobile } = useSidebar();
   const navigate = useNavigate();
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(defaultOpen || forceExpanded);
+  const showCollapsed = !isMobile && collapsed;
 
   const hasActiveChild = childItems.some((c) => c.isActive);
 
   useEffect(() => {
-    if (hasActiveChild && !collapsed) {
+    if (forceExpanded || (hasActiveChild && !showCollapsed)) {
       setOpen(true);
     }
-  }, [hasActiveChild, collapsed]);
+  }, [hasActiveChild, showCollapsed, forceExpanded]);
 
   const handleTriggerClick = () => {
-    if (collapsed) {
+    if (showCollapsed) {
       const first = childItems[0];
       if (first?.to) {
         navigate(first.to);
@@ -36,32 +38,34 @@ const SidebarNavGroup = ({
     setOpen((prev) => !prev);
   };
 
+  const isExpanded = forceExpanded || !showCollapsed;
+
   return (
     <div className="sidebar-nav-group">
       <button
         type="button"
         className="sidebar-nav-item sidebar-nav-group__trigger"
         onClick={handleTriggerClick}
-        data-tooltip={collapsed ? label : undefined}
-        aria-expanded={!collapsed ? open : undefined}
+        data-tooltip={showCollapsed ? label : undefined}
+        aria-expanded={isExpanded ? open : undefined}
       >
         <span className="sidebar-nav-item__icon" aria-hidden>
           <Icon size={20} strokeWidth={hasActiveChild ? 2.25 : 2} />
         </span>
         <span className="sidebar-nav-item__label">{label}</span>
-        {!collapsed && (
+        {isExpanded && !forceExpanded ? (
           <ChevronDown
             size={16}
             className={`sidebar-nav-group__chevron ${open ? 'sidebar-nav-group__chevron--open' : ''}`}
             aria-hidden
           />
-        )}
+        ) : null}
       </button>
 
-      {!collapsed && (
+      {isExpanded && (
         <div
           className={`expand-section sidebar-nav-group__expand ${
-            open ? 'expand-section--open' : ''
+            open || forceExpanded ? 'expand-section--open' : ''
           }`}
         >
           <div className="expand-section__inner">
@@ -73,6 +77,7 @@ const SidebarNavGroup = ({
                     label={child.label}
                     icon={child.icon}
                     isActive={child.isActive}
+                    onNavigate={child.onNavigate}
                   />
                 </div>
               ))}

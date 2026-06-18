@@ -1,0 +1,25 @@
+/* Shared responsive breakpoints — use in @media (max-width: …) via custom properties */
+
+:root {
+  --bp-xs: 479px;
+  --bp-sm: 639px;
+  --bp-md: 767px;
+  --bp-lg: 1023px;
+  --bp-xl: 1279px;
+
+  /* Layout tokens */
+  --mobile-top-bar-height: 52px;
+  --app-content-padding: 24px;
+}
+
+@media (max-width: 1023px) {
+  :root {
+    --app-content-padding: 16px;
+  }
+}
+
+@media (max-width: 639px) {
+  :root {
+    --app-content-padding: 12px;
+  }
+}

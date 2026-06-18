@@ -14,6 +14,8 @@ export const transactionService = {
     if (filters.startDate) params.append('startDate', filters.startDate);
     if (filters.endDate) params.append('endDate', filters.endDate);
     if (filters.categoryId) params.append('categoryId', filters.categoryId);
+    if (filters.subCategoryId) params.append('subCategoryId', filters.subCategoryId);
+    if (filters.paymentMethodId) params.append('paymentMethodId', filters.paymentMethodId);
     if (filters.tag) params.append('tag', filters.tag);
     if (filters.limit) params.append('limit', filters.limit);
     if (filters.page) params.append('page', filters.page);

@@ -1,25 +1,28 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import Select from '../ui/Select';
 import { SETTINGS_SECTIONS } from '../../constants/settingsSections';
 
 const SettingsNav = ({ activeId, onSelect, variant = 'sidebar' }) => {
+  const sectionOptions = useMemo(
+    () => SETTINGS_SECTIONS.map((section) => ({ value: section.id, label: section.label })),
+    []
+  );
+
   if (variant === 'select') {
     return (
       <div className="settings-nav settings-nav--mobile">
         <label className="settings-nav__mobile-label" htmlFor="settings-section-select">
           Section
         </label>
-        <select
+        <Select
           id="settings-section-select"
-          className="settings-nav__mobile-select"
           value={activeId}
           onChange={(e) => onSelect(e.target.value)}
-        >
-          {SETTINGS_SECTIONS.map((section) => (
-            <option key={section.id} value={section.id}>
-              {section.label}
-            </option>
-          ))}
-        </select>
+          options={sectionOptions}
+          glass
+          glassTriggerClassName="settings-nav__mobile-select-trigger"
+          glassMenuClassName="settings-nav__mobile-select-menu"
+        />
       </div>
     );
   }

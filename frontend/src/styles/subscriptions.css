@@ -611,6 +611,33 @@
   }
 }
 
+@media (max-width: 767px) {
+  .subscriptions-kpi {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .subscriptions-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .subscriptions-toolbar__chip {
+    min-height: 44px;
+  }
+
+  .subscriptions-page__title {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 639px) {
+  .subscriptions-kpi {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Month picker — glass + purple palette (aligned with dashboard) */
 .subscriptions-page__month .datepicker-wrapper,
 .subscriptions-page__month .datepicker-input-wrapper,

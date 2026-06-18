@@ -955,3 +955,45 @@
   margin-top: 2px;
 }
 
+@media (max-width: 639px) {
+  .investments-page__title {
+    font-size: 22px;
+  }
+
+  .investments-history-modal__table-wrap {
+    overflow-x: visible;
+    border: none;
+  }
+
+  .investments-history-modal__table {
+    min-width: 0;
+  }
+
+  .investments-history-modal__table thead {
+    display: none;
+  }
+
+  .investments-history-modal__table tbody tr {
+    display: block;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 12px;
+    border: 1px solid var(--glass-control-border);
+    background: var(--glass-chip-bg);
+  }
+
+  .investments-history-modal__table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 6px 0;
+    border: none;
+  }
+
+  .investments-history-modal__details {
+    max-width: none;
+    text-align: right;
+  }
+}
+

@@ -77,7 +77,8 @@ const Transactions = () => {
     startDate: startDateFromUrl,
     endDate: endDateFromUrl,
     categoryId: categoryFromUrl,
-    subCategoryId: subCategoryFromUrl
+    subCategoryId: subCategoryFromUrl,
+    paymentMethodId: ''
   });
   const typeTabsRef = useRef(null);
   const typeTabRefs = useRef({});
@@ -321,7 +322,11 @@ const Transactions = () => {
   };
 
   const hasAdvancedFilters =
-    filters.startDate || filters.endDate || filters.categoryId || filters.subCategoryId;
+    filters.startDate ||
+    filters.endDate ||
+    filters.categoryId ||
+    filters.subCategoryId ||
+    filters.paymentMethodId;
 
   const hasAnyFilters = Boolean(filters.type || hasAdvancedFilters);
 
@@ -331,7 +336,8 @@ const Transactions = () => {
       startDate: '',
       endDate: '',
       categoryId: '',
-      subCategoryId: ''
+      subCategoryId: '',
+      paymentMethodId: ''
     });
     setFiltersExpanded(false);
   };
@@ -529,6 +535,18 @@ const Transactions = () => {
                                 sc.categoryId === filters.categoryId
                             )
                             .map((sub) => ({ value: sub._id, label: sub.name }))
+                        ]}
+                      />
+                    </label>
+                    <label className="transactions-filters__field transactions-filters__field--wide">
+                      <span className="transactions-filters__label">Payment method</span>
+                      <Select
+                        glass
+                        value={filters.paymentMethodId || ''}
+                        onChange={(e) => setFilters({ ...filters, paymentMethodId: e.target.value })}
+                        options={[
+                          { value: '', label: 'All payment methods' },
+                          ...paymentMethods.map((pm) => ({ value: pm._id, label: pm.name }))
                         ]}
                       />
                     </label>

@@ -33,6 +33,10 @@ const LoadingScreenDev =
   process.env.NODE_ENV === 'development'
     ? lazy(() => import('./pages/dev/LoadingScreenDev'))
     : null;
+const ResponsiveDev =
+  process.env.NODE_ENV === 'development'
+    ? lazy(() => import('./pages/dev/ResponsiveDev'))
+    : null;
 
 /**
  * Main App Component
@@ -66,6 +70,21 @@ function App() {
                 <Suspense fallback={null}>
                   <LoadingScreenDev />
                 </Suspense>
+              }
+            />
+          ) : null}
+
+          {ResponsiveDev ? (
+            <Route
+              path="/dev/responsive"
+              element={
+                <ProtectedRoute>
+                  <MainLayout>
+                    <Suspense fallback={null}>
+                      <ResponsiveDev />
+                    </Suspense>
+                  </MainLayout>
+                </ProtectedRoute>
               }
             />
           ) : null}

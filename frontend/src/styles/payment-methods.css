@@ -445,6 +445,85 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .payment-methods-section__content--loaded .payment-methods-table__row {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .payment-methods-page__header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .payment-methods-page__title {
+    font-size: 22px;
+  }
+
+  .payment-methods-section {
+    padding: 16px 14px;
+    margin-bottom: 14px;
+  }
+
+  .payment-methods-section__head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .payment-methods-section__head .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .payment-methods-table-wrap {
+    overflow-x: visible;
+  }
+
+  .payment-methods-table thead {
+    display: none;
+  }
+
+  .payment-methods-table tbody tr {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+    border-radius: 14px;
+    background: var(--glass-tile-bg);
+    border: 1px solid var(--glass-tile-border);
+  }
+
+  .payment-methods-table tbody tr:hover {
+    background: var(--glass-tile-bg);
+  }
+
+  .payment-methods-table td {
+    display: block;
+    padding: 0;
+    border: none;
+  }
+
+  .payment-methods-table td:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .payment-methods-table td:last-child {
+    grid-column: 1 / -1;
+    justify-self: end;
+  }
+
+  .payment-methods-actions {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
   .payment-methods-section__content--loaded .payment-methods-table__row,
   .payment-methods-section__content--loaded .payment-methods-empty {
     animation: none;

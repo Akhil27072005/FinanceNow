@@ -662,6 +662,12 @@
   }
 }
 
+@media (max-width: 639px) {
+  .tags-page__title {
+    font-size: 22px;
+  }
+}
+
 /* Month picker popover — purple theme (aligned with dashboard glass picker) */
 .react-datepicker-popper:has(.tags-month-picker__calendar) {
   z-index: 10020 !important;

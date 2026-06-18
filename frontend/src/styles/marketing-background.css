@@ -36,6 +36,7 @@
   position: relative;
   min-height: 100vh;
   background: #050510;
+  overflow-x: hidden;
 }
 
 .marketing-shell > :not(.marketing-bg) {

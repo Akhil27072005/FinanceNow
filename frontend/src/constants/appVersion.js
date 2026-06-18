@@ -1,2 +1,2 @@
 /** User-facing app version shown in Settings → About. Bump manually on releases. */
-export const APP_VERSION = '0.5.4';
+export const APP_VERSION = '1.5.4';

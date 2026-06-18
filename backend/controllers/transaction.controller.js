@@ -210,6 +210,7 @@ const getTransactions = async (req, res, next) => {
       endDate,
       categoryId,
       subCategoryId,
+      paymentMethodId,
       tag,
       limit = 20,
       page = 1
@@ -280,6 +281,17 @@ const getTransactions = async (req, res, next) => {
       filter.subCategoryId = subCategoryId;
     }
 
+    // Filter by payment method
+    if (paymentMethodId) {
+      if (!mongoose.Types.ObjectId.isValid(paymentMethodId)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid paymentMethodId format'
+        });
+      }
+      filter.paymentMethodId = paymentMethodId;
+    }
+
     // Filter by tag
     if (tag) {
       if (!mongoose.Types.ObjectId.isValid(tag)) {
@@ -323,6 +335,7 @@ const getTransactions = async (req, res, next) => {
       if (endDate) cacheKeyParts.push(`end:${endDate}`);
       if (categoryId) cacheKeyParts.push(`cat:${categoryId}`);
       if (subCategoryId) cacheKeyParts.push(`subcat:${subCategoryId}`);
+      if (paymentMethodId) cacheKeyParts.push(`pm:${paymentMethodId}`);
       if (tag) cacheKeyParts.push(`tag:${tag}`);
       const baseCacheKey = cacheKeyParts.join(':');
       const cacheKey = await cache.getVersionedKey(baseCacheKey, userIdStr, 'transactions');

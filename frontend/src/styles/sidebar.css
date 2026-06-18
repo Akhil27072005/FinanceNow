@@ -87,6 +87,7 @@
 }
 
 .sidebar--collapsed .sidebar__shell {
+  width: var(--sidebar-collapsed-width);
   padding: 16px 10px;
 }
 
@@ -119,7 +120,6 @@
 
 .sidebar__scroll {
   flex: 1;
-  overflow-y: auto;
   overflow-x: hidden;
 }
 
@@ -199,6 +199,11 @@
 }
 
 .sidebar--collapsed .sidebar-nav-item {
+  justify-content: center;
+  padding: 10px;
+}
+
+.sidebar--collapsed .sidebar-nav-group__trigger {
   justify-content: center;
   padding: 10px;
 }
@@ -321,4 +326,97 @@
 
 .sidebar--collapsed .sidebar__collapse-btn {
   padding: 10px;
+}
+
+/* Mobile off-canvas drawer */
+body.sidebar-mobile-open {
+  overflow: hidden;
+}
+
+.sidebar__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1040;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: rgba(5, 5, 16, 0.45);
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+.sidebar__mobile-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+.sidebar__mobile-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--sidebar-border);
+  border-radius: 12px;
+  background: var(--sidebar-hover-bg);
+  color: var(--sidebar-text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sidebar__mobile-close:hover {
+  background: var(--sidebar-active-bg);
+}
+
+@media (max-width: 767px) {
+  .sidebar .sidebar__shell {
+    width: min(280px, 85vw);
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 1050;
+    padding-top: calc(16px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .sidebar__scroll {
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+
+  .sidebar--mobile-open .sidebar__shell {
+    transform: translateX(0);
+  }
+
+  .sidebar--collapsed .sidebar-nav-item__label,
+  .sidebar--collapsed .sidebar-nav-group__chevron {
+    display: inline;
+  }
+
+  .sidebar--collapsed .sidebar-nav-item {
+    justify-content: flex-start;
+    padding: 10px 12px;
+  }
+
+  .sidebar-nav-item,
+  .sidebar-nav-group__trigger,
+  .sidebar__collapse-btn {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar .sidebar__shell {
+    transition: none;
+  }
 }

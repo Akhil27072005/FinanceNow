@@ -1,4 +1,13 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo
+} from 'react';
+import { useLocation } from 'react-router-dom';
+import { useBreakpoint } from '../hooks/useBreakpoint';
 
 const STORAGE_KEY = 'sidebarCollapsed';
 
@@ -8,6 +17,8 @@ export const EXPANDED_WIDTH = 260;
 export const COLLAPSED_WIDTH = 72;
 
 export const SidebarProvider = ({ children }) => {
+  const { pathname } = useLocation();
+  const { isMobile } = useBreakpoint();
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem(STORAGE_KEY) === 'true';
@@ -15,6 +26,7 @@ export const SidebarProvider = ({ children }) => {
       return false;
     }
   });
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -24,11 +36,49 @@ export const SidebarProvider = ({ children }) => {
     }
   }, [collapsed]);
 
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileOpen(false);
+    }
+  }, [isMobile]);
+
+  useEffect(() => {
+    const className = 'sidebar-mobile-open';
+    if (isMobile && mobileOpen) {
+      document.body.classList.add(className);
+    } else {
+      document.body.classList.remove(className);
+    }
+    return () => document.body.classList.remove(className);
+  }, [isMobile, mobileOpen]);
+
+  useEffect(() => {
+    if (!isMobile || !mobileOpen) return undefined;
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setMobileOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isMobile, mobileOpen]);
+
   const toggleCollapsed = useCallback(() => {
     setCollapsed((prev) => !prev);
   }, []);
 
-  const sidebarWidth = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+  const openMobile = useCallback(() => setMobileOpen(true), []);
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
+  const toggleMobile = useCallback(() => setMobileOpen((prev) => !prev), []);
+
+  const desktopWidth = collapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH;
+  const sidebarWidth = isMobile ? 0 : desktopWidth;
 
   const value = useMemo(
     () => ({
@@ -36,16 +86,26 @@ export const SidebarProvider = ({ children }) => {
       toggleCollapsed,
       sidebarWidth,
       expandedWidth: EXPANDED_WIDTH,
-      collapsedWidth: COLLAPSED_WIDTH
+      collapsedWidth: COLLAPSED_WIDTH,
+      isMobile,
+      mobileOpen,
+      openMobile,
+      closeMobile,
+      toggleMobile
     }),
-    [collapsed, toggleCollapsed, sidebarWidth]
+    [
+      collapsed,
+      toggleCollapsed,
+      sidebarWidth,
+      isMobile,
+      mobileOpen,
+      openMobile,
+      closeMobile,
+      toggleMobile
+    ]
   );
 
-  return (
-    <SidebarContext.Provider value={value}>
-      {children}
-    </SidebarContext.Provider>
-  );
+  return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;
 };
 
 export const useSidebar = () => {

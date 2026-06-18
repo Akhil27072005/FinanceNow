@@ -1,0 +1,97 @@
+/* Shared page header — title + actions stack on narrow viewports */
+
+.page-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.page-header__intro {
+  min-width: 0;
+  flex: 1 1 200px;
+}
+
+.page-header__title {
+  margin: 0;
+  font-weight: 800;
+  font-size: 26px;
+  color: var(--app-text-heading);
+  letter-spacing: -0.03em;
+}
+
+.page-header__subtitle {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--app-text-subtle);
+  line-height: 1.5;
+}
+
+.page-header__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* Filter toolbar mobile pattern */
+.filter-toolbar-mobile {
+  display: none;
+}
+
+.filter-toolbar-mobile__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-chip-border);
+  background: var(--glass-chip-bg);
+  color: var(--accent-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 767px) {
+  .page-header__title {
+    font-size: 22px;
+  }
+
+  .page-header__actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .page-header__actions > .btn,
+  .page-header__actions > a.btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .filter-toolbar--collapsible .filter-toolbar__desktop-bar {
+    display: none;
+  }
+
+  .filter-toolbar-mobile {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .filter-toolbar--collapsible.filter-toolbar--open .filter-toolbar__desktop-bar {
+    display: block;
+  }
+}
+
+@media (max-width: 639px) {
+  .page-header {
+    align-items: stretch;
+  }
+}

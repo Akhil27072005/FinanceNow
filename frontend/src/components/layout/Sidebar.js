@@ -15,7 +15,8 @@ import {
   PiggyBank,
   Settings,
   PanelLeftClose,
-  PanelLeft
+  PanelLeft,
+  X
 } from 'lucide-react';
 import FinanceNowLogo from '../brand/FinanceNowLogo';
 import { useSidebar } from '../../contexts/SidebarContext';
@@ -27,8 +28,10 @@ const INSIGHTS_PATHS = ['/reports', '/budgets', '/investments'];
 
 const Sidebar = () => {
   const location = useLocation();
-  const { collapsed, toggleCollapsed, sidebarWidth } = useSidebar();
+  const { collapsed, toggleCollapsed, isMobile, mobileOpen, closeMobile, sidebarWidth } =
+    useSidebar();
   const pathname = location.pathname;
+  const showCollapsed = !isMobile && collapsed;
 
   const isActive = (path) => pathname === path;
 
@@ -51,91 +54,140 @@ const Sidebar = () => {
     []
   );
 
+  const sidebarClass = [
+    'sidebar',
+    showCollapsed ? 'sidebar--collapsed' : '',
+    isMobile && mobileOpen ? 'sidebar--mobile-open' : ''
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <aside
-      className={`sidebar ${collapsed ? 'sidebar--collapsed' : ''}`}
-      style={{ '--sidebar-width': `${sidebarWidth}px` }}
-    >
-      <div className="sidebar__shell">
-        <div className="sidebar__logo">
-          <Link to="/dashboard" className="sidebar__logo-link">
-            <FinanceNowLogo className="sidebar__logo-mark" />
-          </Link>
-        </div>
+    <>
+      {isMobile && mobileOpen ? (
+        <button
+          type="button"
+          className="sidebar__backdrop"
+          onClick={closeMobile}
+          aria-label="Close navigation menu"
+        />
+      ) : null}
 
-        <div className="sidebar__scroll">
-          <section className="sidebar__section" aria-label="Main menu">
-            {!collapsed && <h2 className="sidebar__section-label">Main menu</h2>}
-            <nav className="sidebar__nav">
-              <SidebarNavItem
-                to="/dashboard"
-                label="Dashboard"
-                icon={LayoutDashboard}
-                isActive={isActive('/dashboard')}
-              />
-              <SidebarNavItem
-                to="/transactions"
-                label="Transactions"
-                icon={ArrowLeftRight}
-                isActive={isActive('/transactions')}
-              />
-              <SidebarNavGroup
-                label="Insights"
-                icon={LineChart}
-                defaultOpen={INSIGHTS_PATHS.some((p) => pathname.startsWith(p))}
-                childItems={insightsChildren.map((c) => ({
-                  ...c,
-                  to: c.path,
-                  isActive: isActive(c.path)
-                }))}
-              />
-              <SidebarNavGroup
-                label="Catalog"
-                icon={Layers}
-                defaultOpen={CATALOG_PATHS.some((p) => pathname.startsWith(p))}
-                childItems={catalogChildren.map((c) => ({
-                  ...c,
-                  to: c.path,
-                  isActive: isActive(c.path)
-                }))}
-              />
-              <SidebarNavItem
-                to="/subscriptions"
-                label="Subscriptions"
-                icon={Repeat}
-                isActive={isActive('/subscriptions')}
-              />
-            </nav>
-          </section>
+      <aside
+        className={sidebarClass}
+        style={!isMobile ? { '--sidebar-width': `${sidebarWidth}px` } : undefined}
+        aria-hidden={isMobile && !mobileOpen}
+      >
+        <div
+          className="sidebar__shell"
+          style={!isMobile ? { width: `${sidebarWidth}px` } : undefined}
+        >
+          {isMobile ? (
+            <div className="sidebar__mobile-head">
+              <Link to="/dashboard" className="sidebar__logo-link" onClick={closeMobile}>
+                <FinanceNowLogo className="sidebar__logo-mark" />
+              </Link>
+              <button
+                type="button"
+                className="sidebar__mobile-close"
+                onClick={closeMobile}
+                aria-label="Close navigation menu"
+              >
+                <X size={20} strokeWidth={2} aria-hidden />
+              </button>
+            </div>
+          ) : (
+            <div className="sidebar__logo">
+              <Link to="/dashboard" className="sidebar__logo-link">
+                <FinanceNowLogo className="sidebar__logo-mark" />
+              </Link>
+            </div>
+          )}
 
-          <section className="sidebar__section" aria-label="Settings">
-            {!collapsed && <h2 className="sidebar__section-label">Settings</h2>}
-            <nav className="sidebar__nav">
-              <SidebarNavItem
-                to="/settings"
-                label="Settings"
-                icon={Settings}
-                isActive={isActive('/settings')}
-              />
-            </nav>
-          </section>
-        </div>
+          <div className="sidebar__scroll">
+            <section className="sidebar__section" aria-label="Main menu">
+              {!showCollapsed && <h2 className="sidebar__section-label">Main menu</h2>}
+              <nav className="sidebar__nav">
+                <SidebarNavItem
+                  to="/dashboard"
+                  label="Dashboard"
+                  icon={LayoutDashboard}
+                  isActive={isActive('/dashboard')}
+                  onNavigate={isMobile ? closeMobile : undefined}
+                />
+                <SidebarNavItem
+                  to="/transactions"
+                  label="Transactions"
+                  icon={ArrowLeftRight}
+                  isActive={isActive('/transactions')}
+                  onNavigate={isMobile ? closeMobile : undefined}
+                />
+                <SidebarNavGroup
+                  label="Insights"
+                  icon={LineChart}
+                  defaultOpen={INSIGHTS_PATHS.some((p) => pathname.startsWith(p))}
+                  forceExpanded={isMobile}
+                  childItems={insightsChildren.map((c) => ({
+                    ...c,
+                    to: c.path,
+                    isActive: isActive(c.path),
+                    onNavigate: isMobile ? closeMobile : undefined
+                  }))}
+                />
+                <SidebarNavGroup
+                  label="Catalog"
+                  icon={Layers}
+                  defaultOpen={CATALOG_PATHS.some((p) => pathname.startsWith(p))}
+                  forceExpanded={isMobile}
+                  childItems={catalogChildren.map((c) => ({
+                    ...c,
+                    to: c.path,
+                    isActive: isActive(c.path),
+                    onNavigate: isMobile ? closeMobile : undefined
+                  }))}
+                />
+                <SidebarNavItem
+                  to="/subscriptions"
+                  label="Subscriptions"
+                  icon={Repeat}
+                  isActive={isActive('/subscriptions')}
+                  onNavigate={isMobile ? closeMobile : undefined}
+                />
+              </nav>
+            </section>
 
-        <div className="sidebar__footer">
-          <button
-            type="button"
-            className="sidebar__collapse-btn"
-            onClick={toggleCollapsed}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {collapsed ? <PanelLeft size={20} /> : <PanelLeftClose size={20} />}
-            <span className="sidebar__collapse-btn__label">
-              {collapsed ? 'Expand' : 'Collapse'}
-            </span>
-          </button>
+            <section className="sidebar__section" aria-label="Settings">
+              {!showCollapsed && <h2 className="sidebar__section-label">Settings</h2>}
+              <nav className="sidebar__nav">
+                <SidebarNavItem
+                  to="/settings"
+                  label="Settings"
+                  icon={Settings}
+                  isActive={isActive('/settings')}
+                  onNavigate={isMobile ? closeMobile : undefined}
+                />
+              </nav>
+            </section>
+          </div>
+
+          {!isMobile ? (
+            <div className="sidebar__footer">
+              <button
+                type="button"
+                className="sidebar__collapse-btn"
+                onClick={toggleCollapsed}
+                aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                {collapsed ? <PanelLeft size={20} /> : <PanelLeftClose size={20} />}
+                <span className="sidebar__collapse-btn__label">
+                  {collapsed ? 'Expand' : 'Collapse'}
+                </span>
+              </button>
+            </div>
+          ) : null}
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 };
 

@@ -366,4 +366,13 @@
   .contact-aside {
     padding: 22px 18px;
   }
+
+  .contact-form__row {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-form__field,
+  .contact-form__select {
+    width: 100%;
+  }
 }

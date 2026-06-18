@@ -960,3 +960,51 @@
   border-top-color: var(--glass-divider);
 }
 
+/* Mobile bottom-sheet style modals */
+@media (max-width: 639px) {
+  .modal-glass__center {
+    align-items: flex-end;
+    padding: 0;
+    min-height: 100%;
+  }
+
+  .modal-glass__panel {
+    width: 100%;
+    max-width: 100%;
+    max-height: 92dvh;
+    margin: 0;
+    border-radius: 20px 20px 0 0;
+    padding: 1.25rem 1rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .modal-glass__panel--confirm {
+    border-radius: 20px;
+    margin: 1rem;
+    width: calc(100% - 2rem);
+    max-height: calc(100dvh - 2rem);
+  }
+
+  .modal-glass__body {
+    max-height: calc(92dvh - 5rem);
+    overflow-y: auto;
+  }
+
+  .modal-glass__close {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-glass-enter--panel,
+  .modal-glass-leave--panel {
+    transform: none !important;
+  }
+
+  .modal-glass__panel {
+    transition: none;
+  }
+}
+

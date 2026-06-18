@@ -285,6 +285,11 @@
     padding-bottom: 32px;
   }
 
+  .pricing-plan__card,
+  .pricing-faq__item {
+    width: 100%;
+  }
+
   .pricing-plan__card {
     padding: 24px 20px 22px;
   }

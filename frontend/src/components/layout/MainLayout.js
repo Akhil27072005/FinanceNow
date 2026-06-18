@@ -1,23 +1,19 @@
 import React from 'react';
 import Sidebar from './Sidebar';
+import MobileTopBar from './MobileTopBar';
 import { SidebarProvider, useSidebar } from '../../contexts/SidebarContext';
 import '../../styles/content-glass.css';
 
 const MainLayoutContent = ({ children }) => {
-  const { sidebarWidth } = useSidebar();
+  const { sidebarWidth, isMobile } = useSidebar();
 
   return (
-    <div className="app-shell" style={{ display: 'flex', minHeight: '100vh' }}>
+    <div className="app-shell">
+      <MobileTopBar />
       <Sidebar />
       <div
-        style={{
-          marginLeft: `${sidebarWidth}px`,
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          minWidth: 0,
-          transition: 'margin-left 0.25s ease'
-        }}
+        className={`app-shell__main${isMobile ? ' app-shell__main--mobile' : ''}`}
+        style={{ '--sidebar-width': `${sidebarWidth}px` }}
       >
         <main className="app-content">
           <div className="app-content__backdrop" aria-hidden />

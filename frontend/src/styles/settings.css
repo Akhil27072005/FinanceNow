@@ -231,7 +231,7 @@
 
 .settings-nav--mobile {
   display: none;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
 
 .settings-nav__mobile-label {
@@ -239,20 +239,71 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--app-text-subtle);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }
 
-.settings-nav__mobile-select {
+/* Glass section picker — matches settings / contact selects */
+.settings-nav__mobile-select-trigger.modal-glass__select-trigger {
   width: 100%;
-  padding: 10px 12px;
+  min-height: 44px;
+  padding: 10px 14px;
   border-radius: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid var(--glass-control-border, rgba(255, 255, 255, 0.55));
+  background: var(--glass-control-bg, rgba(255, 255, 255, 0.22));
+  color: var(--app-text-heading);
   font-size: 14px;
   font-weight: 500;
-  color: var(--app-text-heading);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
+  font-family: Inter, system-ui, sans-serif;
+  -webkit-backdrop-filter: blur(var(--glass-blur, 12px)) saturate(var(--glass-saturate, 1.1));
+  backdrop-filter: blur(var(--glass-blur, 12px)) saturate(var(--glass-saturate, 1.1));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.settings-nav__mobile-select-trigger.modal-glass__select-trigger:hover:not(:disabled) {
+  background: var(--glass-control-bg-hover, rgba(255, 255, 255, 0.35));
+  border-color: rgba(var(--accent-rgb), 0.28);
+}
+
+.settings-nav__mobile-select-trigger.modal-glass__select-trigger:focus {
+  outline: none;
+  border-color: rgba(var(--accent-rgb), 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 0 0 2px rgba(var(--accent-rgb), 0.12);
+}
+
+.settings-nav--mobile .ui-select__chevron {
+  color: var(--app-text-subtle);
+}
+
+.settings-nav__mobile-select-menu.modal-glass__select-menu {
+  z-index: 10050 !important;
+  border-radius: 14px;
+  border: 1px solid var(--picker-popover-border, var(--glass-border));
+  background: var(--picker-popover-bg, var(--glass-bg));
+  box-shadow: var(--glass-shadow, 0 12px 40px rgba(0, 0, 0, 0.12));
+  -webkit-backdrop-filter: blur(var(--glass-blur, 20px)) saturate(var(--glass-saturate, 1.15));
+  backdrop-filter: blur(var(--glass-blur, 20px)) saturate(var(--glass-saturate, 1.15));
+}
+
+.settings-nav__mobile-select-menu .modal-glass__select-option {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.settings-nav__mobile-select-menu .modal-glass__select-option:hover,
+.settings-nav__mobile-select-menu .modal-glass__select-option--active {
+  background: var(--glass-control-bg-hover);
+  color: var(--accent-text);
+}
+
+.settings-nav__mobile-select-menu .modal-glass__select-option--selected {
+  color: var(--accent-text);
+  font-weight: 600;
+}
+
+.settings-nav__mobile-select-menu .modal-glass__select-option--selected svg {
+  color: var(--accent-bright);
 }
 
 /* Section */
@@ -782,15 +833,6 @@
   cursor: pointer;
 }
 
-.settings-page .settings-nav__mobile-select:focus {
-  outline: none;
-  border-color: rgba(255, 255, 255, 0.75);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 0 0 2px rgba(var(--accent-rgb), 0.12);
-}
-
-
 .settings-link-list {
   display: flex;
   flex-direction: column;
@@ -891,10 +933,18 @@
 
   .settings-nav--mobile {
     display: block;
+    padding: 16px 16px 14px;
+    border-bottom: 1px solid var(--glass-divider, rgba(255, 255, 255, 0.35));
+    background: rgba(255, 255, 255, 0.06);
   }
 
   .settings-page__content-panel {
     min-height: 400px;
+    overflow: visible;
+  }
+
+  .settings-page__content-inner {
+    padding-top: 16px;
   }
 
   .settings-appearance {
@@ -914,6 +964,13 @@
 
   .settings-profile__fields {
     width: 100%;
+  }
+
+  .settings-save-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   }
 }
 

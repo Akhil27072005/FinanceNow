@@ -574,6 +574,27 @@
   }
 }
 
+@media (max-width: 767px) {
+  .budgets-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .budgets-toolbar__chip {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 639px) {
+  .budgets-kpi {
+    grid-template-columns: 1fr;
+  }
+
+  .budgets-page__title {
+    font-size: 22px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .budgets-cards-panel--from-next,
   .budgets-cards-panel--from-prev,
